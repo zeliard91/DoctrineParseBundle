@@ -225,7 +225,11 @@ class ObjectPersister
             $this->profileQuery();
             $fields = json_decode($parseObject->_encode());
 
-            $parseObject->save(true);
+            try {
+                $parseObject->save(true);
+            } catch (\Parse\ParseException $e) {
+                throw new WrappedParseException($e);
+            }
 
             $this->logQuery(['type' => 'insert', 'fields' => $fields]);
 
