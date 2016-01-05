@@ -1,0 +1,1562 @@
+<?php
+
+namespace Redking\ParseBundle;
+
+use Exception;
+use UnexpectedValueException;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\PropertyChangedListener;
+use Redking\ParseBundle\Exception\RedkingParseException;
+use Redking\ParseBundle\Persisters\ObjectPersister;
+use Redking\ParseBundle\Hydrator\ParseObjectHydrator;
+use Redking\ParseBundle\Proxy\Proxy;
+use Redking\ParseBundle\Mapping\ClassMetadata;
+use Redking\ParseBundle\Event\ListenersInvoker;
+use Parse\ParseObject;
+
+/**
+ * The UnitOfWork is responsible for tracking changes to objects during an
+ * "object-level" transaction and for writing out changes to the database
+ * in the correct order.
+ *
+ * Internal note: This class contains highly performance-sensitive code.
+ *
+ * @since       2.0
+ *
+ * @author      Benjamin Eberlei <kontakt@beberlei.de>
+ * @author      Guilherme Blanco <guilhermeblanco@hotmail.com>
+ * @author      Jonathan Wage <jonwage@gmail.com>
+ * @author      Roman Borschel <roman@code-factory.org>
+ * @author      Rob Caiger <rob@clocal.co.uk>
+ */
+class UnitOfWork implements PropertyChangedListener
+{
+    /**
+     * An entity is in MANAGED state when its persistence is managed by an EntityManager.
+     */
+    const STATE_MANAGED = 1;
+
+    /**
+     * An entity is new if it has just been instantiated (i.e. using the "new" operator)
+     * and is not (yet) managed by an EntityManager.
+     */
+    const STATE_NEW = 2;
+
+    /**
+     * A detached entity is an instance with persistent state and identity that is not
+     * (or no longer) associated with an EntityManager (and a UnitOfWork).
+     */
+    const STATE_DETACHED = 3;
+
+    /**
+     * A removed entity instance is an instance with a persistent identity,
+     * associated with an EntityManager, whose persistent state will be deleted
+     * on commit.
+     */
+    const STATE_REMOVED = 4;
+
+    /**
+     * The identity map holds references to all managed objects.
+     *
+     * Documents are grouped by their class name, and then indexed by the
+     * serialized string of their database identifier field or, if the class
+     * has no identifier, the SPL object hash. Serializing the identifier allows
+     * differentiation of values that may be equal (via type juggling) but not
+     * identical.
+     *
+     * Since all classes in a hierarchy must share the same identifier set,
+     * we always take the root class name of the hierarchy.
+     *
+     * @var array
+     */
+    private $identityMap = array();
+
+    /**
+     * Map of all identifiers of managed objects.
+     * Keys are object ids (spl_object_hash).
+     *
+     * @var array
+     */
+    private $objectIdentifiers = array();
+
+    /**
+     * Map of the original object data of managed objects.
+     * Keys are object ids (spl_object_hash). This is used for calculating changesets
+     * at commit time.
+     *
+     * @var array
+     *
+     * @internal Note that PHPs "copy-on-write" behavior helps a lot with memory usage.
+     *           A value will only really be copied if the value in the object is modified
+     *           by the user.
+     */
+    private $originalObjectData = array();
+
+    /**
+     * Map of object changes. Keys are object ids (spl_object_hash).
+     * Filled at the beginning of a commit of the UnitOfWork and cleaned at the end.
+     *
+     * @var array
+     */
+    private $objectChangeSets = array();
+
+    /**
+     * The (cached) states of any known objects.
+     * Keys are object ids (spl_object_hash).
+     *
+     * @var array
+     */
+    private $objectStates = array();
+
+    /**
+     * The object persister instances used to persist entity instances.
+     *
+     * @var array
+     */
+    private $persisters = array();
+
+    /**
+     * Map of objects that are scheduled for dirty checking at commit time.
+     *
+     * Documents are grouped by their class name, and then indexed by their SPL
+     * object hash. This is only used for objects with a change tracking
+     * policy of DEFERRED_EXPLICIT.
+     *
+     * @var array
+     *
+     * @todo rename: scheduledForSynchronization
+     */
+    private $scheduledForDirtyCheck = array();
+
+    /**
+     * A list of all pending object insertions.
+     *
+     * @var array
+     */
+    private $objectInsertions = array();
+
+    /**
+     * A list of all pending object updates.
+     *
+     * @var array
+     */
+    private $objectUpdates = array();
+
+    /**
+     * A list of all pending object upserts.
+     *
+     * @var array
+     */
+    private $objectUpserts = array();
+
+    /**
+     * A list of all pending object deletions.
+     *
+     * @var array
+     */
+    private $objectDeletions = array();
+
+    /**
+     * All pending collection deletions.
+     *
+     * @var array
+     */
+    private $collectionDeletions = array();
+
+    /**
+     * All pending collection updates.
+     *
+     * @var array
+     */
+    private $collectionUpdates = array();
+
+    /**
+     * A list of objects related to collections scheduled for update or deletion.
+     *
+     * @var array
+     */
+    private $hasScheduledCollections = array();
+
+    /**
+     * The ObjectManager that "owns" this UnitOfWork instance.
+     *
+     * @var ObjectManager
+     */
+    private $om;
+
+    /**
+     * The EventManager used for dispatching events.
+     *
+     * @var EventManager
+     */
+    private $evm;
+
+    /**
+     * Additional documents that are scheduled for removal.
+     *
+     * @var array
+     */
+    private $orphanRemovals = array();
+
+    /**
+     * The ListenersInvoker used for dispatching events.
+     *
+     * @var \Redking\ParsBundle\Event\ListenersInvoker
+     */
+    private $listenersInvoker;
+
+    public function __construct(ObjectManager $om)
+    {
+        $this->om = $om;
+        $this->evm = $om->getEventManager();
+        $this->listenersInvoker = new ListenersInvoker($this->om);
+    }
+
+    public function propertyChanged($object, $propertyName, $oldValue, $newValue)
+    {
+        $oid = spl_object_hash($object);
+        $class = $this->om->getClassMetadata(get_class($object));
+
+        $isAssocField = isset($class->associationMappings[$propertyName]);
+
+        if (!$isAssocField && !isset($class->fieldMappings[$propertyName])) {
+            return; // ignore non-persistent fields
+        }
+
+        // Update changeset and mark object for synchronization
+        $this->objectChangeSets[$oid][$propertyName] = array($oldValue, $newValue);
+
+        if (!isset($this->scheduledForSynchronization[$class->name][$oid])) {
+            $this->scheduleForDirtyCheck($object);
+        }
+    }
+
+    /**
+     * Tries to find an entity with the given identifier in the identity map of
+     * this UnitOfWork.
+     *
+     * @param mixed  $id            The entity identifier to look for.
+     * @param string $rootClassName The name of the root class of the mapped entity hierarchy.
+     *
+     * @return object|bool Returns the entity with the specified identifier if it exists in
+     *                     this UnitOfWork, FALSE otherwise.
+     */
+    public function tryGetById($id, $rootClassName)
+    {
+        $idHash = implode(' ', (array) $id);
+
+        if (isset($this->identityMap[$rootClassName][$idHash])) {
+            return $this->identityMap[$rootClassName][$idHash];
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks whether an object is registered in the identity map of this UnitOfWork.
+     *
+     * @param object $object
+     *
+     * @return bool
+     */
+    public function isInIdentityMap($object)
+    {
+        $oid = spl_object_hash($object);
+
+        if (!isset($this->objectIdentifiers[$oid])) {
+            return false;
+        }
+
+        $classMetadata = $this->om->getClassMetadata(get_class($object));
+        $idHash = implode(' ', [$this->objectIdentifiers[$oid]]);
+
+        if ($idHash === '') {
+            return false;
+        }
+
+        return isset($this->identityMap[$classMetadata->rootEntityName][$idHash]);
+    }
+
+    /**
+     * INTERNAL:
+     * Removes an object from the identity map. This effectively detaches the
+     * object from the persistence management of Doctrine.
+     *
+     * @ignore
+     *
+     * @param object $object
+     *
+     * @return bool
+     *
+     * @throws ORMInvalidArgumentException
+     */
+    public function removeFromIdentityMap($object)
+    {
+        $oid = spl_object_hash($object);
+        $classMetadata = $this->om->getClassMetadata(get_class($object));
+        $idHash = implode(' ', [$this->objectIdentifiers[$oid]]);
+
+        if ($idHash === '') {
+            throw ORMInvalidArgumentException::entityHasNoIdentity($object, 'remove from identity map');
+        }
+
+        $className = $classMetadata->rootEntityName;
+
+        if (isset($this->identityMap[$className][$idHash])) {
+            unset($this->identityMap[$className][$idHash]);
+            unset($this->readOnlyObjects[$oid]);
+
+            //$this->entityStates[$oid] = self::STATE_DETACHED;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Gets the EntityPersister for an Object.
+     *
+     * @param string $objectName The name of the object.
+     *
+     * @return \Redking\ParseBundle\ObjectPersister
+     */
+    public function getObjectPersister($objectName)
+    {
+        if (isset($this->persisters[$objectName])) {
+            return $this->persisters[$objectName];
+        }
+
+        $class = $this->om->getClassMetadata($objectName);
+
+        $persister = new ObjectPersister($this->om, $class);
+
+        $this->persisters[$objectName] = $persister;
+
+        return $this->persisters[$objectName];
+    }
+
+    /**
+     * INTERNAL:
+     * Creates an object. Used for reconstitution of persistent object.
+     *
+     * Internal note: Highly performance-sensitive method.
+     *
+     * @ignore
+     *
+     * @param string $className The name of the object class.
+     * @param object $data      The data for the object.
+     * @param array  $hints     Any hints to account for during reconstitution/lookup of the object
+     *
+     * @return object The managed object instance.
+     */
+    public function getOrCreateObject($className, $data, &$hints = array(), $object = null)
+    {
+        $class = $this->om->getClassMetadata($className);
+        $id = $data->getObjectId();
+        $idHash = implode(' ', [$id]);
+
+        if (isset($this->identityMap[$class->rootEntityName][$idHash])) {
+            $object = $this->identityMap[$class->rootEntityName][$idHash];
+            $oid = spl_object_hash($object);
+
+            if ($object instanceof Proxy && !$object->__isInitialized()) {
+                $object->__setInitialized(true);
+                $overrideLocalValues = true;
+            } else {
+                $overrideLocalValues = isset($hints['doctrine.refresh']);
+            }
+            if ($overrideLocalValues) {
+                $this->originalObjectData[$oid] = $data;
+            }
+
+            $hydrator = new ParseObjectHydrator($this->om, $class);
+            $hydrator->hydrate($object, $data, $hints);
+        } else {
+            if ($object == null) {
+                $object = $class->newInstance();
+            }
+            $this->registerManaged($object, $id, $data);
+            $oid = spl_object_hash($object);
+            $this->objectStates[$oid] = self::STATE_MANAGED;
+            $this->identityMap[$class->rootEntityName][$idHash] = $object;
+            $hydrator = new ParseObjectHydrator($this->om, $class);
+            $hydrator->hydrate($object, $data, $hints);
+            $this->originalObjectData[$oid] = $data;
+        }
+
+        return $object;
+    }
+
+    /**
+     * INTERNAL:
+     * Registers a object as managed.
+     *
+     * TODO: This method assumes that $id is a valid PHP identifier for the
+     * document class. If the class expects its database identifier to be a
+     * MongoId, and an incompatible $id is registered (e.g. an integer), the
+     * document identifiers map will become inconsistent with the identity map.
+     * In the future, we may want to round-trip $id through a PHP and database
+     * conversion and throw an exception if it's inconsistent.
+     *
+     * @param object $object The object.
+     * @param array  $id     The identifier values.
+     * @param array  $data   The original object data.
+     */
+    public function registerManaged($object, $id, ParseObject $data)
+    {
+        $oid = spl_object_hash($object);
+        $class = $this->om->getClassMetadata(get_class($object));
+        if (!$class->identifier || $id === null) {
+            $this->objectIdentifiers[$oid] = $oid;
+        } else {
+            $this->objectIdentifiers[$oid] = $id;
+        }
+
+        $this->objectStates[$oid] = self::STATE_MANAGED;
+        $this->originalObjectData[$oid] = $data;
+        $this->addToIdentityMap($object);
+    }
+
+    /**
+     * INTERNAL:
+     * Registers an object in the identity map.
+     * Note that entities in a hierarchy are registered with the class name of
+     * the root object.
+     *
+     * @ignore
+     *
+     * @param object $object The object to register.
+     *
+     * @return bool TRUE if the registration was successful, FALSE if the identity of
+     *              the object in question is already managed.
+     *
+     * @throws ORMInvalidArgumentException
+     */
+    public function addToIdentityMap($object)
+    {
+        $classMetadata = $this->om->getClassMetadata(get_class($object));
+        $idHash = implode(' ', [$this->objectIdentifiers[spl_object_hash($object)]]);
+
+        if ($idHash === '') {
+            throw ORMInvalidArgumentException::entityWithoutIdentity($classMetadata->name, $object);
+        }
+
+        $className = $classMetadata->rootEntityName;
+
+        if (isset($this->identityMap[$className][$idHash])) {
+            return false;
+        }
+
+        $this->identityMap[$className][$idHash] = $object;
+
+        return true;
+    }
+
+    /**
+     * Gets the state of a document with regard to the current unit of work.
+     *
+     * @param object   $document
+     * @param int|null $assume   The state to assume if the state is not yet known (not MANAGED or REMOVED).
+     *                           This parameter can be set to improve performance of document state detection
+     *                           by potentially avoiding a database lookup if the distinction between NEW and DETACHED
+     *                           is either known or does not matter for the caller of the method.
+     *
+     * @return int The document state.
+     */
+    public function getObjectState($document, $assume = null)
+    {
+        $oid = spl_object_hash($document);
+
+        if (isset($this->objectStates[$oid])) {
+            return $this->objectStates[$oid];
+        }
+
+        $class = $this->om->getClassMetadata(get_class($document));
+
+        if ($assume !== null) {
+            return $assume;
+        }
+
+        /* State can only be NEW or DETACHED, because MANAGED/REMOVED states are
+         * known. Note that you cannot remember the NEW or DETACHED state in
+         * _documentStates since the UoW does not hold references to such
+         * objects and the object hash can be reused. More generally, because
+         * the state may "change" between NEW/DETACHED without the UoW being
+         * aware of it.
+         */
+        $id = $class->getIdentifierObject($document);
+
+        if ($id === null) {
+            return self::STATE_NEW;
+        }
+
+        // Last try before DB lookup: check the identity map.
+        if ($this->tryGetById($id, $class)) {
+            return self::STATE_DETACHED;
+        }
+
+        // DB lookup
+        if ($this->getDocumentPersister($class->name)->exists($document)) {
+            return self::STATE_DETACHED;
+        }
+
+        return self::STATE_NEW;
+    }
+
+    /**
+     * Gets the ParseObject of an object.
+     *
+     * @param object $object
+     *
+     * @return array
+     */
+    public function getOriginalObjectData($object)
+    {
+        $oid = spl_object_hash($object);
+
+        if (isset($this->originalObjectData[$oid])) {
+            return $this->originalObjectData[$oid];
+        }
+
+        return array();
+    }
+
+    /**
+     * Persists a object as part of the current unit of work.
+     *
+     * @param object $object The object to persist.
+     *
+     * @throws MongoDBException          If trying to persist MappedSuperclass.
+     * @throws \InvalidArgumentException If there is something wrong with object's identifier.
+     */
+    public function persist($object)
+    {
+        $class = $this->om->getClassMetadata(get_class($object));
+        if ($class->isMappedSuperclass) {
+            throw new \Exception('Can not persist super class '.$class->name);
+        }
+        $visited = array();
+        $this->doPersist($object, $visited);
+    }
+
+    /**
+     * Saves a object as part of the current unit of work.
+     * This method is internally called during save() cascades as it tracks
+     * the already visited objects to prevent infinite recursions.
+     *
+     * NOTE: This method always considers objects that are not yet known to
+     * this UnitOfWork as NEW.
+     *
+     * @param object $object  The object to persist.
+     * @param array  $visited The already visited objects.
+     *
+     * @throws \InvalidArgumentException
+     * @throws MongoDBException
+     */
+    private function doPersist($object, array &$visited)
+    {
+        $oid = spl_object_hash($object);
+        if (isset($visited[$oid])) {
+            return; // Prevent infinite recursion
+        }
+
+        $visited[$oid] = $object; // Mark visited
+
+        $class = $this->om->getClassMetadata(get_class($object));
+
+        $documentState = $this->getObjectState($object, self::STATE_NEW);
+        switch ($documentState) {
+            case self::STATE_MANAGED:
+                // Nothing to do, except if policy is "deferred explicit"
+                if ($class->isChangeTrackingDeferredExplicit()) {
+                    $this->scheduleForDirtyCheck($object);
+                }
+                break;
+            case self::STATE_NEW:
+                $this->persistNew($class, $object);
+                break;
+
+            case self::STATE_REMOVED:
+                // Document becomes managed again
+                unset($this->objectDeletions[$oid]);
+
+                $this->objectStates[$oid] = self::STATE_MANAGED;
+                break;
+
+            case self::STATE_DETACHED:
+                throw new \InvalidArgumentException(
+                    'Behavior of persist() for a detached object is not yet defined.'
+                );
+                break;
+
+            default:
+                throw MongoDBException::invalidDocumentState($documentState);
+        }
+
+        $this->cascadePersist($object, $visited);
+    }
+
+    /**
+     * @param \Doctrine\ORM\Mapping\ClassMetadata $class
+     * @param object                              $object
+     */
+    private function persistNew($class, $object)
+    {
+        $oid = spl_object_hash($object);
+        $invoke = $this->listenersInvoker->getSubscribedSystems($class, Events::prePersist);
+
+        if ($invoke !== ListenersInvoker::INVOKE_NONE) {
+            $this->listenersInvoker->invoke($class, Events::prePersist, $object, new LifecycleEventArgs($object, $this->om), $invoke);
+        }
+
+        $this->objectIdentifiers[$oid] = $oid;
+
+        $this->objectStates[$oid] = self::STATE_MANAGED;
+
+        $this->scheduleForInsert($object);
+    }
+
+    /**
+     * Schedules a object for insertion into the database.
+     * If the object already has an identifier, it will be added to the
+     * identity map.
+     *
+     * @param object $object The object to schedule for insertion.
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function scheduleForInsert($object)
+    {
+        $oid = spl_object_hash($object);
+
+        if (isset($this->objectUpdates[$oid])) {
+            throw new \InvalidArgumentException('Dirty object can not be scheduled for insertion.');
+        }
+        if (isset($this->objectDeletions[$oid])) {
+            throw new \InvalidArgumentException('Removed object can not be scheduled for insertion.');
+        }
+        if (isset($this->objectInsertions[$oid])) {
+            throw new \InvalidArgumentException('Document can not be scheduled for insertion twice.');
+        }
+
+        $this->objectInsertions[$oid] = $object;
+
+        if (isset($this->objectIdentifiers[$oid])) {
+            $this->addToIdentityMap($object);
+        }
+    }
+
+    /**
+     * Cascades the save operation to associated objects.
+     *
+     * @param object $object
+     * @param array  $visited
+     */
+    private function cascadePersist($object, array &$visited)
+    {
+        $class = $this->om->getClassMetadata(get_class($object));
+
+        $associationMappings = array_filter(
+            $class->associationMappings,
+            function ($assoc) {
+                return $assoc['isCascadePersist'];
+            }
+        );
+
+        foreach ($associationMappings as $assoc) {
+            $relatedObjects = $class->reflFields[$assoc['fieldName']]->getValue($object);
+
+            switch (true) {
+                case $relatedObjects instanceof PersistentCollection:
+                    // Unwrap so that foreach() does not initialize
+                    $relatedObjects = $relatedObjects->unwrap();
+                    // break; is commented intentionally!
+
+                case $relatedObjects instanceof Collection:
+                case is_array($relatedObjects):
+                    foreach ($relatedObjects as $relatedEntity) {
+                        $this->doPersist($relatedEntity, $visited);
+                    }
+                    break;
+
+                case $relatedObjects !== null:
+                    $this->doPersist($relatedObjects, $visited);
+                    break;
+
+                default:
+                    // Do nothing
+            }
+        }
+    }
+
+    /**
+     * Commits the UnitOfWork, executing all operations that have been postponed
+     * up to this point. The state of all managed entities will be synchronized with
+     * the database.
+     *
+     * The operations are executed in the following order:
+     *
+     * 1) All object insertions
+     * 2) All object updates
+     * 3) All collection deletions
+     * 4) All collection updates
+     * 5) All object deletions
+     *
+     * @param null|object|array $object
+     *
+     * @throws \Exception
+     */
+    public function commit($object = null)
+    {
+        // Raise preFlush
+        if ($this->evm->hasListeners(Events::preFlush)) {
+            $this->evm->dispatchEvent(Events::preFlush, new PreFlushEventArgs($this->om));
+        }
+
+        // Compute changes done since last commit.
+        if ($object === null) {
+            $this->computeChangeSets();
+        } elseif (is_object($object)) {
+            $this->computeSingleObjectChangeSet($object);
+        } elseif (is_array($object)) {
+            foreach ($object as $object) {
+                $this->computeSingleObjectChangeSet($object);
+            }
+        }
+
+        if (!($this->objectInsertions ||
+                $this->objectDeletions ||
+                $this->objectUpdates ||
+                $this->collectionUpdates ||
+                $this->collectionDeletions ||
+                $this->orphanRemovals)) {
+            $this->dispatchOnFlushEvent();
+            $this->dispatchPostFlushEvent();
+
+            return; // Nothing to do.
+        }
+
+        if ($this->orphanRemovals) {
+            foreach ($this->orphanRemovals as $orphan) {
+                $this->remove($orphan);
+            }
+        }
+
+        $this->dispatchOnFlushEvent();
+
+        // try {
+        //     if ($this->objectInsertions) {
+        //         foreach ($commitOrder as $class) {
+        //             $this->executeInserts($class);
+        //         }
+        //     }
+
+        //     if ($this->objectUpdates) {
+        //         foreach ($commitOrder as $class) {
+        //             $this->executeUpdates($class);
+        //         }
+        //     }
+
+        //     // Extra updates that were requested by persisters.
+        //     if ($this->extraUpdates) {
+        //         $this->executeExtraUpdates();
+        //     }
+
+        //     // Collection deletions (deletions of complete collections)
+        //     foreach ($this->collectionDeletions as $collectionToDelete) {
+        //         $this->getCollectionPersister($collectionToDelete->getMapping())->delete($collectionToDelete);
+        //     }
+        //     // Collection updates (deleteRows, updateRows, insertRows)
+        //     foreach ($this->collectionUpdates as $collectionToUpdate) {
+        //         $this->getCollectionPersister($collectionToUpdate->getMapping())->update($collectionToUpdate);
+        //     }
+
+        //     // Entity deletions come last and need to be in reverse commit order
+        //     if ($this->objectDeletions) {
+        //         for ($count = count($commitOrder), $i = $count - 1; $i >= 0; --$i) {
+        //             $this->executeDeletions($commitOrder[$i]);
+        //         }
+        //     }
+
+        //     $conn->commit();
+        // } catch (Exception $e) {
+        //     $this->om->close();
+        //     $conn->rollback();
+
+        //     throw $e;
+        // }
+
+        // // Take new snapshots from visited collections
+        // foreach ($this->visitedCollections as $coll) {
+        //     $coll->takeSnapshot();
+        // }
+
+        foreach ($this->getClassesForCommitAction($this->objectInsertions) as $classAndObjects) {
+            list($class, $objects) = $classAndObjects;
+            $this->executeInserts($class, $objects);
+        }
+
+        foreach ($this->getClassesForCommitAction($this->objectUpdates) as $classAndObjects) {
+            list($class, $objects) = $classAndObjects;
+            $this->executeUpdates($class, $objects);
+        }
+
+        foreach ($this->getClassesForCommitAction($this->objectDeletions, true) as $classAndObjects) {
+            list($class, $objects) = $classAndObjects;
+            $this->executeDeletions($class, $objects);
+        }
+
+        $this->dispatchPostFlushEvent();
+
+        // Clear up
+        $this->objectInsertions =
+        $this->objectUpdates =
+        $this->objectDeletions =
+        $this->extraUpdates =
+        $this->objectChangeSets =
+        $this->collectionUpdates =
+        $this->collectionDeletions =
+        $this->visitedCollections =
+        $this->scheduledForDirtyCheck =
+        $this->orphanRemovals = array();
+    }
+
+    /**
+     * Groups a list of scheduled objects by their class.
+     *
+     * @param array $objects         Scheduled objects (e.g. $this->objectInsertions)
+     * @param bool  $includeEmbedded
+     *
+     * @return array Tuples of ClassMetadata and a corresponding array of objects
+     */
+    private function getClassesForCommitAction($objects, $includeEmbedded = false)
+    {
+        if (empty($objects)) {
+            return array();
+        }
+        $divided = array();
+        foreach ($objects as $oid => $d) {
+            $className = get_class($d);
+            if (isset($divided[$className])) {
+                $divided[$className][1][$oid] = $d;
+                continue;
+            }
+            $class = $this->om->getClassMetadata($className);
+            if (empty($divided[$class->name])) {
+                $divided[$class->name] = array($class, array($oid => $d));
+            } else {
+                $divided[$class->name][1][$oid] = $d;
+            }
+        }
+
+        return $divided;
+    }
+
+    /**
+     * Executes all entity insertions for objects of the specified type.
+     *
+     * @param \Doctrine\ORM\Mapping\ClassMetadata $class
+     */
+    private function executeInserts($class)
+    {
+        $objects = array();
+        $className = $class->name;
+        $persister = $this->getObjectPersister($className);
+        $invoke = $this->listenersInvoker->getSubscribedSystems($class, Events::postPersist);
+
+        foreach ($this->objectInsertions as $oid => $object) {
+            if ($this->om->getClassMetadata(get_class($object))->name !== $className) {
+                continue;
+            }
+
+            $persister->addInsert($object);
+
+            unset($this->objectInsertions[$oid]);
+
+            if ($invoke !== ListenersInvoker::INVOKE_NONE) {
+                $objects[] = $object;
+            }
+        }
+
+        $postInsertIds = $persister->executeInserts();
+
+        if ($postInsertIds) {
+            // Persister returned post-insert IDs
+            foreach ($postInsertIds as $id => $results) {
+                $oid = spl_object_hash($results['object']);
+                $idField = $class->identifier;
+
+                $class->reflFields[$idField]->setValue($results['object'], $id);
+
+                $this->objectIdentifiers[$oid] = $id;
+                $this->objectStates[$oid] = self::STATE_MANAGED;
+                $this->originalObjectData[$oid] = $results['parseObject'];
+
+                $this->addToIdentityMap($object);
+            }
+        }
+
+        foreach ($objects as $object) {
+            $this->listenersInvoker->invoke($class, Events::postPersist, $object, new LifecycleEventArgs($object, $this->om), $invoke);
+        }
+    }
+
+    /**
+     * Executes all object updates for entities of the specified type.
+     *
+     * @param \Doctrine\ORM\Mapping\ClassMetadata $class
+     */
+    private function executeUpdates(ClassMetadata $class, array $objects)
+    {
+        $className = $class->name;
+        $persister = $this->getObjectPersister($className);
+        $preUpdateInvoke = $this->listenersInvoker->getSubscribedSystems($class, Events::preUpdate);
+        $postUpdateInvoke = $this->listenersInvoker->getSubscribedSystems($class, Events::postUpdate);
+
+        foreach ($objects as $oid => $object) {
+            if ($this->om->getClassMetadata(get_class($object))->name !== $className) {
+                continue;
+            }
+
+            if ($preUpdateInvoke != ListenersInvoker::INVOKE_NONE) {
+                $this->listenersInvoker->invoke($class, Events::preUpdate, $object, new PreUpdateEventArgs($object, $this->om, $this->objectChangeSets[$oid]), $preUpdateInvoke);
+                $this->recomputeSingleEntityChangeSet($class, $object);
+            }
+
+            if (!empty($this->objectChangeSets[$oid])) {
+                $persister->update($this->originalObjectData[$oid], $this->objectChangeSets[$oid]);
+            }
+
+            unset($this->objectUpdates[$oid]);
+
+            if ($postUpdateInvoke != ListenersInvoker::INVOKE_NONE) {
+                $this->listenersInvoker->invoke($class, Events::postUpdate, $object, new LifecycleEventArgs($object, $this->om), $postUpdateInvoke);
+            }
+        }
+    }
+
+    /**
+     * Executes all object deletions for objects of the specified type.
+     *
+     * @param \Doctrine\ORM\Mapping\ClassMetadata $class
+     */
+    private function executeDeletions($class)
+    {
+        $className = $class->name;
+        $persister = $this->getObjectPersister($className);
+        $invoke = $this->listenersInvoker->getSubscribedSystems($class, Events::postRemove);
+
+        foreach ($this->objectDeletions as $oid => $object) {
+            if ($this->om->getClassMetadata(get_class($object))->name !== $className) {
+                continue;
+            }
+
+            $persister->delete($this->originalObjectData[$oid]);
+
+            unset(
+                $this->objectDeletions[$oid],
+                $this->objectIdentifiers[$oid],
+                $this->originalObjectData[$oid],
+                $this->objectStates[$oid]
+            );
+
+            // Object with this $oid after deletion treated as NEW, even if the $oid
+            // is obtained by a new object because the old one went out of scope.
+            $class->reflFields[$class->identifier]->setValue($object, null);
+
+            if ($invoke !== ListenersInvoker::INVOKE_NONE) {
+                $this->listenersInvoker->invoke($class, Events::postRemove, $object, new LifecycleEventArgs($object, $this->om), $invoke);
+            }
+        }
+    }
+
+    /**
+     * Computes all the changes that have been done to entities and collections
+     * since the last commit and stores these changes in the _entityChangeSet map
+     * temporarily for access by the persisters, until the UoW commit is finished.
+     */
+    public function computeChangeSets()
+    {
+        // Compute changes for INSERTed objects first. This must always happen.
+        $this->computeScheduleInsertsChangeSets();
+
+        // Compute changes for other MANAGED objects. Change tracking policies take effect here.
+        foreach ($this->identityMap as $className => $objects) {
+            $class = $this->om->getClassMetadata($className);
+
+            // Skip class if instances are read-only
+            if ($class->isReadOnly) {
+                continue;
+            }
+
+            // If change tracking is explicit or happens through notification, then only compute
+            // changes on objects of that type that are explicitly marked for synchronization.
+            switch (true) {
+                case $class->isChangeTrackingDeferredImplicit():
+                    $objectTorProcess = $objects;
+                    break;
+
+                case isset($this->scheduledForDirtyCheck[$className]):
+                    $objectTorProcess = $this->scheduledForDirtyCheck[$className];
+                    break;
+
+                default:
+                    $objectTorProcess = array();
+
+            }
+
+            foreach ($objectTorProcess as $object) {
+                // Ignore uninitialized proxy objects
+                if ($object instanceof Proxy && !$object->__isInitialized__) {
+                    continue;
+                }
+
+                // Only MANAGED objects that are NOT SCHEDULED FOR INSERTION are processed here.
+                $oid = spl_object_hash($object);
+
+                if (!isset($this->objectInsertions[$oid]) && isset($this->objectStates[$oid])) {
+                    $this->computeChangeSet($class, $object);
+                }
+            }
+        }
+    }
+
+    /**
+     * Computes the changesets of all objects scheduled for insertion.
+     */
+    private function computeScheduleInsertsChangeSets()
+    {
+        foreach ($this->objectInsertions as $object) {
+            $class = $this->om->getClassMetadata(get_class($object));
+
+            $this->computeChangeSet($class, $object);
+        }
+    }
+
+    /**
+     * Computes the changes that happened to a single entity.
+     *
+     * Modifies/populates the following properties:
+     *
+     * {@link _originalObjectData}
+     * If the entity is NEW or MANAGED but not yet fully persisted (only has an id)
+     * then it was not fetched from the database and therefore we have no original
+     * entity data yet. All of the current entity data is stored as the original entity data.
+     *
+     * {@link _objectChangeSets}
+     * The changes detected on all properties of the entity are stored there.
+     * A change is a tuple array where the first entry is the old value and the second
+     * entry is the new value of the property. Changesets are used by persisters
+     * to INSERT/UPDATE the persistent entity state.
+     *
+     * {@link _objectUpdates}
+     * If the entity is already fully MANAGED (has been fetched from the database before)
+     * and any changes to its properties are detected, then a reference to the entity is stored
+     * there to mark it for an update.
+     *
+     * {@link _collectionDeletions}
+     * If a PersistentCollection has been de-referenced in a fully MANAGED entity,
+     * then this collection is marked for deletion.
+     *
+     * @ignore
+     *
+     * @internal Don't call from the outside.
+     *
+     * @param ClassMetadata $class  The class descriptor of the entity.
+     * @param object        $object The entity for which to compute the changes.
+     */
+    public function computeChangeSet(ClassMetadata $class, $object)
+    {
+        $oid = spl_object_hash($object);
+
+        if (isset($this->readOnlyObjects[$oid])) {
+            return;
+        }
+
+        if (!$class->isInheritanceTypeNone()) {
+            $class = $this->om->getClassMetadata(get_class($object));
+        }
+
+        $invoke = $this->listenersInvoker->getSubscribedSystems($class, Events::preFlush) & ~ListenersInvoker::INVOKE_MANAGER;
+
+        if ($invoke !== ListenersInvoker::INVOKE_NONE) {
+            $this->listenersInvoker->invoke($class, Events::preFlush, $object, new PreFlushEventArgs($this->om), $invoke);
+        }
+
+        if (isset($this->originalObjectData[$oid])) {
+            $actualData = clone $this->originalObjectData[$oid];
+        } else {
+            $actualData = $this->getObjectPersister(get_class($object))->instanciateParseObject();
+        }
+
+        foreach ($class->reflFields as $name => $refProp) {
+            $value = $refProp->getValue($object);
+
+            if ($class->isCollectionValuedAssociation($name) && $value !== null) {
+                if ($value instanceof PersistentCollection) {
+                    if ($value->getOwner() === $object) {
+                        continue;
+                    }
+
+                    $value = new ArrayCollection($value->getValues());
+                }
+
+                // If $value is not a Collection then use an ArrayCollection.
+                if (!$value instanceof Collection) {
+                    $value = new ArrayCollection($value);
+                }
+
+                $assoc = $class->associationMappings[$name];
+
+                // Inject PersistentCollection
+                $value = new PersistentCollection(
+                    $this->om,
+                    $this->om->getClassMetadata($assoc['targetDocument']),
+                    $value
+                );
+                $value->setOwner($object, $assoc);
+                $value->setDirty(!$value->isEmpty());
+
+                $class->reflFields[$name]->setValue($object, $value);
+
+                $actualData->set($class->getNameOfField($name), $value);
+
+                continue;
+            }
+
+            // if single ref, try to get the one for uow
+            if ($class->isSingleValuedAssociation($name) && $value !== null) {
+                $ref_oid = spl_object_hash($value);
+                if (isset($this->originalObjectData[$ref_oid])) {
+                    $actualData->set($class->getNameOfField($name), $this->originalObjectData[$ref_oid]);
+                    continue;
+                }
+            }
+
+            if (!$class->isIdentifier($name) && $name !== 'createdAt' && $name !== 'updatedAt') {
+                $actualData->set($class->getNameOfField($name), $value);
+            }
+        }
+
+        if (!isset($this->originalObjectData[$oid])) {
+            // Entity is either NEW or MANAGED but not yet fully persisted (only has an id).
+            // These result in an INSERT.
+            $this->originalObjectData[$oid] = $actualData;
+            $changeSet = array();
+
+            foreach ($actualData as $propName => $actualValue) {
+                if (!isset($class->associationMappings[$propName])) {
+                    $changeSet[$propName] = array(null, $actualValue);
+
+                    continue;
+                }
+
+                $assoc = $class->associationMappings[$propName];
+
+                if ($assoc['isOwningSide'] && $assoc['type'] & ClassMetadata::ONE) {
+                    $changeSet[$propName] = array(null, $actualValue);
+                }
+            }
+
+            $this->objectChangeSets[$oid] = $changeSet;
+        } else {
+            // Entity is "fully" MANAGED: it was already fully persisted before
+            // and we have a copy of the original data
+            $originalData = $this->originalObjectData[$oid];
+            $isChangeTrackingNotify = $class->isChangeTrackingNotify();
+            $changeSet = ($isChangeTrackingNotify && isset($this->objectChangeSets[$oid]))
+                ? $this->objectChangeSets[$oid]
+                : array();
+
+            // foreach ($actualData as $propName => $actualValue) {
+            foreach ($class->fieldMappings as $fieldName) {
+                $propName = $fieldName['name'];
+                // skip field, its a partially omitted one!
+
+                if ($originalData->has($propName) === false) {
+                    continue;
+                }
+                $actualValue = $actualData->get($propName);
+
+                $orgValue = $originalData->get($propName);
+
+                // skip if value haven't changed
+                if ($orgValue === $actualValue) {
+                    continue;
+                }
+
+                // if regular field
+                if (!isset($class->associationMappings[$propName])) {
+                    if ($isChangeTrackingNotify) {
+                        continue;
+                    }
+
+                    $changeSet[$propName] = array($orgValue, $actualValue);
+
+                    continue;
+                }
+
+                $assoc = $class->associationMappings[$propName];
+
+                // Persistent collection was exchanged with the "originally"
+                // created one. This can only mean it was cloned and replaced
+                // on another entity.
+                if ($actualValue instanceof PersistentCollection) {
+                    $owner = $actualValue->getOwner();
+                    if ($owner === null) { // cloned
+                        $actualValue->setOwner($object, $assoc);
+                    } elseif ($owner !== $object) { // no clone, we have to fix
+                        if (!$actualValue->isInitialized()) {
+                            $actualValue->initialize(); // we have to do this otherwise the cols share state
+                        }
+                        $newValue = clone $actualValue;
+                        $newValue->setOwner($object, $assoc);
+                        $class->reflFields[$propName]->setValue($object, $newValue);
+                    }
+                }
+
+                if ($orgValue instanceof PersistentCollection) {
+                    // A PersistentCollection was de-referenced, so delete it.
+                    $coid = spl_object_hash($orgValue);
+
+                    if (isset($this->collectionDeletions[$coid])) {
+                        continue;
+                    }
+
+                    $this->collectionDeletions[$coid] = $orgValue;
+                    $changeSet[$propName] = $orgValue; // Signal changeset, to-many assocs will be ignored.
+
+                    continue;
+                }
+
+                if ($assoc['type'] & ClassMetadata::ONE) {
+                    if ($assoc['isOwningSide']) {
+                        $changeSet[$propName] = array($orgValue, $actualValue);
+                    }
+
+                    if ($orgValue !== null && $assoc['orphanRemoval']) {
+                        $this->scheduleOrphanRemoval($orgValue);
+                    }
+                }
+            }
+
+            if ($changeSet) {
+                $this->objectChangeSets[$oid] = $changeSet;
+                // apply changes on original data
+                foreach ($changeSet as $key => $values) {
+                    $this->originalObjectData[$oid]->set($key, $values[1]);
+                }
+                $actualData = $this->originalObjectData;
+
+                $this->objectUpdates[$oid] = $object;
+            }
+        }
+
+        // Look for changes in associations of the entity
+        foreach ($class->associationMappings as $field => $assoc) {
+            if (($val = $class->reflFields[$field]->getValue($object)) !== null) {
+                $this->computeAssociationChanges($assoc, $val);
+                if (!isset($this->objectChangeSets[$oid]) &&
+                    $assoc['isOwningSide'] &&
+                    $assoc['type'] == ClassMetadata::MANY &&
+                    $val instanceof PersistentCollection &&
+                    $val->isDirty()) {
+                    $this->objectChangeSets[$oid] = array();
+                    $this->originalObjectData[$oid] = $actualData;
+                    $this->objectUpdates[$oid] = $object;
+                }
+            }
+        }
+    }
+
+    /**
+     * Computes the changes of an association.
+     *
+     * @param array $assoc
+     * @param mixed $value The value of the association.
+     *
+     * @throws ORMInvalidArgumentException
+     * @throws ORMException
+     */
+    private function computeAssociationChanges($assoc, $value)
+    {
+        if ($value instanceof Proxy && !$value->__isInitialized__) {
+            return;
+        }
+
+        if ($value instanceof PersistentCollection && $value->isDirty()) {
+            $coid = spl_object_hash($value);
+
+            if ($assoc['isOwningSide']) {
+                $this->collectionUpdates[$coid] = $value;
+            }
+
+            $this->visitedCollections[$coid] = $value;
+        }
+
+        // Look through the entities, and in any of their associations,
+        // for transient (new) entities, recursively. ("Persistence by reachability")
+        // Unwrap. Uninitialized collections will simply be empty.
+        $unwrappedValue = ($assoc['type'] & ClassMetadata::ONE) ? array($value) : $value->unwrap();
+        $targetClass = $this->om->getClassMetadata($assoc['targetDocument']);
+
+        foreach ($unwrappedValue as $key => $entry) {
+            $state = $this->getObjectState($entry, self::STATE_NEW);
+
+            if (!($entry instanceof $assoc['targetDocument'])) {
+                throw new \Exception(
+                    sprintf(
+                        'Found entity of type %s on association %s#%s, but expecting %s',
+                        get_class($entry),
+                        $assoc['sourceEntity'],
+                        $assoc['fieldName'],
+                        $targetClass->name
+                    )
+                );
+            }
+
+            switch ($state) {
+                case self::STATE_NEW:
+                    if (!$assoc['isCascadePersist']) {
+                        throw ORMInvalidArgumentException::newEntityFoundThroughRelationship($assoc, $entry);
+                    }
+
+                    $this->persistNew($targetClass, $entry);
+                    $this->computeChangeSet($targetClass, $entry);
+                    break;
+
+                case self::STATE_REMOVED:
+                    // Consume the $value as array (it's either an array or an ArrayAccess)
+                    // and remove the element from Collection.
+                    if ($assoc['type'] & ClassMetadata::MANY) {
+                        unset($value[$key]);
+                    }
+                    break;
+
+                case self::STATE_DETACHED:
+                    // Can actually not happen right now as we assume STATE_NEW,
+                    // so the exception will be raised from the DBAL layer (constraint violation).
+                    throw ORMInvalidArgumentException::detachedEntityFoundThroughRelationship($assoc, $entry);
+                    break;
+
+                default:
+                    // MANAGED associated entities are already taken into account
+                    // during changeset calculation anyway, since they are in the identity map.
+            }
+        }
+    }
+
+    private function dispatchOnFlushEvent()
+    {
+        if ($this->evm->hasListeners(Events::onFlush)) {
+            $this->evm->dispatchEvent(Events::onFlush, new OnFlushEventArgs($this->em));
+        }
+    }
+
+    private function dispatchPostFlushEvent()
+    {
+        if ($this->evm->hasListeners(Events::postFlush)) {
+            $this->evm->dispatchEvent(Events::postFlush, new PostFlushEventArgs($this->em));
+        }
+    }
+
+    /**
+     * INTERNAL:
+     * Schedules an embedded object for removal. The remove() operation will be
+     * invoked on that object at the beginning of the next commit of this
+     * UnitOfWork.
+     *
+     * @ignore
+     *
+     * @param object $object
+     */
+    public function scheduleOrphanRemoval($object)
+    {
+        $this->orphanRemovals[spl_object_hash($object)] = $object;
+    }
+
+    /**
+     * INTERNAL:
+     * Unschedules an embedded or referenced object for removal.
+     *
+     * @ignore
+     *
+     * @param object $object
+     */
+    public function unscheduleOrphanRemoval($object)
+    {
+        $oid = spl_object_hash($object);
+        if (isset($this->orphanRemovals[$oid])) {
+            unset($this->orphanRemovals[$oid]);
+        }
+    }
+
+    /**
+     * Deletes a object as part of the current unit of work.
+     *
+     * @param object $object The object to remove.
+     */
+    public function remove($object)
+    {
+        $visited = array();
+        $this->doRemove($object, $visited);
+    }
+
+    /**
+     * Deletes an object as part of the current unit of work.
+     *
+     * This method is internally called during delete() cascades as it tracks
+     * the already visited entities to prevent infinite recursions.
+     *
+     * @param object $object  The object to delete.
+     * @param array  $visited The map of the already visited entities.
+     *
+     * @throws ORMInvalidArgumentException If the instance is a detached object.
+     * @throws UnexpectedValueException
+     */
+    private function doRemove($object, array &$visited)
+    {
+        $oid = spl_object_hash($object);
+
+        if (isset($visited[$oid])) {
+            return; // Prevent infinite recursion
+        }
+
+        $visited[$oid] = $object; // mark visited
+
+        // Cascade first, because scheduleForDelete() removes the object from the idobject map, which
+        // can cause problems when a lazy proxy has to be initialized for the cascade operation.
+        $this->cascadeRemove($object, $visited);
+
+        $class = $this->om->getClassMetadata(get_class($object));
+        $objectState = $this->getobjectState($object);
+
+        switch ($objectState) {
+            case self::STATE_NEW:
+            case self::STATE_REMOVED:
+                // nothing to do
+                break;
+
+            case self::STATE_MANAGED:
+                $invoke = $this->listenersInvoker->getSubscribedSystems($class, Events::preRemove);
+
+                if ($invoke !== ListenersInvoker::INVOKE_NONE) {
+                    $this->listenersInvoker->invoke($class, Events::preRemove, $object, new LifecycleEventArgs($object, $this->om), $invoke);
+                }
+
+                $this->scheduleForDelete($object);
+                break;
+
+            case self::STATE_DETACHED:
+                throw RedkingParseException::detachedObjectCannot($object, 'removed');
+            default:
+                throw new UnexpectedValueException("Unexpected object state: $objectState.".self::objToStr($object));
+        }
+    }
+
+    /**
+     * Cascades the delete operation to associated objects.
+     *
+     * @param object $object
+     * @param array  $visited
+     */
+    private function cascadeRemove($object, array &$visited)
+    {
+        $class = $this->om->getClassMetadata(get_class($object));
+        foreach ($class->fieldMappings as $mapping) {
+            if (!$mapping['isCascadeRemove']) {
+                continue;
+            }
+            if ($object instanceof Proxy && !$object->__isInitialized__) {
+                $object->__load();
+            }
+
+            $relatedObjects = $class->reflFields[$mapping['fieldName']]->getValue($object);
+            if (($relatedObjects instanceof Collection || is_array($relatedObjects))) {
+                // If its a PersistentCollection initialization is intended! No unwrap!
+                foreach ($relatedObjects as $relatedObject) {
+                    $this->doRemove($relatedObject, $visited);
+                }
+            } elseif ($relatedObjects !== null) {
+                $this->doRemove($relatedObjects, $visited);
+            }
+        }
+    }
+
+    /**
+     * INTERNAL:
+     * Schedules an object for deletion.
+     *
+     * @param object $object
+     */
+    public function scheduleForDelete($object)
+    {
+        $oid = spl_object_hash($object);
+
+        if (isset($this->objectInsertions[$oid])) {
+            if ($this->isInIdentityMap($object)) {
+                $this->removeFromIdentityMap($object);
+            }
+
+            unset($this->objectInsertions[$oid], $this->objectStates[$oid]);
+
+            return; // object has not been persisted yet, so nothing more to do.
+        }
+
+        if (!$this->isInIdentityMap($object)) {
+            return;
+        }
+
+        $this->removeFromIdentityMap($object);
+
+        if (isset($this->objectUpdates[$oid])) {
+            unset($this->objectUpdates[$oid]);
+        }
+
+        if (!isset($this->objectDeletions[$oid])) {
+            $this->objectDeletions[$oid] = $object;
+            $this->objectStates[$oid] = self::STATE_REMOVED;
+        }
+    }
+
+    /**
+     * Checks whether an object is scheduled for insertion.
+     *
+     * @param object $object
+     *
+     * @return bool
+     */
+    public function isScheduledForInsert($object)
+    {
+        return isset($this->objectInsertions[spl_object_hash($object)]);
+    }
+
+    /**
+     * Checks whether an object is registered as removed/deleted with the unit
+     * of work.
+     *
+     * @param object $object
+     *
+     * @return bool
+     */
+    public function isScheduledForDelete($object)
+    {
+        return isset($this->objectDeletions[spl_object_hash($object)]);
+    }
+
+    /**
+     * Checks whether an object is registered as dirty in the unit of work.
+     * Note: Is not very useful currently as dirty entities are only registered
+     * at commit time.
+     *
+     * @param object $object
+     *
+     * @return bool
+     */
+    public function isScheduledForUpdate($object)
+    {
+        return isset($this->objectUpdates[spl_object_hash($object)]);
+    }
+}

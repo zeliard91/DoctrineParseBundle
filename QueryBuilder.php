@@ -1,0 +1,244 @@
+<?php
+
+namespace Redking\ParseBundle;
+
+use Doctrine\Common\Collections\Criteria;
+use Redking\ParseBundle\Query\Expr;
+
+class QueryBuilder
+{
+    /**
+     * The ObjectManager used by this QueryBuilder.
+     *
+     * @var ObjectManager
+     */
+    private $_om;
+
+    /**
+     * The ClassMetadata instance.
+     *
+     * @var \Doctrine\ODM\MongoDB\Mapping\ClassMetadata
+     */
+    private $_class;
+
+    /**
+     * Array containing the query data.
+     *
+     * @var array
+     */
+    protected $query = array('type' => Query::TYPE_FIND);
+
+    /**
+     * The current field we are operating on.
+     *
+     * @var string
+     */
+    private $currentField;
+
+    /**
+     * The Expr instance used for building this query.
+     *
+     * This object includes the query criteria and the "new object" used for
+     * insert and update queries.
+     *
+     * @var Expr
+     */
+    protected $expr;
+
+    /**
+     * @param ObjectManager $om
+     */
+    public function __construct(ObjectManager $om, $objectName = null)
+    {
+        $this->_om = $om;
+        if ($objectName !== null) {
+            $this->setObjectName($objectName);
+        }
+        $this->expr = new Expr();
+    }
+
+    /**
+     * Return current query.
+     *
+     * @return Query
+     */
+    public function getQuery()
+    {
+        $query = $this->query;
+        $query['query'] = $this->expr->getQuery();
+
+        return new Query($this->_om, $this->_class, $query);
+    }
+
+    /**
+     * @param string[]|string $objectName an array of object names or just one.
+     */
+    private function setObjectName($objectName)
+    {
+        if (is_array($objectName)) {
+            $objectNames = $objectName;
+            $objectName = $objectNames[0];
+
+            $metadata = $this->_om->getClassMetadata($objectName);
+            $discriminatorField = $metadata->discriminatorField;
+            $discriminatorValues = $this->getDiscriminatorValues($objectNames);
+
+            // If a defaultDiscriminatorValue is set and it is among the discriminators being queries, add NULL to the list
+            if ($metadata->defaultDiscriminatorValue && (array_search($metadata->defaultDiscriminatorValue, $discriminatorValues)) !== false) {
+                $discriminatorValues[] = null;
+            }
+
+            $this->field($discriminatorField)->in($discriminatorValues);
+        }
+
+        if ($objectName !== null) {
+            $this->_class = $this->_om->getClassMetadata($objectName);
+        }
+    }
+
+    /**
+     * Define query criteria.
+     *
+     * @param array $criteria [description]
+     */
+    public function setCriteria(array $criteria)
+    {
+        foreach ($criteria as $key => $value) {
+            $this->field($key)->equals($value);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Set the limit for the query.
+     *
+     * This is only relevant for find queries and geoNear and mapReduce
+     * commands.
+     *
+     * @see Query::prepareCursor()
+     *
+     * @param int $limit
+     *
+     * @return self
+     */
+    public function limit($limit)
+    {
+        $this->query['limit'] = (integer) $limit;
+
+        return $this;
+    }
+
+    /**
+     * Set skip for the query cursor.
+     *
+     * This is only relevant for find queries
+     *
+     * @see Query::prepareCursor()
+     *
+     * @param int $skip
+     *
+     * @return self
+     */
+    public function skip($skip)
+    {
+        $this->query['skip'] = (integer) $skip;
+
+        return $this;
+    }
+
+    /**
+     * Set one or more field/order pairs on which to sort the query.
+     *
+     * If sorting by multiple fields, the first argument should be an array of
+     * field name (key) and order (value) pairs.
+     *
+     * @param array|string $fieldName Field name or array of field/order pairs
+     * @param int|string   $order     Field order (if one field is specified)
+     *
+     * @return self
+     */
+    public function sort($fieldName, $order = 1)
+    {
+        if (!isset($this->query['sort'])) {
+            $this->query['sort'] = array();
+        }
+
+        $fields = is_array($fieldName) ? $fieldName : array($fieldName => $order);
+
+        foreach ($fields as $fieldName => $order) {
+            if (is_string($order)) {
+                $order = strtolower($order) === 'asc' ? 'asc' : 'desc';
+            }
+            $this->query['sort'][$fieldName] = $order;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Include association.
+     *
+     * @param string $field
+     *
+     * @return self
+     */
+    public function includeKey($field)
+    {
+        if (!isset($this->query['includes'])) {
+            $this->query['includes'] = [];
+        }
+        $this->query['includes'][] = (string) $field;
+
+        return $this;
+    }
+
+    /**
+     * Set the current field for building the expression.
+     *
+     * @see Expr::field()
+     *
+     * @param string $field
+     *
+     * @return self
+     */
+    public function field($field)
+    {
+        $this->expr->field((string) $field);
+
+        return $this;
+    }
+
+    /**
+     * Specify containsAll criteria for the current field.
+     *
+     * @see Expr::in()
+     * @see https://parse.com/docs/php/guide#queries-queries-on-array-values
+     *
+     * @param array $values
+     *
+     * @return self
+     */
+    public function in(array $values)
+    {
+        $this->expr->in($values);
+
+        return $this;
+    }
+
+    /**
+     * Specify an equality match for the current field.
+     *
+     * @see Expr::equals()
+     *
+     * @param mixed $value
+     *
+     * @return self
+     */
+    public function equals($value)
+    {
+        $this->expr->equals($value);
+
+        return $this;
+    }
+}

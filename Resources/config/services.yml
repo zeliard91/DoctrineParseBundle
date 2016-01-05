@@ -1,0 +1,67 @@
+parameters:
+    # doctrine.parse.metadata.annotation.class: 'Doctrine\ORM\Mapping\Driver\AnnotationDriver'
+    doctrine.parse.metadata.yml.class: 'Redking\ParseBundle\Mapping\Driver\YamlDriver'
+    doctrine.parse.metadata.driver_chain.class: 'Doctrine\Common\Persistence\Mapping\Driver\MappingDriverChain'
+    doctrine.parse.proxy_cache_warmer.class: 'Redking\ParseBundle\CacheWarmer\ProxyCacheWarmer'
+    doctrine.parse.data_collector.class: 'Redking\ParseBundle\DataCollector\SimpleDataCollector'
+    doctrine.parse.logger.class: 'Redking\ParseBundle\Logger\Logger'
+    doctrine.parse.logger.aggregate.class: 'Redking\ParseBundle\Logger\AggregateLogger'
+
+services:
+    # Registry
+    doctrine_parse:
+        class: Redking\ParseBundle\Registry
+        arguments:
+            - "@service_container"
+            - "redking_parse.manager"
+
+    # Manager
+    redking_parse.manager:
+        class: Redking\ParseBundle\ObjectManager
+        arguments:
+            - "@redking_parse.configuration"
+            - "@redking_parse.event_manager"
+
+    redking_parse.event_manager:
+        class: Doctrine\Common\EventManager
+
+    redking_parse.configuration:
+        class: Redking\ParseBundle\Configuration
+        public: false
+
+    # Generate proxies classes on cache
+    redking_parse.proxy_cache_warmer:
+        class: %doctrine.parse.proxy_cache_warmer.class%
+        public: false
+        arguments:
+            - "@redking_parse.manager"
+        tags:
+            - {name: kernel.cache_warmer}
+
+    # logger
+    redking_parse.logger.aggregate:
+        class: %doctrine.parse.logger.aggregate.class%
+        public: false
+
+    redking_parse.logger:
+        class: %doctrine.parse.logger.class%
+        public: false
+        arguments:
+            - "@logger"
+        tags:
+            - {name: monolog.logger, channel: parse}
+
+    # profiler
+    redking_parse.data_collector:
+        class: %doctrine.parse.data_collector.class%
+        public: false
+        arguments:
+            - "@?debug.stopwatch"
+
+    # sensio converter parameter
+    redking_parse.converter.doctrine.parse:
+        class: Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\DoctrineParamConverter
+        arguments:
+            - "@doctrine_parse"
+        tags:
+            - {name: request.param_converter, converter: doctrine.parse, priority: 1}

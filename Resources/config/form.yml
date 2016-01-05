@@ -1,0 +1,8 @@
+services:
+    # Form Type
+    redking_parse.form.object:
+        class: Redking\ParseBundle\Form\Type\ObjectType
+        tags:
+            - {name: form.type, alias: object}
+        arguments:
+            - "@doctrine_parse"

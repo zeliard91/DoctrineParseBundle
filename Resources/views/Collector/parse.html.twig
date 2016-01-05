@@ -1,0 +1,99 @@
+{% extends 'WebProfilerBundle:Profiler:layout.html.twig' %}
+
+{% block toolbar %}
+    {% set icon %}
+        {{ include('@RedkingParse/Collector/icon.svg') }}
+        <span class="sf-toolbar-value">{{ collector.queryCount }}</span>
+    {% endset %}
+    {% set text %}
+        <div class="sf-toolbar-info-piece">
+            <b>Parse Queries</b>
+            <span class="sf-toolbar-status">{{ collector.queryCount }}</span>
+        </div>
+    {% endset %}
+    {% include 'WebProfilerBundle:Profiler:toolbar_item.html.twig' with { 'link': profiler_url } %}
+{% endblock %}
+
+{% block menu %}
+    <span class="label {{ collector.querycount == 0 ? 'disabled' }}">
+        <span class="icon">{{ include('@RedkingParse/Collector/icon.svg') }}</span>
+        <strong>Parse</strong>
+        <span class="count">{{ collector.queryCount }}</span>
+    </span>
+{% endblock %}
+
+{% block panel %}
+    <h2>Queries</h2>
+
+    {% if collector.queries is empty %}
+        <div class="empty">
+            <p>No queries.</p>
+        </div>
+    {% else %}
+        <!-- <ul class="alt">
+            {% for query in collector.queries %}
+                <li class="{{ cycle(['odd', 'even'], loop.index) }}">
+                    <div>
+                        <code>{{ query }}</code>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul> -->
+        <table class="alt queries-table">
+            <thead>
+                <tr>
+                    <th class="nowrap" onclick="javascript:sortTable(this, 0, 'queries')" data-sort-direction="-1" style="cursor: pointer;">#<span class="text-muted">&#9650;</span></th>
+                    <th class="nowrap" onclick="javascript:sortTable(this, 1, 'queries')" style="cursor: pointer;">Time<span></span></th>
+                    <th style="width: 100%;">Info</th>
+                </tr>
+            </thead>
+            <tbody id="queries">
+                {% for i, query in collector.queries %}
+                <tr id="queryNo-{{ i }}">
+                    <td>{{ loop.index }}</td>
+                    <td class="nowrap">{{ '%0.2f'|format(collector.queryTimes[i]) }}&nbsp;ms</td>
+                    <td><code>{{ query }}</code></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <script type="text/javascript">//<![CDATA[
+        function sortTable(header, column, targetId) {
+            "use strict";
+
+            var direction = parseInt(header.getAttribute('data-sort-direction')) || 1,
+                items = [],
+                target = document.getElementById(targetId),
+                rows = target.children,
+                headers = header.parentElement.children,
+                i;
+
+            for (i = 0; i < rows.length; ++i) {
+                items.push(rows[i]);
+            }
+
+            for (i = 0; i < headers.length; ++i) {
+                headers[i].removeAttribute('data-sort-direction');
+                if (headers[i].children.length > 0) {
+                    headers[i].children[0].innerHTML = '';
+                }
+            }
+
+            header.setAttribute('data-sort-direction', (-1*direction).toString());
+            header.children[0].innerHTML = direction > 0 ? '<span class="text-muted">&#9650;</span>' : '<span class="text-muted">&#9660;</span>';
+
+            items.sort(function(a, b) {
+                return direction * (parseFloat(a.children[column].innerHTML) - parseFloat(b.children[column].innerHTML));
+            });
+
+            for (i = 0; i < items.length; ++i) {
+                Sfjs.removeClass(items[i], i % 2 ? 'even' : 'odd');
+                Sfjs.addClass(items[i], i % 2 ? 'odd' : 'even');
+                target.appendChild(items[i]);
+            }
+        }
+
+        //]]></script>
+    {% endif %}
+{% endblock %}
