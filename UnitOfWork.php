@@ -1173,11 +1173,7 @@ class UnitOfWork implements PropertyChangedListener
             // foreach ($actualData as $propName => $actualValue) {
             foreach ($class->fieldMappings as $fieldName) {
                 $propName = $fieldName['name'];
-                // skip field, its a partially omitted one!
-
-                if ($originalData->has($propName) === false) {
-                    continue;
-                }
+                
                 $actualValue = $actualData->get($propName);
 
                 $orgValue = $originalData->get($propName);
