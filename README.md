@@ -12,7 +12,7 @@ Add bundle to composer.json
 ```js
 {
     "require": {
-        "redking/parse-bundle": "~0.1"
+        "redking/parse-bundle": "~1"
     },
     "repositories": [
         {

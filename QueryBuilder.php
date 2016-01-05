@@ -58,6 +58,15 @@ class QueryBuilder
     }
 
     /**
+     * Force cloning of expr.
+     *
+     */
+    public function __clone()
+    {
+        $this->expr = clone $this->expr;
+    }
+
+    /**
      * Return current query.
      *
      * @return Query
