@@ -6,6 +6,7 @@ parameters:
     doctrine.parse.data_collector.class: 'Redking\ParseBundle\DataCollector\SimpleDataCollector'
     doctrine.parse.logger.class: 'Redking\ParseBundle\Logger\Logger'
     doctrine.parse.logger.aggregate.class: 'Redking\ParseBundle\Logger\AggregateLogger'
+    parse_authenticator.class: 'Redking\ParseBundle\Security\ParseAuthenticator'
 
 services:
     # Registry
@@ -65,3 +66,7 @@ services:
             - "@doctrine_parse"
         tags:
             - {name: request.param_converter, converter: doctrine.parse, priority: 1}
+
+    # authenticator
+    parse_authenticator:
+        class:     "%parse_authenticator.class%"

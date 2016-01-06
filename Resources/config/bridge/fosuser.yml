@@ -1,0 +1,15 @@
+parameters:
+    redking_parse.fos_user.manager.class: 'Redking\ParseBundle\Bridge\FOSUser\UserManager'
+
+services:
+
+### FOSUSER PARSE BRIDGE USER MANAGER ###
+    redking_parse.fos_user.manager:
+        class: "%redking_parse.fos_user.manager.class%"
+        public: false
+        arguments: 
+            - "@security.encoder_factory"
+            - "@fos_user.util.username_canonicalizer"
+            - "@fos_user.util.email_canonicalizer"
+            - "@redking_parse.manager"
+            - "%fos_user.model.user.class%"

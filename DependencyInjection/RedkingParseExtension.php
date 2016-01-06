@@ -83,6 +83,13 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         foreach ($methods as $method => $arg) {
             $configDef->addMethodCall($method, array($arg));
         }
+
+        // Load bridge configurations
+        $bundles = $container->getParameter('kernel.bundles');
+
+        if (isset($bundles['FOSUserBundle'])) {
+            $loader->load('bridge/fosuser.yml');
+        }
     }
 
     protected function getObjectManagerElementName($name)
