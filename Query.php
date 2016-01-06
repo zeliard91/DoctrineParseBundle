@@ -97,6 +97,7 @@ class Query
         $this->_om = $om;
         $this->_class = $class;
         $this->query = $query;
+        $this->type = $query['type'];
         $this->_parseQuery = new ParseQuery($this->_class->getCollection());
     }
 
@@ -184,6 +185,12 @@ class Query
                 return new ArrayCollection($results);
                 break;
 
+            case self::TYPE_COUNT:
+                $nb_results = $results = $this->_parseQuery->count();
+                $this->logQuery();
+                return $nb_results;
+
+                break;
             default:
                 dump(__METHOD__);
                 die;

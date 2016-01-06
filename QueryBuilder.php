@@ -106,6 +106,17 @@ class QueryBuilder
     }
 
     /**
+     * Change the query type to count.
+     *
+     * @return self
+     */
+    public function count()
+    {
+        $this->query['type'] = Query::TYPE_COUNT;
+        return $this;
+    }
+
+    /**
      * Define query criteria.
      *
      * @param array $criteria [description]
