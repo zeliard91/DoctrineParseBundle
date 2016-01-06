@@ -1555,4 +1555,29 @@ class UnitOfWork implements PropertyChangedListener
     {
         return isset($this->objectUpdates[spl_object_hash($object)]);
     }
+
+    /**
+     * Initializes (loads) an uninitialized persistent collection of an object.
+     *
+     * @param \Redking\ParseBundle\PersistentCollection $collection The collection to initialize.
+     *
+     * @return void
+     *
+     */
+    public function loadCollection(PersistentCollection $collection)
+    {
+        $assoc     = $collection->getMapping();
+        $persister = $this->getObjectPersister($assoc['targetDocument']);
+
+        if (isset($assoc['repositoryMethod']) && $assoc['repositoryMethod']) {
+            $persister->loadReferenceManyWithRepositoryMethod($collection);
+        } else {
+            if ($assoc['isOwningSide']) {
+                $persister->loadReferenceManyCollectionOwningSide($collection);
+            } else {
+                $persister->loadReferenceManyCollectionInverseSide($collection);
+            }
+        }
+        $collection->setInitialized(true);
+    }
 }

@@ -4,6 +4,7 @@ namespace Redking\ParseBundle;
 
 use Redking\ParseBundle\Mapping\ClassMetadata;
 use Parse\ParseQuery;
+use Parse\ParseObject;
 use Doctrine\Common\Collections\ArrayCollection;
 use Redking\ParseBundle\Exception\RedkingParseException;
 
@@ -152,7 +153,15 @@ class Query
         if (null !== $this->_om->getConfiguration()->getLoggerCallable()) {
             $loggable_query = [];
             $loggable_query['className'] = $this->_class->getCollection();
-            $loggable_query += $this->_parseQuery->_getOptions();
+            $query = $this->_parseQuery->_getOptions();
+            if (isset($query['where'])) {
+                foreach ($query['where'] as $key => &$value) {
+                    if ($value instanceof ParseObject) {
+                        $value = $value->getClassName().'.'.$value->getObjectId();
+                    }
+                }
+            }
+            $loggable_query += $query;
             call_user_func_array($this->_om->getConfiguration()->getLoggerCallable(), array($loggable_query));
         }
     }

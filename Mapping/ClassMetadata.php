@@ -52,6 +52,24 @@ class ClassMetadata implements BaseClassMetadata
     const INHERITANCE_TYPE_NONE = 1;
 
     /**
+     * Specifies that an association is to be fetched when it is first accessed.
+     */
+    const FETCH_LAZY = 2;
+
+    /**
+     * Specifies that an association is to be fetched when the owner of the
+     * association is fetched.
+     */
+    const FETCH_EAGER = 3;
+
+    /**
+     * Specifies that an association is to be fetched lazy (on first access) and that
+     * commands such as Collection#count, Collection#slice are issued directly against
+     * the database if the collection is not yet initialized.
+     */
+    const FETCH_EXTRA_LAZY = 4;
+
+    /**
      * READ-ONLY: The name of the entity class.
      *
      * @var string
@@ -464,6 +482,11 @@ class ClassMetadata implements BaseClassMetadata
             if (!isset($mapping['orphanRemoval'])) {
                 $mapping['orphanRemoval'] = false;
             }
+
+            // Fetch mode. Default fetch mode to LAZY, if not set.
+            if ( ! isset($mapping['fetch'])) {
+                $mapping['fetch'] = self::FETCH_LAZY;
+            }
         }
 
         if (isset($mapping['reference']) && $mapping['type'] === 'many' && $mapping['isOwningSide']
@@ -617,7 +640,7 @@ class ClassMetadata implements BaseClassMetadata
      */
     public function isAssociationInverseSide($assocName)
     {
-        dump(__METHOD__);
+        throw new \Exception(__METHOD__);
     }
 
     /**
@@ -625,7 +648,7 @@ class ClassMetadata implements BaseClassMetadata
      */
     public function getAssociationMappedByTargetField($assocName)
     {
-        dump(__METHOD__);
+        throw new \Exception(__METHOD__);
     }
 
     /**

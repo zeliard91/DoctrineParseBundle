@@ -7,6 +7,7 @@ use Redking\ParseBundle\Mapping\ClassMetadata;
 use Parse\ParseQuery;
 use Parse\ParseObject;
 use Redking\ParseBundle\Exception\WrappedParseException;
+use Redking\ParseBundle\PersistentCollection;
 
 class ObjectPersister
 {
@@ -258,5 +259,43 @@ class ObjectPersister
         }
 
         $this->logQuery(['type' => 'remove', 'id' => $object_id]);
+    }
+
+    /**
+     * Load objects in the collection.
+     *
+     * @param  PersistentCollection $collection
+     */
+    public function loadReferenceManyCollectionInverseSide(PersistentCollection $collection)
+    {
+        $query = $this->createReferenceManyInverseSideQuery($collection);
+        $documents = $query->execute()->toArray(false);
+        foreach ($documents as $key => $document) {
+            $collection->add($document);
+        }
+    }
+
+    /**
+     * Return Query for inversed side association.
+     *
+     * @param  PersistentCollection $collection
+     * @return \Redking\ParseBundle\Query
+     */
+    public function createReferenceManyInverseSideQuery(PersistentCollection $collection)
+    {
+        $sort = (isset($mapping['sort'])) ? $mapping['sort'] : null;
+        $limit = (isset($mapping['limit'])) ? $mapping['limit'] : null;
+        $skip = (isset($mapping['skip'])) ? $mapping['skip'] : null;
+
+        $mapping = $collection->getMapping();
+        $owner = $collection->getOwner();
+        $ownerClass = $this->om->getClassMetadata(get_class($owner));
+        $targetClass = $collection->getTypeClass();
+        $mappedByMapping = isset($targetClass->fieldMappings[$mapping['mappedBy']]) ? $targetClass->fieldMappings[$mapping['mappedBy']] : array();
+
+        $objectId = $ownerClass->getIdentifierValues($owner)[$ownerClass->getIdentifier()[0]];
+        $criteria = [$mappedByMapping['fieldName'] => new \Parse\ParseObject($ownerClass->collection, $objectId)];
+        
+        return $this->getQuery($criteria, null, $limit, $skip, $sort);
     }
 }

@@ -84,7 +84,7 @@ class YamlDriver extends FileDriver
         }
 
         $this->addMandatoryFieldMapping($class);
-// dump($element['fields']);die;
+
         if (isset($element['fields'])) {
             foreach ($element['fields'] as $fieldName => $mapping) {
                 if (is_string($mapping)) {
@@ -264,6 +264,9 @@ class YamlDriver extends FileDriver
         }
         if (isset($reference['criteria'])) {
             $mapping['criteria'] = $reference['criteria'];
+        }
+        if (isset($reference['fetch'])) {
+            $mapping['fetch'] = constant('Redking\ParseBundle\ClassMetadata::FETCH_' . $reference['fetch']);
         }
         $this->addFieldMapping($class, $mapping);
     }
