@@ -98,6 +98,6 @@ class ParseQueryBuilderLoader implements EntityLoaderInterface
         return array_values($qb
             ->field($identifier)->in($values)
             ->getQuery()
-            ->execute());
+            ->execute()->toArray());
     }
 }

@@ -4,6 +4,7 @@ namespace Redking\ParseBundle;
 
 use Redking\ParseBundle\Mapping\ClassMetadata;
 use Parse\ParseQuery;
+use Doctrine\Common\Collections\ArrayCollection;
 
 class Query
 {
@@ -175,12 +176,12 @@ class Query
                     return $results;
                 }
 
-                $_results = [];
-                foreach ($results as $result) {
-                    $_results[] = $uow->getOrCreateObject($this->_class->name, $result, $this->unitOfWorkHints);
+                $nb_results = count($results);
+                for ($i=0; $i < $nb_results; $i++) {
+                    $results[$i] = $uow->getOrCreateObject($this->_class->name, $results[$i], $this->unitOfWorkHints);
                 }
 
-                return $_results;
+                return new ArrayCollection($results);
                 break;
 
             default:
