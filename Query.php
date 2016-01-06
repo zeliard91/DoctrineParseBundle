@@ -5,6 +5,7 @@ namespace Redking\ParseBundle;
 use Redking\ParseBundle\Mapping\ClassMetadata;
 use Parse\ParseQuery;
 use Doctrine\Common\Collections\ArrayCollection;
+use Redking\ParseBundle\Exception\RedkingParseException;
 
 class Query
 {
@@ -192,8 +193,7 @@ class Query
 
                 break;
             default:
-                dump(__METHOD__);
-                die;
+                throw new \Exception('Unknown query type '.$this->getType());
                 break;
         }
     }
@@ -214,6 +214,9 @@ class Query
                     if ($field == '_objectId') {
                         $field = 'objectId';
                     }
+                }
+                if (null === $field) {
+                    throw RedkingParseException::nonMappedFieldInQuery($this->_class->name, $attribute);
                 }
                 foreach ($operations as $operator => $value) {
                     $this->_parseQuery->$operator($field, $value);
@@ -260,6 +263,11 @@ class Query
 
         $result = $this->_parseQuery->first();
         $this->logQuery();
+
+        // return null if there is no result
+        if (is_array($result) && count($result) === 0) {
+            return null;
+        }
 
         if ($this->hydrate === false) {
             return $result;

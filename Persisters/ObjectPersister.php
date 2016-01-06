@@ -88,7 +88,6 @@ class ObjectPersister
      */
     protected function getQuery($criteria, $assoc = null, $limit = null, $skip = null, array $orderBy = null)
     {
-        // dump($criteria, $assoc, $limit, $offset, $orderBy);
         $qb = $this->om->createQueryBuilder($this->class->name)
             ->setCriteria($criteria);
 

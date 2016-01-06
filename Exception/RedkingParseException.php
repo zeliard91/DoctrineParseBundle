@@ -136,4 +136,15 @@ class RedkingParseException extends \Exception
 
         return new self(sprintf('%s type requires value of type %s, %s given', $type, $expected, $gotType));
     }
+
+    /**
+     * @param string $objectName
+     * @param string $fieldName
+     *
+     * @return RedkingParseException
+     */
+    public static function nonMappedFieldInQuery($objectName, $fieldName)
+    {
+        return new self(sprintf('Non mapped field in query %s::%s', $objectName, $fieldName));
+    }
 }
