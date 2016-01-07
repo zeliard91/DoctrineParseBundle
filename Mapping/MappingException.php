@@ -278,4 +278,38 @@ class MappingException extends BaseMappingException
     {
         return new self("ReferenceMany's sort can not be used with addToSet and pushAll strategies, $strategy used in $className::$fieldName");
     }
+
+    /**
+     * @param string $className
+     * @param string $methodName
+     *
+     * @return MappingException
+     */
+    public static function lifecycleCallbackMethodNotFound($className, $methodName)
+    {
+        return new self("Object '" . $className . "' has no method '" . $methodName . "' to be registered as lifecycle callback.");
+    }
+
+    /**
+     * @param string $listenerName
+     * @param string $className
+     *
+     * @return MappingException
+     */
+    public static function objectListenerClassNotFound($listenerName, $className)
+    {
+        return new self(sprintf('Object Listener "%s" declared on "%s" not found.', $listenerName, $className));
+    }
+
+    /**
+     * @param string $listenerName
+     * @param string $methodName
+     * @param string $className
+     *
+     * @return MappingException
+     */
+    public static function objectListenerMethodNotFound($listenerName, $methodName, $className)
+    {
+        return new self(sprintf('Object Listener "%s" declared on "%s" has no method "%s".', $listenerName, $className, $methodName));
+    }
 }

@@ -206,6 +206,20 @@ class ClassMetadata implements BaseClassMetadata
     public $associationMappings = array();
 
     /**
+     * READ-ONLY: The registered lifecycle callbacks for entities of this class.
+     *
+     * @var array
+     */
+    public $lifecycleCallbacks = array();
+
+    /**
+     * READ-ONLY: The registered entity listeners.
+     *
+     * @var array
+     */
+    public $objectListeners = array();
+
+    /**
      * Initializes a new ClassMetadata instance that will hold the object-relational mapping
      * metadata of the class with the given name.
      *
@@ -705,5 +719,119 @@ class ClassMetadata implements BaseClassMetadata
     public function isInheritanceTypeNone()
     {
         return $this->inheritanceType == self::INHERITANCE_TYPE_NONE;
+    }
+
+    /**
+     * Validates lifecycle callbacks.
+     *
+     * @param \Doctrine\Common\Persistence\Mapping\ReflectionService $reflService
+     *
+     * @return void
+     *
+     * @throws MappingException
+     */
+    public function validateLifecycleCallbacks($reflService)
+    {
+        foreach ($this->lifecycleCallbacks as $callbacks) {
+            foreach ($callbacks as $callbackFuncName) {
+                if ( ! $reflService->hasPublicMethod($this->name, $callbackFuncName)) {
+                    throw MappingException::lifecycleCallbackMethodNotFound($this->name, $callbackFuncName);
+                }
+            }
+        }
+    }
+
+    /**
+     * Whether the class has any attached lifecycle listeners or callbacks for a lifecycle event.
+     *
+     * @param string $lifecycleEvent
+     *
+     * @return boolean
+     */
+    public function hasLifecycleCallbacks($lifecycleEvent)
+    {
+        return isset($this->lifecycleCallbacks[$lifecycleEvent]);
+    }
+
+    /**
+     * Gets the registered lifecycle callbacks for an event.
+     *
+     * @param string $event
+     *
+     * @return array
+     */
+    public function getLifecycleCallbacks($event)
+    {
+        return isset($this->lifecycleCallbacks[$event]) ? $this->lifecycleCallbacks[$event] : array();
+    }
+
+    /**
+     * Adds a lifecycle callback for objects of this class.
+     *
+     * @param string $callback
+     * @param string $event
+     *
+     * @return void
+     */
+    public function addLifecycleCallback($callback, $event)
+    {
+        if(isset($this->lifecycleCallbacks[$event]) && in_array($callback, $this->lifecycleCallbacks[$event])) {
+            return;
+        }
+
+        $this->lifecycleCallbacks[$event][] = $callback;
+    }
+
+    /**
+     * Sets the lifecycle callbacks for objects of this class.
+     * Any previously registered callbacks are overwritten.
+     *
+     * @param array $callbacks
+     *
+     * @return void
+     */
+    public function setLifecycleCallbacks(array $callbacks)
+    {
+        $this->lifecycleCallbacks = $callbacks;
+    }
+
+    /**
+     * Adds a entity listener for objects of this class.
+     *
+     * @param string $eventName The entity lifecycle event.
+     * @param string $class     The listener class.
+     * @param string $method    The listener callback method.
+     *
+     * @throws \Redking\ParseBundle\Mapping\MappingException
+     */
+    public function addObjectListener($eventName, $class, $method)
+    {
+        $class = $this->fullyQualifiedClassName($class);
+
+        if ( ! class_exists($class)) {
+            throw MappingException::objectListenerClassNotFound($class, $this->name);
+        }
+
+        if ( ! method_exists($class, $method)) {
+            throw MappingException::objectListenerMethodNotFound($class, $method, $this->name);
+        }
+
+        $this->objectListeners[$eventName][] = array(
+            'class'  => $class,
+            'method' => $method
+        );
+    }
+
+    /**
+     * @param   string $className
+     * @return  string
+     */
+    public function fullyQualifiedClassName($className)
+    {
+        if ($className !== null && strpos($className, '\\') === false && strlen($this->namespace) > 0) {
+            return $this->namespace . '\\' . $className;
+        }
+
+        return $className;
     }
 }

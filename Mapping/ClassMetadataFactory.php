@@ -117,6 +117,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
         }
 
         $this->validateIdentifier($class);
+        $class->validateLifecycleCallbacks($this->getReflectionService());
 
         if ($parent && $parent->isInheritanceTypeSingleCollection()) {
             $class->setDatabase($parent->getDatabase());

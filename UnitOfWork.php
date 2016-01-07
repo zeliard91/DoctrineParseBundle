@@ -7,6 +7,7 @@ use UnexpectedValueException;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\PropertyChangedListener;
+use Doctrine\Common\Persistence\Event\LifecycleEventArgs;
 use Redking\ParseBundle\Exception\RedkingParseException;
 use Redking\ParseBundle\Persisters\ObjectPersister;
 use Redking\ParseBundle\Hydrator\ParseObjectHydrator;

@@ -6,6 +6,7 @@ use Doctrine\Common\Persistence\Mapping\ClassMetadata;
 use Doctrine\Common\Persistence\Mapping\Driver\FileDriver;
 use Doctrine\Common\Persistence\Mapping\Driver\SymfonyFileLocator;
 use Symfony\Component\Yaml\Yaml;
+use Redking\ParseBundle\Mapping\Builder\ObjectListenerBuilder;
 
 /**
  * The YamlDriver reads the mapping metadata from yaml schema files.
@@ -114,16 +115,36 @@ class YamlDriver extends FileDriver
                 $this->addMappingFromReference($class, $fieldName, $reference, 'many');
             }
         }
-        if (isset($element['lifecycleCallbacks'])) {
-            foreach ($element['lifecycleCallbacks'] as $type => $methods) {
-                foreach ($methods as $method) {
-                    $class->addLifecycleCallback($method, constant('Doctrine\ODM\MongoDB\Events::'.$type));
-                }
-            }
-        }
         if (isset($element['alsoLoadMethods'])) {
             foreach ($element['alsoLoadMethods'] as $methodName => $fieldName) {
                 $class->registerAlsoLoadMethod($methodName, $fieldName);
+            }
+        }
+
+        // Evaluate lifeCycleCallbacks
+        if (isset($element['lifecycleCallbacks'])) {
+            foreach ($element['lifecycleCallbacks'] as $type => $methods) {
+                foreach ($methods as $method) {
+                    $class->addLifecycleCallback($method, constant('Redking\ParseBundle\Events::' . $type));
+                }
+            }
+        }
+
+        // Evaluate objectListeners
+        if (isset($element['objectListeners'])) {
+            foreach ($element['objectListeners'] as $className => $objectListener) {
+                // Evaluate the listener using naming convention.
+                if (empty($objectListener)) {
+                    ObjectListenerBuilder::bindObjectListener($class, $className);
+
+                    continue;
+                }
+
+                foreach ($objectListener as $eventName => $callbackElement){
+                    foreach ($callbackElement as $methodName){
+                        $class->addObjectListener($eventName, $className, $methodName);
+                    }
+                }
             }
         }
     }

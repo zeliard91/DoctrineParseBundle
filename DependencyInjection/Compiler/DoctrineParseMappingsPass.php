@@ -93,7 +93,7 @@ class DoctrineParseMappingsPass extends RegisterMappingsPass
      */
     public static function createYamlMappingDriver(array $namespaces, array $managerParameters = array(), $enabledParameter = false, array $aliasMap = array())
     {
-        $arguments = array($namespaces, '.orm.yml');
+        $arguments = array($namespaces, '.parse.yml');
         $locator = new Definition('Doctrine\Common\Persistence\Mapping\Driver\SymfonyFileLocator', $arguments);
         $driver = new Definition('Redking\ParseBundle\Mapping\Driver\YamlDriver', array($locator));
 
