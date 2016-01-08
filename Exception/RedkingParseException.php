@@ -28,6 +28,28 @@ class RedkingParseException extends \Exception
     }
 
     /**
+     * @param object $object
+     * @param string $operation
+     *
+     * @return RedkingParseException
+     */
+    static public function objectHasNoIdentity($object, $operation)
+    {
+        return new self("Object has no identity, therefore " . $operation ." cannot be performed. " . self::objToStr($object));
+    }
+
+    /**
+     * @param object $object
+     * @param string $operation
+     *
+     * @return ORMInvalidArgumentException
+     */
+    static public function objectIsRemoved($object, $operation)
+    {
+        return new self("Object is removed, therefore " . $operation ." cannot be performed. " . self::objToStr($object));
+    }
+
+    /**
      * @param string $state
      *
      * @return RedkingParseException
@@ -146,5 +168,17 @@ class RedkingParseException extends \Exception
     public static function nonMappedFieldInQuery($objectName, $fieldName)
     {
         return new self(sprintf('Non mapped field in query %s::%s', $objectName, $fieldName));
+    }
+
+    /**
+     * Helper method to show an object as string.
+     *
+     * @param object $obj
+     *
+     * @return string
+     */
+    private static function objToStr($obj)
+    {
+        return method_exists($obj, '__toString') ? (string)$obj : get_class($obj).'@'.spl_object_hash($obj);
     }
 }

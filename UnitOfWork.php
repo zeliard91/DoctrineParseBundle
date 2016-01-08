@@ -152,6 +152,13 @@ class UnitOfWork implements PropertyChangedListener
     private $objectUpserts = array();
 
     /**
+     * Any pending extra updates that have been scheduled by persisters or events.
+     *
+     * @var array
+     */
+    private $extraUpdates = array();
+
+    /**
      * A list of all pending object deletions.
      *
      * @var array
@@ -812,6 +819,11 @@ class UnitOfWork implements PropertyChangedListener
             $this->executeUpdates($class, $objects);
         }
 
+        // Extra updates that were requested by persisters.
+        if ($this->extraUpdates) {
+            $this->executeExtraUpdates();
+        }
+
         foreach ($this->getClassesForCommitAction($this->objectDeletions, true) as $classAndObjects) {
             list($class, $objects) = $classAndObjects;
             $this->executeDeletions($class, $objects);
@@ -931,7 +943,7 @@ class UnitOfWork implements PropertyChangedListener
 
             if ($preUpdateInvoke != ListenersInvoker::INVOKE_NONE) {
                 $this->listenersInvoker->invoke($class, Events::preUpdate, $object, new PreUpdateEventArgs($object, $this->om, $this->objectChangeSets[$oid]), $preUpdateInvoke);
-                $this->recomputeSingleEntityChangeSet($class, $object);
+                $this->recomputeSingleObjectChangeSet($class, $object);
             }
 
             if (!empty($this->objectChangeSets[$oid])) {
@@ -943,6 +955,19 @@ class UnitOfWork implements PropertyChangedListener
             if ($postUpdateInvoke != ListenersInvoker::INVOKE_NONE) {
                 $this->listenersInvoker->invoke($class, Events::postUpdate, $object, new LifecycleEventArgs($object, $this->om), $postUpdateInvoke);
             }
+        }
+    }
+
+    /**
+     * Executes any extra updates that have been scheduled.
+     */
+    private function executeExtraUpdates()
+    {
+        foreach ($this->extraUpdates as $oid => $update) {
+            list ($object, $changeset) = $update;
+
+            $this->objectUpdates[$oid] = $changeset;
+            $this->getObjectPersister(get_class($object))->update($this->originalObjectData[$oid], $changeset);
         }
     }
 
@@ -1142,6 +1167,14 @@ class UnitOfWork implements PropertyChangedListener
                     $actualData->set($class->getNameOfField($name), $this->originalObjectData[$ref_oid]);
                     continue;
                 }
+            }
+
+            // skip if the field is the same ParseFile but it has not been loaded
+            if ($value instanceof ParseFile 
+                && $actualData->get($class->getNameOfField($name)) instanceof ParseFile
+                && $value->getName() === $actualData->get($class->getNameOfField($name))->getName()
+            ) {
+                continue;
             }
 
             if (!$class->isIdentifier($name) && $name !== 'createdAt' && $name !== 'updatedAt') {
@@ -1527,6 +1560,60 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /**
+     * Schedules an object for being updated.
+     *
+     * @param object $object The object to schedule for being updated.
+     *
+     * @return void
+     *
+     * @throws ORMInvalidArgumentException
+     */
+    public function scheduleForUpdate($object)
+    {
+        $oid = spl_object_hash($object);
+
+        if ( ! isset($this->objectIdentifiers[$oid])) {
+            throw RedkingParseException::objectHasNoIdentity($object, "scheduling for update");
+        }
+
+        if (isset($this->objectDeletions[$oid])) {
+            throw RedkingParseException::objectIsRemoved($object, "schedule for update");
+        }
+
+        if ( ! isset($this->objectUpdates[$oid]) && ! isset($this->objectInsertions[$oid])) {
+            $this->objectUpdates[$oid] = $object;
+        }
+    }
+
+    /**
+     * INTERNAL:
+     * Schedules an extra update that will be executed immediately after the
+     * regular object updates within the currently running commit cycle.
+     *
+     * Extra updates for entities are stored as (object, changeset) tuples.
+     *
+     * @ignore
+     *
+     * @param object $object    The object for which to schedule an extra update.
+     * @param array  $changeset The changeset of the object (what to update).
+     *
+     * @return void
+     */
+    public function scheduleExtraUpdate($object, array $changeset)
+    {
+        $oid         = spl_object_hash($object);
+        $extraUpdate = array($object, $changeset);
+
+        if (isset($this->extraUpdates[$oid])) {
+            list($ignored, $changeset2) = $this->extraUpdates[$oid];
+
+            $extraUpdate = array($object, $changeset + $changeset2);
+        }
+
+        $this->extraUpdates[$oid] = $extraUpdate;
+    }
+
+    /**
      * Checks whether an object is scheduled for insertion.
      *
      * @param object $object
@@ -1588,5 +1675,97 @@ class UnitOfWork implements PropertyChangedListener
             }
         }
         $collection->setInitialized(true);
+    }
+
+    /**
+     * INTERNAL:
+     * Computes the changeset of an individual object, independently of the
+     * computeChangeSets() routine that is used at the beginning of a UnitOfWork#commit().
+     *
+     * The passed object must be a managed object. If the object already has a change set
+     * because this method is invoked during a commit cycle then the change sets are added.
+     * whereby changes detected in this method prevail.
+     *
+     * @ignore
+     *
+     * @param ClassMetadata $class  The class descriptor of the object.
+     * @param object        $object The object for which to (re)calculate the change set.
+     * @param boolean       $fromPostUpdate Tells if it is called from a PostUpdate event
+     *                                      in this case, we add in extraUpdate
+     *
+     * @return void
+     *
+     * @throws ORMInvalidArgumentException If the passed object is not MANAGED.
+     */
+    public function recomputeSingleObjectChangeSet(ClassMetadata $class, $object, $fromPostUpdate = false)
+    {
+        $oid = spl_object_hash($object);
+
+        if ( ! isset($this->objectStates[$oid]) || $this->objectStates[$oid] != self::STATE_MANAGED) {
+            throw ORMInvalidArgumentException::entityNotManaged($object);
+        }
+
+        // skip if change tracking is "NOTIFY"
+        if ($class->isChangeTrackingNotify()) {
+            return;
+        }
+
+        if ( ! $class->isInheritanceTypeNone()) {
+            $class = $this->om->getClassMetadata(get_class($object));
+        }
+
+        if (isset($this->originalObjectData[$oid])) {
+            $actualData = clone $this->originalObjectData[$oid];
+        } else {
+            $actualData = $this->getObjectPersister(get_class($object))->instanciateParseObject();
+        }
+
+        foreach ($class->reflFields as $name => $refProp) {
+            if (( ! $class->isIdentifier($name) )
+                && ! $class->isCollectionValuedAssociation($name)
+                && !$class->isIdentifier($name) 
+                && $name !== 'createdAt'
+                && $name !== 'updatedAt') {
+                $actualData->set($class->getNameOfField($name), $refProp->getValue($object));
+            }
+        }
+
+        if ( ! isset($this->originalObjectData[$oid])) {
+            throw new \RuntimeException('Cannot call recomputeSingleObjectChangeSet before computeChangeSet on an object.');
+        }
+
+        $originalData = $this->originalObjectData[$oid];
+        $changeSet = array();
+
+        foreach ($class->fieldMappings as $fieldName) {
+            $propName = $fieldName['name'];
+            
+            $actualValue = $actualData->get($propName);
+
+            $orgValue = $originalData->get($propName);
+
+            if ($orgValue !== $actualValue) {
+                $changeSet[$propName] = array($orgValue, $actualValue);
+            }
+        }
+
+        if ($changeSet) {
+            if (isset($this->objectChangeSets[$oid]) && $fromPostUpdate === false) {
+                $this->objectChangeSets[$oid] = array_merge($this->objectChangeSets[$oid], $changeSet);
+            } else if ( ! isset($this->objectInsertions[$oid])) {
+                $this->objectChangeSets[$oid] = $changeSet;
+                $this->objectUpdates[$oid]    = $object;
+            }
+            // apply changes on original data
+            foreach ($changeSet as $key => $values) {
+                $this->originalObjectData[$oid]->set($key, $values[1]);
+            }
+
+            if ($fromPostUpdate === false) {
+                $this->scheduleForUpdate($object);
+            } else {
+                $this->scheduleExtraUpdate($object, $changeSet);
+            }
+        }
     }
 }
