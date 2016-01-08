@@ -120,7 +120,10 @@ class ObjectManager implements BaseObjectManager
      */
     public function merge($object)
     {
-        die(__METHOD__);
+        if (!is_object($object)) {
+            throw new \InvalidArgumentException(gettype($object));
+        }
+        $this->unitOfWork->merge($object);
     }
 
     /**
@@ -128,7 +131,7 @@ class ObjectManager implements BaseObjectManager
      */
     public function clear($objectName = null)
     {
-        die(__METHOD__);
+        $this->unitOfWork->clear($entityName);
     }
 
     /**
@@ -136,7 +139,10 @@ class ObjectManager implements BaseObjectManager
      */
     public function detach($object)
     {
-        die(__METHOD__);
+        if (!is_object($object)) {
+            throw new \InvalidArgumentException(gettype($object));
+        }
+        $this->unitOfWork->detach($object);
     }
 
     /**
@@ -144,7 +150,10 @@ class ObjectManager implements BaseObjectManager
      */
     public function refresh($object)
     {
-        die(__METHOD__);
+        if (!is_object($object)) {
+            throw new \InvalidArgumentException(gettype($object));
+        }
+        $this->unitOfWork->refresh($object);
     }
 
     /**

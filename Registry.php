@@ -26,7 +26,6 @@ class Registry extends ManagerRegistry
      */
     public function getAliasNamespace($alias)
     {
-        // dump($alias);die;
         foreach (array_keys($this->getManagers()) as $name) {
             try {
                 return $this->getManager($name)->getConfiguration()->getEntityNamespace($alias);
