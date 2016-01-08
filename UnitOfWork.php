@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\PropertyChangedListener;
 use Doctrine\Common\Persistence\Event\LifecycleEventArgs;
+use Doctrine\Common\Persistence\Event\PreUpdateEventArgs;
 use Redking\ParseBundle\Exception\RedkingParseException;
 use Redking\ParseBundle\Persisters\ObjectPersister;
 use Redking\ParseBundle\Hydrator\ParseObjectHydrator;
@@ -1172,62 +1173,7 @@ class UnitOfWork implements PropertyChangedListener
             $actualData = $this->getObjectPersister(get_class($object))->instanciateParseObject();
         }
 
-        foreach ($class->reflFields as $name => $refProp) {
-            $value = $refProp->getValue($object);
-
-            if ($class->isCollectionValuedAssociation($name) && $value !== null) {
-                if ($value instanceof PersistentCollection) {
-                    if ($value->getOwner() === $object) {
-                        continue;
-                    }
-
-                    $value = new ArrayCollection($value->getValues());
-                }
-
-                // If $value is not a Collection then use an ArrayCollection.
-                if (!$value instanceof Collection) {
-                    $value = new ArrayCollection($value);
-                }
-
-                $assoc = $class->associationMappings[$name];
-
-                // Inject PersistentCollection
-                $value = new PersistentCollection(
-                    $this->om,
-                    $this->om->getClassMetadata($assoc['targetDocument']),
-                    $value
-                );
-                $value->setOwner($object, $assoc);
-                $value->setDirty(!$value->isEmpty());
-
-                $class->reflFields[$name]->setValue($object, $value);
-
-                $actualData->set($class->getNameOfField($name), $value);
-
-                continue;
-            }
-
-            // if single ref, try to get the one for uow
-            if ($class->isSingleValuedAssociation($name) && $value !== null) {
-                $ref_oid = spl_object_hash($value);
-                if (isset($this->originalObjectData[$ref_oid])) {
-                    $actualData->set($class->getNameOfField($name), $this->originalObjectData[$ref_oid]);
-                    continue;
-                }
-            }
-
-            // skip if the field is the same ParseFile but it has not been loaded
-            if ($value instanceof ParseFile 
-                && $actualData->get($class->getNameOfField($name)) instanceof ParseFile
-                && $value->getName() === $actualData->get($class->getNameOfField($name))->getName()
-            ) {
-                continue;
-            }
-
-            if (!$class->isIdentifier($name) && $name !== 'createdAt' && $name !== 'updatedAt') {
-                $actualData->set($class->getNameOfField($name), $value);
-            }
-        }
+        $this->applyChangesToParseObject($class, $actualData, $object);
 
         if (!isset($this->originalObjectData[$oid])) {
             // Entity is either NEW or MANAGED but not yet fully persisted (only has an id).
@@ -1331,7 +1277,11 @@ class UnitOfWork implements PropertyChangedListener
                 $this->objectChangeSets[$oid] = $changeSet;
                 // apply changes on original data
                 foreach ($changeSet as $key => $values) {
-                    $this->originalObjectData[$oid]->set($key, $values[1]);
+                    if ($class->isFieldAnArray($class->getFieldNameOfName($key))) {
+                        $this->originalObjectData[$oid]->setArray($key, $values[1]);
+                    } else {
+                        $this->originalObjectData[$oid]->set($key, $values[1]);
+                    }
                 }
                 $actualData = $this->originalObjectData;
 
@@ -1352,6 +1302,78 @@ class UnitOfWork implements PropertyChangedListener
                     $this->originalObjectData[$oid] = $actualData;
                     $this->objectUpdates[$oid] = $object;
                 }
+            }
+        }
+    }
+
+    /**
+     * Apply changes from object to actualData.
+     *
+     * @param  ClassMetadata $class      [description]
+     * @param  ParseObject   $actualData [description]
+     * @param  [type]        $object     [description]
+     */
+    protected function applyChangesToParseObject(ClassMetadata $class, ParseObject $actualData, $object)
+    {
+        foreach ($class->reflFields as $name => $refProp) {
+            $value = $refProp->getValue($object);
+
+            if ($class->isCollectionValuedAssociation($name) && $value !== null) {
+                if ($value instanceof PersistentCollection) {
+                    if ($value->getOwner() === $object) {
+                        continue;
+                    }
+
+                    $value = new ArrayCollection($value->getValues());
+                }
+
+                // If $value is not a Collection then use an ArrayCollection.
+                if (!$value instanceof Collection) {
+                    $value = new ArrayCollection($value);
+                }
+
+                $assoc = $class->associationMappings[$name];
+
+                // Inject PersistentCollection
+                $value = new PersistentCollection(
+                    $this->om,
+                    $this->om->getClassMetadata($assoc['targetDocument']),
+                    $value
+                );
+                $value->setOwner($object, $assoc);
+                $value->setDirty(!$value->isEmpty());
+
+                $class->reflFields[$name]->setValue($object, $value);
+
+                $actualData->set($class->getNameOfField($name), $value);
+
+                continue;
+            }
+
+            // if single ref, try to get the one for uow
+            if ($class->isSingleValuedAssociation($name) && $value !== null) {
+                $ref_oid = spl_object_hash($value);
+                if (isset($this->originalObjectData[$ref_oid])) {
+                    $actualData->set($class->getNameOfField($name), $this->originalObjectData[$ref_oid]);
+                    continue;
+                }
+            }
+
+            // skip if the field is the same ParseFile but it has not been loaded
+            if ($value instanceof ParseFile 
+                && $actualData->get($class->getNameOfField($name)) instanceof ParseFile
+                && $value->getName() === $actualData->get($class->getNameOfField($name))->getName()
+            ) {
+                continue;
+            }
+
+            if ($class->isFieldAnArray($name) && is_array($value)) {
+                $actualData->setArray($class->getNameOfField($name), $value);
+                continue;
+            }
+
+            if (!$class->isIdentifier($name) && $name !== 'createdAt' && $name !== 'updatedAt') {
+                $actualData->set($class->getNameOfField($name), $value);
             }
         }
     }
@@ -1785,22 +1807,10 @@ class UnitOfWork implements PropertyChangedListener
         if (isset($this->originalObjectData[$oid])) {
             $actualData = clone $this->originalObjectData[$oid];
         } else {
-            $actualData = $this->getObjectPersister(get_class($object))->instanciateParseObject();
-        }
-
-        foreach ($class->reflFields as $name => $refProp) {
-            if (( ! $class->isIdentifier($name) )
-                && ! $class->isCollectionValuedAssociation($name)
-                && !$class->isIdentifier($name) 
-                && $name !== 'createdAt'
-                && $name !== 'updatedAt') {
-                $actualData->set($class->getNameOfField($name), $refProp->getValue($object));
-            }
-        }
-
-        if ( ! isset($this->originalObjectData[$oid])) {
             throw new \RuntimeException('Cannot call recomputeSingleObjectChangeSet before computeChangeSet on an object.');
         }
+
+        $this->applyChangesToParseObject($class, $actualData, $object);
 
         $originalData = $this->originalObjectData[$oid];
         $changeSet = array();
@@ -1826,7 +1836,11 @@ class UnitOfWork implements PropertyChangedListener
             }
             // apply changes on original data
             foreach ($changeSet as $key => $values) {
-                $this->originalObjectData[$oid]->set($key, $values[1]);
+                if ($class->isFieldAnArray($class->getFieldNameOfName($key))) {
+                    $this->originalObjectData[$oid]->setArray($key, $values[1]);
+                } else {
+                    $this->originalObjectData[$oid]->set($key, $values[1]);
+                }
             }
 
             if ($fromPostUpdate === false) {

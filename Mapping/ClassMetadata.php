@@ -4,6 +4,7 @@ namespace Redking\ParseBundle\Mapping;
 
 use Doctrine\Common\Persistence\Mapping\ClassMetadata as BaseClassMetadata;
 use Doctrine\Instantiator\Instantiator;
+use Redking\ParseBundle\Types\Type;
 
 /**
  * Contract for a Doctrine persistence layer ClassMetadata class to implement.
@@ -632,6 +633,21 @@ class ClassMetadata implements BaseClassMetadata
     }
 
     /**
+     * Return the name of the object's field based on the name of the ParseObject's field.
+     *
+     * @param  string $name
+     * @return string
+     */
+    public function getFieldNameOfName($name)
+    {
+        foreach ($this->fieldMappings as $fieldName => $mapping) {
+            if ($mapping['name'] === $name) {
+                return $fieldName;
+            }
+        }
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function getAssociationTargetClass($assocName)
@@ -827,5 +843,21 @@ class ClassMetadata implements BaseClassMetadata
         }
 
         return $className;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isFieldAFile($fieldName)
+    {
+        return $this->fieldMappings[$fieldName]['type'] == Type::FILE;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isFieldAnArray($fieldName)
+    {
+        return $this->fieldMappings[$fieldName]['type'] == Type::TARRAY;
     }
 }
