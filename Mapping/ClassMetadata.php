@@ -454,16 +454,6 @@ class ClassMetadata implements BaseClassMetadata
         if (isset($mapping['reference']) && $mapping['type'] === 'many') {
             $mapping['association'] = self::REFERENCE_MANY;
         }
-        if (isset($mapping['embedded']) && $mapping['type'] === 'one') {
-            $mapping['association'] = self::EMBED_ONE;
-        }
-        if (isset($mapping['embedded']) && $mapping['type'] === 'many') {
-            $mapping['association'] = self::EMBED_MANY;
-        }
-
-        if (isset($mapping['association']) && !isset($mapping['targetDocument']) && !isset($mapping['discriminatorField'])) {
-            $mapping['discriminatorField'] = self::DEFAULT_DISCRIMINATOR_FIELD;
-        }
 
         /*
         if (isset($mapping['type']) && ($mapping['type'] === 'one' || $mapping['type'] === 'many')) {

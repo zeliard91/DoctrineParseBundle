@@ -262,7 +262,7 @@ class ObjectPersister
     }
 
     /**
-     * Load objects in the collection.
+     * Load objects in the inversed collection.
      *
      * @param  PersistentCollection $collection
      */
@@ -297,5 +297,29 @@ class ObjectPersister
         $criteria = [$mappedByMapping['fieldName'] => new \Parse\ParseObject($ownerClass->collection, $objectId)];
         
         return $this->getQuery($criteria, null, $limit, $skip, $sort);
+    }
+
+    /**
+     * Load objects in the collection.
+     *
+     * @param  PersistentCollection $collection
+     */
+    public function loadReferenceManyCollectionOwningSide(PersistentCollection $collection)
+    {
+        $owner = $collection->getOwner();
+        $mapping = $collection->getMapping();
+        $originalData = $this->om->getUnitOfWork()->getOriginalObjectData($owner);
+        $fieldName = $mapping['name'];
+        
+        $parseReferences = $originalData->get($fieldName);
+
+        if (!is_array($parseReferences)) {
+            return;
+        }
+        
+        foreach ($parseReferences as $parseReference) {
+            $reference = $this->om->getReference($mapping['targetDocument'], $parseReference->getObjectId(), $parseReference);
+            $collection->add($reference);
+        }
     }
 }

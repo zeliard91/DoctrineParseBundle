@@ -3,6 +3,7 @@
 namespace Redking\ParseBundle;
 
 use Doctrine\Common\Collections\Collection;
+use Redking\ParseBundle\Mapping\ClassMetadata;
 
 class PersistentCollection implements Collection
 {
@@ -286,7 +287,6 @@ class PersistentCollection implements Collection
 
         if ($this->association !== null &&
             $this->association['isOwningSide'] &&
-            $this->association['type'] === ClassMetadata::MANY_TO_MANY &&
             $this->owner &&
             $this->om->getClassMetadata(get_class($this->owner))->isChangeTrackingNotify()) {
             $this->om->getUnitOfWork()->scheduleForDirtyCheck($this->owner);

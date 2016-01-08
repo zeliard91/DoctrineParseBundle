@@ -59,12 +59,12 @@ class ParseObjectHydrator
                     }
 
                     // Get object or set Proxy
-                    $reference_parse = $data->get($mapping['name']);
+                    $reference_parse = $data->get($assoc['name']);
                     if (is_object($reference_parse)) {
                         if ($reference_parse->isDataAvailable()) {
-                            $reference = $this->om->getUnitOfWork()->getOrCreateObject($mapping['targetDocument'], $reference_parse, $hints);
+                            $reference = $this->om->getUnitOfWork()->getOrCreateObject($assoc['targetDocument'], $reference_parse, $hints);
                         } else {
-                            $reference = $this->om->getReference($mapping['targetDocument'], $reference_parse->getObjectId(), $data->get($mapping['name']));
+                            $reference = $this->om->getReference($assoc['targetDocument'], $reference_parse->getObjectId(), $data->get($assoc['name']));
                         }
                         $this->class->reflFields[$field]->setValue($object, $reference);
                     }
