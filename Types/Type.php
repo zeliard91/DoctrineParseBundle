@@ -41,6 +41,8 @@ abstract class Type
     const FLOAT = 'float';
     const STRING = 'string';
     const DATE = 'date';
+    const TARRAY = 'array';
+    const FILE = 'file';
     // const KEY = 'key';
     // const TIMESTAMP = 'timestamp';
     // const BINDATA = 'bin';
@@ -72,6 +74,8 @@ abstract class Type
         self::FLOAT => 'Redking\ParseBundle\Types\FloatType',
         self::STRING => 'Redking\ParseBundle\Types\StringType',
         self::DATE => 'Redking\ParseBundle\Types\DateType',
+        self::TARRAY => 'Redking\ParseBundle\Types\ArrayType',
+        self::FILE => 'Redking\ParseBundle\Types\FileType',
         // self::KEY => 'Doctrine\ODM\MongoDB\Types\KeyType',
         // self::TIMESTAMP => 'Doctrine\ODM\MongoDB\Types\TimestampType',
         // self::BINDATA => 'Doctrine\ODM\MongoDB\Types\BinDataType',
