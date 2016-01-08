@@ -1337,7 +1337,7 @@ class UnitOfWork implements PropertyChangedListener
         // Look through the entities, and in any of their associations,
         // for transient (new) entities, recursively. ("Persistence by reachability")
         // Unwrap. Uninitialized collections will simply be empty.
-        $unwrappedValue = ($assoc['type'] & ClassMetadata::ONE) ? array($value) : $value->unwrap();
+        $unwrappedValue = ($assoc['type'] === ClassMetadata::ONE) ? array($value) : $value->unwrap();
         $targetClass = $this->om->getClassMetadata($assoc['targetDocument']);
 
         foreach ($unwrappedValue as $key => $entry) {
