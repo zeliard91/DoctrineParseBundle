@@ -2,6 +2,7 @@
 
 namespace Redking\ParseBundle\Mapping\Driver;
 
+use Redking\ParseBundle\Mapping\ClassMetadata as ParseClassMetadata;
 use Doctrine\Common\Persistence\Mapping\ClassMetadata;
 use Doctrine\Common\Persistence\Mapping\Driver\FileDriver;
 use Doctrine\Common\Persistence\Mapping\Driver\SymfonyFileLocator;
@@ -62,7 +63,7 @@ class YamlDriver extends FileDriver
             }
         }
         if (isset($element['inheritanceType'])) {
-            $class->setInheritanceType(constant('Doctrine\ODM\MongoDB\Mapping\ClassMetadata::INHERITANCE_TYPE_'.strtoupper($element['inheritanceType'])));
+            $class->setInheritanceType(constant('Redking\ParseBundle\Mapping\ClassMetadata::INHERITANCE_TYPE_'.strtoupper($element['inheritanceType'])));
         }
         if (isset($element['discriminatorField'])) {
             $class->setDiscriminatorField($this->parseDiscriminatorField($element['discriminatorField']));
@@ -74,7 +75,7 @@ class YamlDriver extends FileDriver
             $class->setDefaultDiscriminatorValue($element['defaultDiscriminatorValue']);
         }
         if (isset($element['changeTrackingPolicy'])) {
-            $class->setChangeTrackingPolicy(constant('Doctrine\ODM\MongoDB\Mapping\ClassMetadata::CHANGETRACKING_'
+            $class->setChangeTrackingPolicy(constant('Redking\ParseBundle\Mapping\ClassMetadata::CHANGETRACKING_'
                     .strtoupper($element['changeTrackingPolicy'])));
         }
         if (isset($element['requireIndexes'])) {
@@ -287,7 +288,11 @@ class YamlDriver extends FileDriver
             $mapping['criteria'] = $reference['criteria'];
         }
         if (isset($reference['fetch'])) {
-            $mapping['fetch'] = constant('Redking\ParseBundle\ClassMetadata::FETCH_' . $reference['fetch']);
+            $mapping['fetch'] = constant('Redking\ParseBundle\Mapping\ClassMetadata::FETCH_' . $reference['fetch']);
+        }
+
+        if ($type === ParseClassMetadata::MANY) {
+            $mapping['implementation'] = isset($mapping['implementation']) ? constant('Redking\ParseBundle\Mapping\ClassMetadata::ASSOCIATION_IMPL_' . strtoupper($reference['implementation'])) : ParseClassMetadata::ASSOCIATION_IMPL_ARRAY;
         }
         $this->addFieldMapping($class, $mapping);
     }

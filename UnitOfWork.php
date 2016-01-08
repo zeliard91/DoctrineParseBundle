@@ -103,6 +103,14 @@ class UnitOfWork implements PropertyChangedListener
     private $objectChangeSets = array();
 
     /**
+     * Map of collection changes. Keys are object ids (spl_object_hash).
+     * Filled in a commit by the collection persisters
+     *
+     * @var array
+     */
+    private $collectionChangeSets = array();
+
+    /**
      * The (cached) states of any known objects.
      * Keys are object ids (spl_object_hash).
      *
@@ -116,6 +124,13 @@ class UnitOfWork implements PropertyChangedListener
      * @var array
      */
     private $persisters = array();
+
+    /**
+     * The collection persister instances used to persist collections.
+     *
+     * @var array
+     */
+    private $collectionPersisters = array();
 
     /**
      * Map of objects that are scheduled for dirty checking at commit time.
@@ -178,6 +193,15 @@ class UnitOfWork implements PropertyChangedListener
      * @var array
      */
     private $collectionUpdates = array();
+
+    /**
+     * List of collections visited during changeset calculation on a commit-phase of a UnitOfWork.
+     * At the end of the UnitOfWork all these collections will make new snapshots
+     * of their data.
+     *
+     * @var array
+     */
+    private $visitedCollections = array();
 
     /**
      * A list of objects related to collections scheduled for update or deletion.
@@ -351,6 +375,65 @@ class UnitOfWork implements PropertyChangedListener
         $this->persisters[$objectName] = $persister;
 
         return $this->persisters[$objectName];
+    }
+
+    /**
+     * Returns Collection persister for an association
+     * 
+     * @param array $association
+     * 
+     * @return \Redking\ParseBundle\Persisters\AbstractCollectionPersister
+     */
+    public function getCollectionPersister(array $association)
+    {
+        $implementation = $association['implementation'];
+
+        if (isset($this->collectionPersisters[$implementation])) {
+            return $this->collectionPersisters[$implementation];
+        }
+
+        switch ($implementation) {
+            case ClassMetadata::ASSOCIATION_IMPL_ARRAY:
+                $persister = new Persisters\CollectionArrayPersister($this->om);
+                break;
+
+            case ClassMetadata::ASSOCIATION_IMPL_RELATION:
+                $persister = new Persisters\CollectionRelationPersister($this->om);
+                break;
+        }
+
+        $this->collectionPersisters[$implementation] = $persister;
+
+        return $this->collectionPersisters[$implementation];
+    }
+
+    
+    /**
+     * Add change to collection changeset.
+     *
+     * @param object $object    The object owner of the collection
+     * @param string $field     The original field
+     * @param array $changeSet  The changeset ([$oldValue, $newValue])
+     */
+    public function addToCollectionChangeSet($object, $field, array $changeSet)
+    {
+        $oid = spl_object_hash($object);
+
+        if (!isset($this->collectionChangeSets[$oid])) {
+            $this->collectionChangeSets[$oid] = [];
+        }
+        $this->collectionChangeSets[$oid][$field] = $changeSet;
+    }
+
+    /**
+     * Returns collection changeSet.
+     *
+     * @param  string $oid
+     * @return array
+     */
+    public function getCollectionChangeSet($oid)
+    {
+        return (isset($this->collectionChangeSets[$oid])) ? $this->collectionChangeSets[$oid] : [];
     }
 
     /**
@@ -760,54 +843,17 @@ class UnitOfWork implements PropertyChangedListener
             }
         }
 
-        $this->dispatchOnFlushEvent();
 
-        // try {
-        //     if ($this->objectInsertions) {
-        //         foreach ($commitOrder as $class) {
-        //             $this->executeInserts($class);
-        //         }
-        //     }
-
-        //     if ($this->objectUpdates) {
-        //         foreach ($commitOrder as $class) {
-        //             $this->executeUpdates($class);
-        //         }
-        //     }
-
-        //     // Extra updates that were requested by persisters.
-        //     if ($this->extraUpdates) {
-        //         $this->executeExtraUpdates();
-        //     }
-
-        //     // Collection deletions (deletions of complete collections)
-        //     foreach ($this->collectionDeletions as $collectionToDelete) {
-        //         $this->getCollectionPersister($collectionToDelete->getMapping())->delete($collectionToDelete);
-        //     }
-        //     // Collection updates (deleteRows, updateRows, insertRows)
-        //     foreach ($this->collectionUpdates as $collectionToUpdate) {
-        //         $this->getCollectionPersister($collectionToUpdate->getMapping())->update($collectionToUpdate);
-        //     }
-
-        //     // Entity deletions come last and need to be in reverse commit order
-        //     if ($this->objectDeletions) {
-        //         for ($count = count($commitOrder), $i = $count - 1; $i >= 0; --$i) {
-        //             $this->executeDeletions($commitOrder[$i]);
-        //         }
-        //     }
-
-        //     $conn->commit();
-        // } catch (Exception $e) {
-        //     $this->om->close();
-        //     $conn->rollback();
-
-        //     throw $e;
-        // }
-
-        // // Take new snapshots from visited collections
-        // foreach ($this->visitedCollections as $coll) {
-        //     $coll->takeSnapshot();
-        // }
+        // Apply collection changes to originalData and treats them as updates.
+        
+        // Collection deletions (deletions of complete collections)
+        foreach ($this->collectionDeletions as $collectionToDelete) {
+            $this->getCollectionPersister($collectionToDelete->getMapping())->delete($collectionToDelete);
+        }
+        // Collection updates (deleteRows, updateRows, insertRows)
+        foreach ($this->collectionUpdates as $collectionToUpdate) {
+            $this->getCollectionPersister($collectionToUpdate->getMapping())->update($collectionToUpdate);
+        }
 
         foreach ($this->getClassesForCommitAction($this->objectInsertions) as $classAndObjects) {
             list($class, $objects) = $classAndObjects;
@@ -837,6 +883,7 @@ class UnitOfWork implements PropertyChangedListener
         $this->objectDeletions =
         $this->extraUpdates =
         $this->objectChangeSets =
+        $this->collectionChangeSets =
         $this->collectionUpdates =
         $this->collectionDeletions =
         $this->visitedCollections =
@@ -947,7 +994,7 @@ class UnitOfWork implements PropertyChangedListener
             }
 
             if (!empty($this->objectChangeSets[$oid])) {
-                $persister->update($this->originalObjectData[$oid], $this->objectChangeSets[$oid]);
+                $persister->update($this->originalObjectData[$oid], $this->objectChangeSets[$oid]+$this->getCollectionChangeSet($oid));
             }
 
             unset($this->objectUpdates[$oid]);
@@ -1611,6 +1658,27 @@ class UnitOfWork implements PropertyChangedListener
         }
 
         $this->extraUpdates[$oid] = $extraUpdate;
+    }
+
+    /**
+     * INTERNAL:
+     * Schedules a complete collection for removal when this UnitOfWork commits.
+     *
+     * @param PersistentCollection $coll
+     *
+     * @return void
+     */
+    public function scheduleCollectionDeletion(PersistentCollection $coll)
+    {
+        $coid = spl_object_hash($coll);
+
+        //TODO: if $coll is already scheduled for recreation ... what to do?
+        // Just remove $coll from the scheduled recreations?
+        if (isset($this->collectionUpdates[$coid])) {
+            unset($this->collectionUpdates[$coid]);
+        }
+
+        $this->collectionDeletions[$coid] = $coll;
     }
 
     /**

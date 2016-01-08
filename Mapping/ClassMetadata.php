@@ -21,6 +21,10 @@ class ClassMetadata implements BaseClassMetadata
     const MANY = 'many';
     const ONE = 'one';
 
+    // Association implementation
+    const ASSOCIATION_IMPL_ARRAY = 'array';
+    const ASSOCIATION_IMPL_RELATION = 'relation';
+
     /**
      * DEFERRED_IMPLICIT means that changes of entities are calculated at commit-time
      * by doing a property-by-property comparison with the original data. This will

@@ -378,7 +378,6 @@ class PersistentCollection implements Collection
         $this->changed();
 
         if ($this->association !== null &&
-            $this->association['type'] & ClassMetadata::TO_MANY &&
             $this->owner &&
             $this->association['orphanRemoval']) {
             $this->om->getUnitOfWork()->scheduleOrphanRemoval($removed);
@@ -455,7 +454,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function exists(Closure $p)
+    public function exists(\Closure $p)
     {
         $this->initialize();
 
@@ -577,7 +576,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function map(Closure $func)
+    public function map(\Closure $func)
     {
         $this->initialize();
 
@@ -587,7 +586,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function filter(Closure $p)
+    public function filter(\Closure $p)
     {
         $this->initialize();
 
@@ -597,7 +596,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function forAll(Closure $p)
+    public function forAll(\Closure $p)
     {
         $this->initialize();
 
@@ -607,7 +606,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function partition(Closure $p)
+    public function partition(\Closure $p)
     {
         $this->initialize();
 
@@ -635,7 +634,7 @@ class PersistentCollection implements Collection
 
         $uow = $this->om->getUnitOfWork();
 
-        if ($this->association['type'] & ClassMetadata::TO_MANY &&
+        if ($this->association['type'] & ClassMetadata::MANY &&
             $this->association['orphanRemoval'] &&
             $this->owner) {
             // we need to initialize here, as orphan removal acts like implicit cascadeRemove,
@@ -822,10 +821,6 @@ class PersistentCollection implements Collection
 
         if ($this->initialized) {
             return $this->coll->matching($criteria);
-        }
-
-        if ($this->association['type'] !== ClassMetadata::ONE_TO_MANY) {
-            throw new \RuntimeException("Matching Criteria on PersistentCollection only works on OneToMany associations at the moment.");
         }
 
         $builder         = Criteria::expr();
