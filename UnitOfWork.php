@@ -214,6 +214,14 @@ class UnitOfWork implements PropertyChangedListener
         $this->listenersInvoker = new ListenersInvoker($this->om);
     }
 
+    /**
+     * @return \Redking\ParsBundle\Event\ListenersInvoker
+     */
+    public function getListenersInvoker()
+    {
+        return $this->listenersInvoker;
+    }
+
     public function propertyChanged($object, $propertyName, $oldValue, $newValue)
     {
         $oid = spl_object_hash($object);

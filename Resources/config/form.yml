@@ -6,3 +6,9 @@ services:
             - {name: form.type, alias: object}
         arguments:
             - "@doctrine_parse"
+    redking_parse.form.file:
+        class: Redking\ParseBundle\Form\Type\ParseFileType
+        tags:
+            - {name: form.type, alias: parse_file}
+        arguments:
+            - "@redking_parse.manager"

@@ -176,4 +176,11 @@ final class Events
      * @var string
      */
     const onClear = 'onClear';
+
+    /**
+     * The preUpload event occurs when a ParseFile is bind to a ParseObject
+     *
+     * @var string
+     */
+    const preUpload = 'preUpload';
 }

@@ -8,10 +8,27 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Redking\ParseBundle\ObjectManager;
+use Redking\ParseBundle\Event\ListenersInvoker;
+use Redking\ParseBundle\Event\PreUploadEventArgs;
+use Redking\ParseBundle\Events;
 use Parse\ParseFile;
 
 class ParseFileType extends FileType
 {
+    /**
+     * @var \Redking\ParseBundle\ObjectManager
+     */
+    private $om;
+
+    /**
+     * @param Registry $registry Doctrine Parse Registry
+     */
+    public function __construct(ObjectManager $om)
+    {
+        $this->om = $om;
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -32,8 +49,19 @@ class ParseFileType extends FileType
                     } else {
                         $fileName = $object->getClientOriginalName();
                     }
-                    $object = ParseFile::createFromFile($object->getPathname(), $fileName);
-                    $event->setData($object);
+                    $parseFile = ParseFile::createFromFile($object->getPathname(), $fileName);
+                    $event->setData($parseFile);
+
+                    // Dispatch preUpload Event on parent ParseObject
+                    $class = $this->om->getClassMetadata($form->getParent()->getConfig()->getDataClass());
+                    $parent = $form->getParent()->getData();
+
+                    $listenersInvoker = $this->om->getUnitOfWork()->getListenersInvoker();
+                    $invoke = $listenersInvoker->getSubscribedSystems($class, Events::preUpload);
+
+                    if ($invoke !== ListenersInvoker::INVOKE_NONE) {
+                        $listenersInvoker->invoke($class, Events::preUpload, $parent, new PreUploadEventArgs($parent, $this->om, $object, $form->getConfig()->getName()), $invoke);
+                    }
                 } // reset ParseFile if widget has not been filled
                 elseif (null === $object && $form->getData() instanceof ParseFile) {
                     $event->setData($form->getData());
