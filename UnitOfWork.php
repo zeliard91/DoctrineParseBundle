@@ -1345,7 +1345,10 @@ class UnitOfWork implements PropertyChangedListener
 
                 $class->reflFields[$name]->setValue($object, $value);
 
-                $actualData->set($class->getNameOfField($name), $value);
+                // We set data only on owning side
+                if ($class->isOwningCollectionValuedAssociation($name)) {
+                    $this->getCollectionPersister($assoc)->applyParseData($actualData, $value);
+                }
 
                 continue;
             }

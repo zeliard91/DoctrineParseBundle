@@ -574,6 +574,16 @@ class ClassMetadata implements BaseClassMetadata
     /**
      * {@inheritdoc}
      */
+    public function isOwningCollectionValuedAssociation($fieldName)
+    {
+        return isset($this->fieldMappings[$fieldName]['association']) &&
+            $this->fieldMappings[$fieldName]['association'] === self::REFERENCE_MANY && 
+            $this->fieldMappings[$fieldName]['isOwningSide'] === true;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getFieldNames()
     {
         return array_keys($this->fieldMappings);

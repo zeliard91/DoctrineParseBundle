@@ -4,6 +4,7 @@ namespace Redking\ParseBundle\Persisters;
 
 use Redking\ParseBundle\ObjectManager;
 use Redking\ParseBundle\PersistentCollection;
+use Parse\ParseObject;
 
 abstract class AbstractCollectionPersister
 {
@@ -35,7 +36,10 @@ abstract class AbstractCollectionPersister
      */
     public function update(PersistentCollection $coll)
     {
-        $this->checkOwnerInScheduleUpdate($coll);
+        if (!$this->uow->isScheduledForInsert($coll->getOwner()) && !$this->uow->isScheduledForUpdate($coll->getOwner())) {
+            $this->uow->scheduleForUpdate($coll->getOwner());
+        }
+
         $this->doUpdate($coll);
     }
 
@@ -48,25 +52,13 @@ abstract class AbstractCollectionPersister
      */
     public function delete(PersistentCollection $coll)
     {
-        $this->checkOwnerInScheduleUpdate($coll);
+        if (!$this->uow->isScheduledForUpdate($coll->getOwner())) {
+            $this->uow->scheduleForUpdate($coll->getOwner());
+        }
         $this->doDelete($coll);
     }
 
     abstract protected function doDelete(PersistentCollection $coll);
-
-    
-    /**
-     * Check if collection's owner is schedule for update, if not, do it.
-     *
-     * @param  PersistentCollection $coll
-     */
-    protected function checkOwnerInScheduleUpdate(PersistentCollection $coll)
-    {
-        if (!$this->uow->isScheduledForUpdate($coll->getOwner())) {
-            $this->scheduleForUpdate($coll->getOwner());
-        }
-
-    }
 
     /**
      * Returns ParseObject based on Object value
@@ -76,4 +68,15 @@ abstract class AbstractCollectionPersister
     {
         return $this->uow->getOriginalObjectData($object);
     }
+
+    abstract protected function getParseData(PersistentCollection $coll);
+
+    /**
+     * Called from computeChange to build a new ParseObject.
+     * 
+     * @param  ParseObject          $object
+     * @param  PersistentCollection $coll
+     * @param  mixed                $data   will be used if !== false
+     */
+    abstract protected function applyParseData(ParseObject $object, PersistentCollection $coll, $data = false);
 }
