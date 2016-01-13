@@ -1278,10 +1278,19 @@ class UnitOfWork implements PropertyChangedListener
                 // apply changes on original data
                 foreach ($changeSet as $key => $values) {
                     if ($class->isFieldAnArray($class->getFieldNameOfName($key))) {
-                        $this->originalObjectData[$oid]->setArray($key, $values[1]);
-                    } else {
-                        $this->originalObjectData[$oid]->set($key, $values[1]);
+                        if (is_array($values[1])) {
+                            $this->originalObjectData[$oid]->setArray($key, $values[1]);
+                        }
+                        continue;
                     }
+                    if ($class->isFieldAnHash($class->getFieldNameOfName($key))) {
+                        if (is_array($values[1])) {
+                            $this->originalObjectData[$oid]->setAssociativeArray($key, $values[1]);
+                        }
+                        continue;
+                    }
+
+                    $this->originalObjectData[$oid]->set($key, $values[1]);
                 }
                 $actualData = $this->originalObjectData;
 
@@ -1370,8 +1379,17 @@ class UnitOfWork implements PropertyChangedListener
                 continue;
             }
 
-            if ($class->isFieldAnArray($name) && is_array($value)) {
-                $actualData->setArray($class->getNameOfField($name), $value);
+            if ($class->isFieldAnArray($name)) {
+                if (is_array($value)) {
+                    $actualData->setArray($class->getNameOfField($name), $value);
+                }
+                continue;
+            }
+
+            if ($class->isFieldAnHash($name)) {
+                if (is_array($value)) {
+                    $actualData->setAssociativeArray($class->getNameOfField($name), $value);
+                }
                 continue;
             }
 
@@ -1840,10 +1858,19 @@ class UnitOfWork implements PropertyChangedListener
             // apply changes on original data
             foreach ($changeSet as $key => $values) {
                 if ($class->isFieldAnArray($class->getFieldNameOfName($key))) {
-                    $this->originalObjectData[$oid]->setArray($key, $values[1]);
-                } else {
-                    $this->originalObjectData[$oid]->set($key, $values[1]);
+                    if (is_array($values[1])) {
+                        $this->originalObjectData[$oid]->setArray($key, $values[1]);
+                    }
+                    continue;
                 }
+                if ($class->isFieldAnHash($class->getFieldNameOfName($key))) {
+                    if (is_array($values[1])) {
+                        $this->originalObjectData[$oid]->setAssociativeArray($key, $values[1]);
+                    }
+                    continue;
+                }
+
+                $this->originalObjectData[$oid]->set($key, $values[1]);
             }
 
             if ($fromPostUpdate === false) {

@@ -43,7 +43,7 @@ abstract class Type
     const DATE = 'date';
     const TARRAY = 'array';
     const FILE = 'file';
-    // const KEY = 'key';
+    const TOBJECT = 'object';
     // const TIMESTAMP = 'timestamp';
     // const BINDATA = 'bin';
     // const BINDATAFUNC = 'bin_func';
@@ -53,7 +53,7 @@ abstract class Type
     // const BINDATAMD5 = 'bin_md5';
     // const BINDATACUSTOM = 'bin_custom';
     // const FILE = 'file';
-    // const HASH = 'hash';
+    const HASH = 'hash';
     // const COLLECTION = 'collection';
     // const INCREMENT = 'increment';
     // const OBJECTID = 'object_id';
@@ -76,7 +76,7 @@ abstract class Type
         self::DATE => 'Redking\ParseBundle\Types\DateType',
         self::TARRAY => 'Redking\ParseBundle\Types\ArrayType',
         self::FILE => 'Redking\ParseBundle\Types\FileType',
-        // self::KEY => 'Doctrine\ODM\MongoDB\Types\KeyType',
+        self::TOBJECT => 'Redking\ParseBundle\Types\ObjectType',
         // self::TIMESTAMP => 'Doctrine\ODM\MongoDB\Types\TimestampType',
         // self::BINDATA => 'Doctrine\ODM\MongoDB\Types\BinDataType',
         // self::BINDATAFUNC => 'Doctrine\ODM\MongoDB\Types\BinDataFuncType',
@@ -86,7 +86,7 @@ abstract class Type
         // self::BINDATAMD5 => 'Doctrine\ODM\MongoDB\Types\BinDataMD5Type',
         // self::BINDATACUSTOM => 'Doctrine\ODM\MongoDB\Types\BinDataCustomType',
         // self::FILE => 'Doctrine\ODM\MongoDB\Types\FileType',
-        // self::HASH => 'Doctrine\ODM\MongoDB\Types\HashType',
+        self::HASH => 'Redking\ParseBundle\Types\HashType',
         // self::COLLECTION => 'Doctrine\ODM\MongoDB\Types\CollectionType',
         // self::INCREMENT => 'Doctrine\ODM\MongoDB\Types\IncrementType',
         // self::OBJECTID => 'Doctrine\ODM\MongoDB\Types\ObjectIdType',

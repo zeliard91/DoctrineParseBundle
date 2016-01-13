@@ -870,4 +870,12 @@ class ClassMetadata implements BaseClassMetadata
     {
         return $this->fieldMappings[$fieldName]['type'] == Type::TARRAY;
     }
+
+    /**
+     * @return boolean
+     */
+    public function isFieldAnHash($fieldName)
+    {
+        return $this->fieldMappings[$fieldName]['type'] == Type::HASH;
+    }
 }
