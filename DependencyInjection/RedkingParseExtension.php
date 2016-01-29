@@ -90,6 +90,8 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         if (isset($bundles['FOSUserBundle'])) {
             $loader->load('bridge/fosuser.yml');
         }
+
+        $container->setAlias('doctrine.parse.object_manager', 'redking_parse.manager');
     }
 
     protected function getObjectManagerElementName($name)
