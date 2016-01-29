@@ -878,4 +878,60 @@ class ClassMetadata implements BaseClassMetadata
     {
         return $this->fieldMappings[$fieldName]['type'] == Type::HASH;
     }
+
+    /**
+     * Adds a one-to-one mapping.
+     *
+     * @param array $mapping The mapping.
+     *
+     * @return void
+     */
+    public function mapToOne(array $mapping)
+    {
+        $this->_storeAssociationMapping($mapping);
+    }
+
+    /**
+     * Adds a one-to-many mapping.
+     *
+     * @param array $mapping The mapping.
+     *
+     * @return void
+     */
+    public function mapToMany(array $mapping)
+    {
+        $this->_storeAssociationMapping($mapping);
+    }
+
+    /**
+     * @param string $fieldName
+     * @throws MappingException
+     */
+    private function assertFieldNotMapped($fieldName)
+    {
+        if (isset($this->fieldMappings[$fieldName]) ||
+            isset($this->associationMappings[$fieldName]) ||
+            isset($this->embeddedClasses[$fieldName])) {
+
+            throw MappingException::duplicateFieldMapping($this->name, $fieldName);
+        }
+    }
+
+    /**
+     * Stores the association mapping.
+     *
+     * @param array $assocMapping
+     *
+     * @return void
+     *
+     * @throws MappingException
+     */
+    protected function _storeAssociationMapping(array $assocMapping)
+    {
+        $sourceFieldName = $assocMapping['fieldName'];
+
+        $this->assertFieldNotMapped($sourceFieldName);
+
+        $this->associationMappings[$sourceFieldName] = $assocMapping;
+    }
 }

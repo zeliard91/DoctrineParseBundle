@@ -64,9 +64,30 @@ class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                 ->end()
+                ->append($this->getTargetObjectsResolverNode())
             ->end()
         ;
 
         return $treeBuilder;
+    }
+
+    /**
+     * Return target objects resolver node
+     *
+     * @return \Symfony\Component\Config\Definition\Builder\NodeDefinition
+     */
+    private function getTargetObjectsResolverNode()
+    {
+        $treeBuilder = new TreeBuilder();
+        $node = $treeBuilder->root('resolve_target_objects');
+
+        $node
+            ->useAttributeAsKey('interface')
+            ->prototype('scalar')
+                ->cannotBeEmpty()
+            ->end()
+        ;
+
+        return $node;
     }
 }

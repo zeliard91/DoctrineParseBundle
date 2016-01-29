@@ -38,6 +38,7 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         // cheat $config for parent requirements
         $config['name'] = 'default';
         $this->loadEntityManagerMappingInformation($config, $configDef, $container);
+        $this->resolveDocuments($config, $container);
 
         $container->setParameter('doctrine.parse.auto_generate_proxy_classes', $config['auto_generate_proxy_classes']);
 
@@ -163,5 +164,23 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         $this->registerMappingDrivers($entityManager, $container);
 
         $ormConfigDef->addMethodCall('setEntityNamespaces', array($this->aliasMap));
+    }
+
+    /**
+     * Resolve document targets
+     *
+     * @param array $config Configuration
+     */
+    protected function resolveDocuments(array $config, ContainerBuilder $container)
+    {
+        if ($config['resolve_target_objects']) {
+            $def = $container->findDefinition('doctrine.parse.listeners.resolve_target_object');
+            foreach ($config['resolve_target_objects'] as $name => $implementation) {
+                $def->addMethodCall('addResolveObject', array(
+                    $name, $implementation, array(),
+                ));
+            }
+            $def->addTag('doctrine_parse.event_subscriber');
+        }
     }
 }

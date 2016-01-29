@@ -6,6 +6,7 @@ parameters:
     doctrine.parse.data_collector.class: 'Redking\ParseBundle\DataCollector\SimpleDataCollector'
     doctrine.parse.logger.class: 'Redking\ParseBundle\Logger\Logger'
     doctrine.parse.logger.aggregate.class: 'Redking\ParseBundle\Logger\AggregateLogger'
+    doctrine.parse.listeners.resolve_target_object.class: 'Redking\ParseBundle\Tools\ResolveTargetObjectListener'
     parse_authenticator.class: 'Redking\ParseBundle\Security\ParseAuthenticator'
 
 services:
@@ -51,6 +52,11 @@ services:
             - "@logger"
         tags:
             - {name: monolog.logger, channel: parse}
+
+    # listeners
+    doctrine.parse.listeners.resolve_target_object:
+        class: %doctrine.parse.listeners.resolve_target_object.class%
+        public: false
 
     # profiler
     redking_parse.data_collector:
