@@ -30,7 +30,10 @@ class RedkingParseBundle extends Bundle
         $app_id = $this->container->getParameter('redking_parse.app_id');
         $rest_key = $this->container->getParameter('redking_parse.rest_key');
         $master_key = $this->container->getParameter('redking_parse.master_key');
+        $server_url = $this->container->getParameter('redking_parse.server_url');
+        $mount_path = $this->container->getParameter('redking_parse.mount_path');
 
         ParseClient::initialize($app_id, $rest_key, $master_key);
+        ParseClient::setServerURL($server_url, $mount_path);
     }
 }

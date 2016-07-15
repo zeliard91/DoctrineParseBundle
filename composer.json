@@ -14,7 +14,7 @@
     ],
     "require": {
         "php": ">=5.4.0",
-        "parse/php-sdk": "~1.1.9",
+        "parse/php-sdk": "^1.2",
         "symfony/symfony": "~2.3|3.0",
         "sensio/framework-extra-bundle": "~3.0",
         "doctrine/common": "~2.4",

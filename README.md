@@ -48,6 +48,7 @@ redking_parse:
     app_id: %parse.app_id%
     rest_key: %parse.rest_key%
     master_key: %parse.master_key%
+    server_url: %parse.server_url%
     auto_mapping: true
 
 ```

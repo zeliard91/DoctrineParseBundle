@@ -28,6 +28,8 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         $container->setParameter('redking_parse.app_id', $config['app_id']);
         $container->setParameter('redking_parse.rest_key', $config['rest_key']);
         $container->setParameter('redking_parse.master_key', $config['master_key']);
+        $container->setParameter('redking_parse.server_url', $config['server_url']);
+        $container->setParameter('redking_parse.mount_path', $config['mount_path']);
 
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yml');
