@@ -8,6 +8,7 @@ use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 use Symfony\Component\Security\Http\Authentication\SimpleFormAuthenticatorInterface;
 use Symfony\Component\Security\Core\Exception\BadCredentialsException;
+use Symfony\Component\Security\Core\Exception\DisabledException;
 
 use Parse\ParseClient;
 use Parse\ParseException;
@@ -29,6 +30,12 @@ class ParseAuthenticator implements SimpleFormAuthenticatorInterface
             $result = ParseClient::_request('GET', 'login', '', $data);
         } catch (ParseException $e) {
             throw new BadCredentialsException('The presented password is invalid.');
+        }
+
+        if (!$user->isEnabled()) {
+            $ex = new DisabledException('User account is disabled.');
+            $ex->setUser($user);
+            throw $ex;
         }
         
         return new UsernamePasswordToken(
