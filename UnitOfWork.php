@@ -1365,10 +1365,19 @@ class UnitOfWork implements PropertyChangedListener
             // if single ref, try to get the one for uow
             if ($class->isSingleValuedAssociation($name) && $value !== null) {
                 $ref_oid = spl_object_hash($value);
-                if (isset($this->originalObjectData[$ref_oid])) {
-                    $actualData->set($class->getNameOfField($name), $this->originalObjectData[$ref_oid]);
-                    continue;
+                $assoc = $class->associationMappings[$name];
+
+                // if not found, we transform the object in a ParseObject if there is a cascade persist
+                if (!isset($this->originalObjectData[$ref_oid])) {
+                    if ($assoc['isCascadePersist']) {
+                        $this->originalObjectData[$ref_oid] = $this->getObjectPersister(get_class($value))->instanciateParseObject();
+                    } else {
+                        continue;
+                    }
                 }
+
+                $actualData->set($class->getNameOfField($name), $this->originalObjectData[$ref_oid]);
+                continue;
             }
 
             // skip if the field is the same ParseFile but it has not been loaded
