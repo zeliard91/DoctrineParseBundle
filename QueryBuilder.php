@@ -261,4 +261,20 @@ class QueryBuilder
 
         return $this;
     }
+
+    /**
+     * @param object $object
+     * @return Builder
+     */
+    public function references($object)
+    {
+        $originalObject = $this->_om->getUnitOfWork()->getOriginalObjectData($object);
+        if (!is_object($originalObject)) {
+            throw new \InvalidArgumentException('The object passed in reference is not from Parse DB');
+        }
+
+        $this->expr->equals($originalObject);
+
+        return $this;
+    }
 }
