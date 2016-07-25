@@ -1448,7 +1448,7 @@ class UnitOfWork implements PropertyChangedListener
             switch ($state) {
                 case self::STATE_NEW:
                     if (!$assoc['isCascadePersist']) {
-                        throw ORMInvalidArgumentException::newEntityFoundThroughRelationship($assoc, $entry);
+                        throw RedkingParseException::newObjectFoundThroughRelationship($assoc, $entry);
                     }
 
                     $this->persistNew($targetClass, $entry);
@@ -1466,7 +1466,7 @@ class UnitOfWork implements PropertyChangedListener
                 case self::STATE_DETACHED:
                     // Can actually not happen right now as we assume STATE_NEW,
                     // so the exception will be raised from the DBAL layer (constraint violation).
-                    throw ORMInvalidArgumentException::detachedEntityFoundThroughRelationship($assoc, $entry);
+                    throw RedkingParseException::detachedObjectFoundThroughRelationship($assoc, $entry);
                     break;
 
                 default:

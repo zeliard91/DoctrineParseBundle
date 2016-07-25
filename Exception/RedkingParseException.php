@@ -181,4 +181,31 @@ class RedkingParseException extends \Exception
     {
         return method_exists($obj, '__toString') ? (string)$obj : get_class($obj).'@'.spl_object_hash($obj);
     }
+
+    /**
+     * @param array  $assoc
+     * @param object $entry
+     *
+     * @return ORMInvalidArgumentException
+     */
+    static public function newObjectFoundThroughRelationship(array $assoc, $entry)
+    {
+        return new self('A new document was found through a relationship that was not'
+                            . ' configured to cascade persist operations: ' . self::objToStr($entry) . '.'
+                            . ' Explicitly persist the new document or configure cascading persist operations'
+                            . ' on the relationship.');
+    }
+
+    /**
+     * @param array  $assoc
+     * @param object $entry
+     *
+     * @return ORMInvalidArgumentException
+     */
+    static public function detachedObjectFoundThroughRelationship(array $assoc, $entry)
+    {
+        return new self("A detached object of type " . $assoc['targetDocument'] . " (" . self::objToStr($entry) . ") "
+                        . " was found through the relationship '#" . $assoc['fieldName'] . "' "
+                        . "during cascading a persist operation.");
+    }
 }
