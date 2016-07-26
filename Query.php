@@ -104,6 +104,16 @@ class Query
     }
 
     /**
+     * @param array $hints
+     */
+    public function setHints(array $hints)
+    {
+        $this->unitOfWorkHints = $hints;
+
+        return $this;
+    }
+
+    /**
      * Return query type.
      *
      * @return int

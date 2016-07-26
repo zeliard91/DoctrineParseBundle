@@ -57,7 +57,7 @@ class ObjectPersister
     public function load(array $criteria, $object = null, $assoc = null, array $hints = array(), $limit = null, array $orderBy = null)
     {
         try {
-            return $this->getQuery($criteria, $assoc, $limit, null, $orderBy)->getSingleResult();
+            return $this->getQuery($criteria, $assoc, $limit, null, $orderBy)->setHints($hints)->getSingleResult();
         } catch (\Parse\ParseException $e) {
             throw new WrappedParseException($e);
         }

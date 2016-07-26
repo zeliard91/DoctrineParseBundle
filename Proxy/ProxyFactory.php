@@ -139,7 +139,7 @@ class ProxyFactory extends AbstractProxyFactory
                 $proxy->__setInitialized(true);
                 $proxy->__wakeup();
 
-                if (null === $objectPersister->load($classMetadata->getIdentifierValues($proxy), $proxy)) {
+                if (null === $objectPersister->load($classMetadata->getIdentifierValues($proxy), $proxy, null, ['doctrine.refresh' => true])) {
                     $proxy->__setInitializer($initializer);
                     $proxy->__setCloner($cloner);
                     $proxy->__setInitialized(false);
@@ -170,7 +170,7 @@ class ProxyFactory extends AbstractProxyFactory
 
             $proxy->__setInitialized(true);
 
-            if (null === $objectPersister->load($classMetadata->getIdentifierValues($proxy), $proxy)) {
+            if (null === $objectPersister->load($classMetadata->getIdentifierValues($proxy), $proxy, null, ['doctrine.refresh' => true])) {
                 $proxy->__setInitializer($initializer);
                 $proxy->__setCloner($cloner);
                 $proxy->__setInitialized(false);
