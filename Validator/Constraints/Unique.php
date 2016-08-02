@@ -14,4 +14,5 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 class Unique extends UniqueEntity
 {
     public $service = 'doctrine_parse.unique';
+    public $repositoryMethod = 'findByWithoutManaging';
 }

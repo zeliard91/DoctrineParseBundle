@@ -458,6 +458,9 @@ class UnitOfWork implements PropertyChangedListener
         $idHash = implode(' ', [$id]);
 
         if (isset($this->identityMap[$class->rootEntityName][$idHash])) {
+            if (isset($hints['doctrine.do_not_manage'])) {
+                return $this->identityMap[$class->rootEntityName][$idHash];
+            }
             $object = $this->identityMap[$class->rootEntityName][$idHash];
             $oid = spl_object_hash($object);
 

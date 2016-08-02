@@ -70,13 +70,14 @@ class ObjectPersister
      * @param array|null $orderBy
      * @param int|null   $limit
      * @param int|null   $skip
+     * @param array      $hints    Hints for entity creation.
      *
      * @return array
      */
-    public function loadAll(array $criteria = array(), array $orderBy = null, $limit = null, $skip = null)
+    public function loadAll(array $criteria = array(), array $orderBy = null, $limit = null, $skip = null, array $hints = array())
     {
         try {
-            return $this->getQuery($criteria, null, $limit, $skip, $orderBy)->execute();
+            return $this->getQuery($criteria, null, $limit, $skip, $orderBy)->setHints($hints)->execute();
         } catch (\Parse\ParseException $e) {
             throw new WrappedParseException($e);
         }

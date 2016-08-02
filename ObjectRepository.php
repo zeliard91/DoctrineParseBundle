@@ -158,6 +158,21 @@ class ObjectRepository implements BaseObjectRepository, Selectable
     }
 
     /**
+     * Finds objects by a set of criteria without keeping them in the unitOfWork
+     *
+     * @param array    $criteria Query criteria
+     * @param array    $sort     Sort array for Cursor::sort()
+     * @param int|null $limit    Limit for Cursor::limit()
+     * @param int|null $skip     Skip for Cursor::skip()
+     *
+     * @return array
+     */
+    public function findByWithoutManaging(array $criteria, array $sort = null, $limit = null, $skip = null)
+    {
+        return $this->getObjectPersister()->loadAll($criteria, $sort, $limit, $skip, ['doctrine.do_not_manage' => 1]);
+    }
+
+    /**
      * Finds a single object by a set of criteria.
      *
      * @param array $criteria
