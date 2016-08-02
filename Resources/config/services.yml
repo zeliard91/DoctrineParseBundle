@@ -8,6 +8,7 @@ parameters:
     doctrine.parse.logger.aggregate.class: 'Redking\ParseBundle\Logger\AggregateLogger'
     doctrine.parse.listeners.resolve_target_object.class: 'Redking\ParseBundle\Tools\ResolveTargetObjectListener'
     parse_authenticator.class: 'Redking\ParseBundle\Security\ParseAuthenticator'
+    doctrine_parse.validator.unique.class: 'Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntityValidator'
 
 services:
     # Registry
@@ -76,3 +77,11 @@ services:
     # authenticator
     parse_authenticator:
         class:     "%parse_authenticator.class%"
+
+    # validators
+    doctrine_parse.validator.unique:
+        class: %doctrine_parse.validator.unique.class%
+        arguments:
+            - "@doctrine_parse"
+        tags:
+            - {name: validator.constraint_validator, alias: doctrine_parse.unique}
