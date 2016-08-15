@@ -277,4 +277,56 @@ class QueryBuilder
 
         return $this;
     }
+
+    /**
+     * Specify $gt criteria for the current field.
+     *
+     * @see Expr::gt()
+     * @param mixed $value
+     * @return $this
+     */
+    public function gt($value)
+    {
+        $this->expr->gt($value);
+        return $this;
+    }
+
+    /**
+     * Specify $gte criteria for the current field.
+     *
+     * @see Expr::gte()
+     * @param mixed $value
+     * @return $this
+     */
+    public function gte($value)
+    {
+        $this->expr->gte($value);
+        return $this;
+    }
+
+    /**
+     * Specify $lt criteria for the current field.
+     *
+     * @see Expr::lte()
+     * @param mixed $value
+     * @return $this
+     */
+    public function lt($value)
+    {
+        $this->expr->lt($value);
+        return $this;
+    }
+
+    /**
+     * Specify $lte criteria for the current field.
+     *
+     * @see Expr::lte()
+     * @param mixed $value
+     * @return $this
+     */
+    public function lte($value)
+    {
+        $this->expr->lte($value);
+        return $this;
+    }
 }

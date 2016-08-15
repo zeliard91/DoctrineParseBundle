@@ -98,4 +98,54 @@ class Expr
     {
         return $this->operator('equalTo', $value);
     }
+
+    /**
+     * Specify $gt criteria for the current field.
+     *
+     * @see Builder::gt()
+     * @param mixed $value
+     * @return $this
+     */
+    public function gt($value)
+    {
+        return $this->operator('greaterThan', $value);
+    }
+
+    /**
+     * Specify $gte criteria for the current field.
+     *
+     * @see Builder::gte()
+     * @param mixed $value
+     * @return $this
+     */
+    public function gte($value)
+    {
+        return $this->operator('greaterThanOrEqualTo', $value);
+    }
+
+    /**
+     * Specify $lt criteria for the current field.
+     *
+     * @see Builder::lte()
+     * @see http://docs.mongodb.org/manual/reference/operator/lte/
+     * @param mixed $value
+     * @return $this
+     */
+    public function lt($value)
+    {
+        return $this->operator('lessThan', $value);
+    }
+
+    /**
+     * Specify $lte criteria for the current field.
+     *
+     * @see Builder::lte()
+     * @see http://docs.mongodb.org/manual/reference/operator/lte/
+     * @param mixed $value
+     * @return $this
+     */
+    public function lte($value)
+    {
+        return $this->operator('lessThanOrEqualTo', $value);
+    }
 }

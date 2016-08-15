@@ -96,6 +96,14 @@ class ObjectRepository implements BaseObjectRepository, Selectable
     }
 
     /**
+     * @return ObjectManager
+     */
+    public function getObjectManager()
+    {
+        return $this->_om;
+    }
+
+    /**
      * Finds a document by its identifier.
      *
      * @param string|object $id The identifier
