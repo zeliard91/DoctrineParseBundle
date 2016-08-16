@@ -329,4 +329,16 @@ class QueryBuilder
         $this->expr->lte($value);
         return $this;
     }
+
+    /**
+     * Match a subquery to the current field.
+     * 
+     * @param  Query  $query
+     * @return $this
+     */
+    public function matchQuery(Query $query)
+    {
+        $this->expr->matchQuery($query);
+        return $this;
+    }
 }

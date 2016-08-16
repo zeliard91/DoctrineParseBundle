@@ -296,4 +296,19 @@ class Query
 
         return $uow->getOrCreateObject($this->_class->name, $result, $this->unitOfWorkHints);
     }
+
+    /**
+     * Returns the ParseQuery associated with this instance.
+     *
+     * @return \Parse\ParseQuery
+     */
+    public function getParseQuery()
+    {
+        // Initialize if empty
+        if (count($this->_parseQuery->_getOptions()) == 0) {
+            $this->applyQuery();
+        }
+
+        return $this->_parseQuery;
+    }
 }

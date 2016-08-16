@@ -2,6 +2,8 @@
 
 namespace Redking\ParseBundle\Query;
 
+use Redking\ParseBundle\Query;
+
 class Expr
 {
     /**
@@ -147,5 +149,16 @@ class Expr
     public function lte($value)
     {
         return $this->operator('lessThanOrEqualTo', $value);
+    }
+
+    /**
+     * Match a subquery to the current field.
+     * 
+     * @param  Query  $query
+     * @return $this
+     */
+    public function matchQuery(Query $query)
+    {
+        return $this->operator('matchesQuery', $query->getParseQuery());
     }
 }
