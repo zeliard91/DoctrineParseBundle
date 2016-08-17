@@ -1892,4 +1892,104 @@ class UnitOfWork implements PropertyChangedListener
             }
         }
     }
+
+    /**
+     * Clears the UnitOfWork.
+     *
+     * @param string|null $objectName if given, only objects of this type will get detached.
+     */
+    public function clear($objectName = null)
+    {
+        if ($objectName === null) {
+            $this->identityMap =
+            $this->objectIdentifiers =
+            $this->originalObjectData =
+            $this->collectionChangeSets =
+            $this->objectChangeSets =
+            $this->objectStates =
+            $this->scheduledForDirtyCheck =
+            $this->objectInsertions =
+            $this->extraUpdates =
+            $this->objectUpserts =
+            $this->objectUpdates =
+            $this->objectDeletions =
+            $this->collectionUpdates =
+            $this->collectionDeletions =
+            $this->orphanRemovals =
+            $this->hasScheduledCollections = array();
+        } else {
+            $visited = array();
+            foreach ($this->identityMap as $className => $objects) {
+                if ($className === $objectName) {
+                    foreach ($objects as $object) {
+                        $this->doDetach($object, $visited);
+                    }
+                }
+            }
+        }
+
+        if ($this->evm->hasListeners(Events::onClear)) {
+            $this->evm->dispatchEvent(Events::onClear, new Event\OnClearEventArgs($this->om, $objectName));
+        }
+    }
+
+    /**
+     * Executes a detach operation on the given object.
+     *
+     * @param object $object
+     * @param array $visited
+     * @internal This method always considers objects with an assigned identifier as DETACHED.
+     */
+    private function doDetach($object, array &$visited)
+    {
+        $oid = spl_object_hash($object);
+        if (isset($visited[$oid])) {
+            return; // Prevent infinite recursion
+        }
+
+        $visited[$oid] = $object; // mark visited
+
+        switch ($this->getObjectState($object, self::STATE_DETACHED)) {
+            case self::STATE_MANAGED:
+                $this->removeFromIdentityMap($object);
+                unset($this->objectInsertions[$oid], $this->objectUpdates[$oid],
+                    $this->objectDeletions[$oid], $this->objectIdentifiers[$oid],
+                    $this->objectStates[$oid], $this->originalObjectData[$oid],
+                    $this->objectUpserts[$oid], $this->hasScheduledCollections[$oid]);
+                break;
+            case self::STATE_NEW:
+            case self::STATE_DETACHED:
+                return;
+        }
+
+        $this->cascadeDetach($object, $visited);
+    }
+
+    /**
+     * Cascades a detach operation to associated objects.
+     *
+     * @param object $object
+     * @param array $visited
+     */
+    private function cascadeDetach($object, array &$visited)
+    {
+        $class = $this->om->getClassMetadata(get_class($object));
+        foreach ($class->fieldMappings as $mapping) {
+            if ( ! $mapping['isCascadeDetach']) {
+                continue;
+            }
+            $relatedObjects = $class->reflFields[$mapping['fieldName']]->getValue($object);
+            if (($relatedObjects instanceof Collection || is_array($relatedObjects))) {
+                if ($relatedObjects instanceof PersistentCollection) {
+                    // Unwrap so that foreach() does not initialize
+                    $relatedObjects = $relatedObjects->unwrap();
+                }
+                foreach ($relatedObjects as $relatedDocument) {
+                    $this->doDetach($relatedDocument, $visited);
+                }
+            } elseif ($relatedObjects !== null) {
+                $this->doDetach($relatedObjects, $visited);
+            }
+        }
+    }
 }

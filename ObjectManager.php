@@ -131,7 +131,7 @@ class ObjectManager implements BaseObjectManager
      */
     public function clear($objectName = null)
     {
-        $this->unitOfWork->clear($entityName);
+        $this->unitOfWork->clear($objectName);
     }
 
     /**
