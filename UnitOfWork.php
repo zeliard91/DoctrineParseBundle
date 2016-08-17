@@ -1222,7 +1222,7 @@ class UnitOfWork implements PropertyChangedListener
                 }
 
                 // if regular field
-                if (!isset($class->associationMappings[$propName])) {
+                if (!isset($class->associationMappings[$fieldName['fieldName']])) {
                     if ($isChangeTrackingNotify) {
                         continue;
                     }
@@ -1232,7 +1232,7 @@ class UnitOfWork implements PropertyChangedListener
                     continue;
                 }
 
-                $assoc = $class->associationMappings[$propName];
+                $assoc = $class->associationMappings[$fieldName['fieldName']];
 
                 // Persistent collection was exchanged with the "originally"
                 // created one. This can only mean it was cloned and replaced
@@ -1267,6 +1267,15 @@ class UnitOfWork implements PropertyChangedListener
 
                 if ($assoc['type'] & ClassMetadata::ONE) {
                     if ($assoc['isOwningSide']) {
+                        // Skip if both values are the same uninitialized ParseObjects
+                        if ($orgValue instanceof ParseObject &&
+                            $actualValue instanceof ParseObject &&
+                            $orgValue->getClassName() === $actualValue->getClassName() &&
+                            $orgValue->getObjectId() === $actualValue->getObjectId() &&
+                            $orgValue->isDataAvailable() === false &&
+                            $actualValue->isDataAvailable() === false ) {
+                            continue;
+                        }
                         $changeSet[$propName] = array($orgValue, $actualValue);
                     }
 
