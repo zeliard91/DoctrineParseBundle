@@ -247,6 +247,20 @@ class QueryBuilder
     }
 
     /**
+     * Specify "not in" criteria for the current field.
+     *
+     * @see Expr::notIn()
+     * @param array $values
+     * @return $this
+     */
+    public function notIn(array $values)
+    {
+        $this->expr->notIn($values);
+
+        return $this;
+    }
+
+    /**
      * Specify an equality match for the current field.
      *
      * @see Expr::equals()
@@ -258,6 +272,34 @@ class QueryBuilder
     public function equals($value)
     {
         $this->expr->equals($value);
+
+        return $this;
+    }
+
+    /**
+     * Specify $ne criteria for the current field.
+     *
+     * @see Expr::notEqual()
+     * @param mixed $value
+     * @return $this
+     */
+    public function notEqual($value)
+    {
+        $this->expr->notEqual($value);
+
+        return $this;
+    }
+
+    /**
+     * Specify "exists" criteria for the current field.
+     *
+     * @see Expr::exists()
+     * @param boolean $bool
+     * @return $this
+     */
+    public function exists($bool)
+    {
+        $this->expr->exists((boolean) $bool);
 
         return $this;
     }

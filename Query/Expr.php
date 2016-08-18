@@ -88,6 +88,18 @@ class Expr
     }
 
     /**
+     * Specify $nin criteria for the current field.
+     *
+     * @see Builder::notIn()
+     * @param array $values
+     * @return $this
+     */
+    public function notIn(array $values)
+    {
+        return $this->operator('notContainedIn', array_values($values));
+    }
+
+    /**
      * Specify an equality match for the current field.
      *
      * @see Builder::equals()
@@ -99,6 +111,36 @@ class Expr
     public function equals($value)
     {
         return $this->operator('equalTo', $value);
+    }
+
+    /**
+     * Specify $ne criteria for the current field.
+     *
+     * @see Builder::notEqual()
+     *
+     * @param mixed $value
+     *
+     * @return self
+     */
+    public function notEqual($value)
+    {
+        return $this->operator('notEqualTo', $value);
+    }
+
+    /**
+     * Specify $exists criteria for the current field.
+     *
+     * @see Builder::exists()
+     * @param boolean $bool
+     * @return $this
+     */
+    public function exists($bool)
+    {
+        if ($bool) {
+            return $this->operator('exists', (boolean) $bool);
+        }
+        return $this->operator('doesNotExist', (boolean) $bool);
+
     }
 
     /**
