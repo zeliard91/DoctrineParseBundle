@@ -1,0 +1,31 @@
+Redking\ParseBundle\ParseObject\Installation:
+    type: mappedSuperclass
+    fields:
+        GCMSenderId:
+            type: string
+        deviceToken:
+            type: string
+        localeIdentifier:
+            type: string
+        badge:
+            type: integer
+        parseVersion:
+            type: string
+        appIdentifier:
+            type: string
+        appName:
+            type: string
+        isAcceptPush:
+            type: boolean
+        deviceType:
+            type: string
+        channels:
+            type: array
+        pushType:
+            type: string
+        installationId:
+            type: string
+        appVersion:
+            type: string
+        timeZone:
+            type: string
