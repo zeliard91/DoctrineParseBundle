@@ -98,14 +98,12 @@ abstract class DoctrineParseCommand extends ContainerAwareCommand
      */
     protected function findBasePathForBundle($bundle)
     {
-        $path = str_replace('\\', '/', $bundle->getNamespace());
-        $search = str_replace('\\', '/', $bundle->getPath());
-        $destination = str_replace('/'.$path, '', $search, $c);
-
-        if ($c != 1) {
-            throw new \RuntimeException(sprintf('Can\'t find base path for bundle (path: "%s", destination: "%s").', $path, $destination));
-        }
-
+        $path = str_replace('\\', DIRECTORY_SEPARATOR, $bundle->getNamespace());
+        $search = str_replace('\\', DIRECTORY_SEPARATOR, $bundle->getPath());
+        $destination = str_replace(DIRECTORY_SEPARATOR.$path, '', $search, $c);
+        // if ($c != 1) {
+        //     throw new \RuntimeException(sprintf('Can\'t find base path for bundle (path: "%s", destination: "%s").', $path, $destination));
+        // }
         return $destination;
     }
 }
