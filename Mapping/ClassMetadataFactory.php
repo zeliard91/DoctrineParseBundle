@@ -93,17 +93,12 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
             $class->setDiscriminatorField($parent->discriminatorField);
             $class->setDiscriminatorMap($parent->discriminatorMap);
             $class->setDefaultDiscriminatorValue($parent->defaultDiscriminatorValue);
-            $class->setIdGeneratorType($parent->generatorType);
             $this->addInheritedFields($class, $parent);
             $this->addInheritedRelations($class, $parent);
-            $this->addInheritedIndexes($class, $parent);
             $class->setIdentifier($parent->identifier);
-            $class->setVersioned($parent->isVersioned);
-            $class->setVersionField($parent->versionField);
             $class->setLifecycleCallbacks($parent->lifecycleCallbacks);
-            $class->setAlsoLoadMethods($parent->alsoLoadMethods);
             $class->setChangeTrackingPolicy($parent->changeTrackingPolicy);
-            $class->setFile($parent->getFile());
+
             if ($parent->isMappedSuperclass) {
                 $class->setCustomRepositoryClass($parent->customRepositoryClassName);
             }
@@ -152,5 +147,55 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
     protected function newClassMetadataInstance($className)
     {
         return new ClassMetadata($className, $this->om->getConfiguration()->getNamingStrategy());
+    }
+
+    /**
+     * Adds inherited fields to the subclass mapping.
+     *
+     * @param ClassMetadata $subClass
+     * @param ClassMetadata $parentClass
+     */
+    private function addInheritedFields(ClassMetadata $subClass, ClassMetadata $parentClass)
+    {
+        foreach ($parentClass->fieldMappings as $fieldName => $mapping) {
+            if ( ! isset($mapping['inherited']) && ! $parentClass->isMappedSuperclass) {
+                $mapping['inherited'] = $parentClass->name;
+            }
+            if ( ! isset($mapping['declared'])) {
+                $mapping['declared'] = $parentClass->name;
+            }
+            $subClass->addInheritedFieldMapping($mapping);
+        }
+        foreach ($parentClass->reflFields as $name => $field) {
+            $subClass->reflFields[$name] = $field;
+        }
+    }
+
+
+    /**
+     * Adds inherited association mappings to the subclass mapping.
+     *
+     * @param \Doctrine\ORM\Mapping\ClassMetadata $subClass
+     * @param \Doctrine\ORM\Mapping\ClassMetadata $parentClass
+     *
+     * @return void
+     *
+     * @throws MappingException
+     */
+    private function addInheritedRelations(ClassMetadata $subClass, ClassMetadata $parentClass)
+    {
+        foreach ($parentClass->associationMappings as $field => $mapping) {
+            if ($parentClass->isMappedSuperclass) {
+                $mapping['sourceDocument'] = $subClass->name;
+            }
+
+            if ( ! isset($mapping['inherited']) && ! $parentClass->isMappedSuperclass) {
+                $mapping['inherited'] = $parentClass->name;
+            }
+            if ( ! isset($mapping['declared'])) {
+                $mapping['declared'] = $parentClass->name;
+            }
+            $subClass->addInheritedAssociationMapping($mapping);
+        }
     }
 }

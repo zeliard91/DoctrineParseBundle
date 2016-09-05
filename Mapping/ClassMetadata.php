@@ -57,6 +57,18 @@ class ClassMetadata implements BaseClassMetadata
     const INHERITANCE_TYPE_NONE = 1;
 
     /**
+     * SINGLE_COLLECTION means the class will be persisted according to the rules of
+     * <tt>Single Collection Inheritance</tt>.
+     */
+    const INHERITANCE_TYPE_SINGLE_COLLECTION = 2;
+
+    /**
+     * COLLECTION_PER_CLASS means the class will be persisted according to the rules
+     * of <tt>Concrete Collection Inheritance</tt>.
+     */
+    const INHERITANCE_TYPE_COLLECTION_PER_CLASS = 3;
+
+    /**
      * Specifies that an association is to be fetched when it is first accessed.
      */
     const FETCH_LAZY = 2;
@@ -225,6 +237,58 @@ class ClassMetadata implements BaseClassMetadata
     public $objectListeners = array();
 
     /**
+     * READ-ONLY: The discriminator value of this class.
+     *
+     * <b>This does only apply to the JOINED and SINGLE_COLLECTION inheritance mapping strategies
+     * where a discriminator field is used.</b>
+     *
+     * @var mixed
+     * @see discriminatorField
+     */
+    public $discriminatorValue;
+
+    /**
+     * READ-ONLY: The discriminator map of all mapped classes in the hierarchy.
+     *
+     * <b>This does only apply to the SINGLE_COLLECTION inheritance mapping strategy
+     * where a discriminator field is used.</b>
+     *
+     * @var mixed
+     * @see discriminatorField
+     */
+    public $discriminatorMap = array();
+
+    /**
+     * READ-ONLY: The definition of the discriminator field used in SINGLE_COLLECTION
+     * inheritance mapping.
+     *
+     * @var string
+     */
+    public $discriminatorField;
+
+    /**
+     * READ-ONLY: The default value for discriminatorField in case it's not set in the document
+     *
+     * @var string
+     * @see discriminatorField
+     */
+    public $defaultDiscriminatorValue;
+
+    /**
+     * READ-ONLY: The names of the parent classes (ancestors).
+     *
+     * @var array
+     */
+    public $parentClasses = array();
+
+    /**
+     * READ-ONLY: The names of all subclasses (descendants).
+     *
+     * @var array
+     */
+    public $subClasses = array();
+
+    /**
      * Initializes a new ClassMetadata instance that will hold the object-relational mapping
      * metadata of the class with the given name.
      *
@@ -253,6 +317,17 @@ class ClassMetadata implements BaseClassMetadata
     public function getIdentifier()
     {
         return array($this->identifier);
+    }
+
+    /**
+     * INTERNAL:
+     * Sets the mapped identifier field of this class.
+     *
+     * @param string $identifier
+     */
+    public function setIdentifier($identifier)
+    {
+        $this->identifier = $identifier;
     }
 
     /**
@@ -528,6 +603,158 @@ class ClassMetadata implements BaseClassMetadata
     }
 
     /**
+     * Sets the inheritance type used by the class and its subclasses.
+     *
+     * @param integer $type
+     *
+     * @return void
+     *
+     * @throws MappingException
+     */
+    public function setInheritanceType($type)
+    {
+        if ( ! $this->_isInheritanceType($type)) {
+            throw MappingException::invalidInheritanceType($this->name, $type);
+        }
+        $this->inheritanceType = $type;
+    }
+
+    /**
+     * Checks whether the given type identifies an inheritance type.
+     *
+     * @param integer $type
+     *
+     * @return boolean TRUE if the given type identifies an inheritance type, FALSe otherwise.
+     */
+    private function _isInheritanceType($type)
+    {
+        return $type == self::INHERITANCE_TYPE_NONE ||
+                $type == self::INHERITANCE_TYPE_SINGLE_COLLECTION ||
+                $type == self::INHERITANCE_TYPE_COLLECTION_PER_CLASS;
+    }
+
+    /**
+     * Sets the discriminator field.
+     *
+     * The field name is the the unmapped database field. Discriminator values
+     * are only used to discern the hydration class and are not mapped to class
+     * properties.
+     *
+     * @param string $discriminatorField
+     *
+     * @throws MappingException If the discriminator field conflicts with the
+     *                          "name" attribute of a mapped field.
+     */
+    public function setDiscriminatorField($discriminatorField)
+    {
+        if ($discriminatorField === null) {
+            $this->discriminatorField = null;
+
+            return;
+        }
+
+        // Handle array argument with name/fieldName keys for BC
+        if (is_array($discriminatorField)) {
+            if (isset($discriminatorField['name'])) {
+                $discriminatorField = $discriminatorField['name'];
+            } elseif (isset($discriminatorField['fieldName'])) {
+                $discriminatorField = $discriminatorField['fieldName'];
+            }
+        }
+
+        foreach ($this->fieldMappings as $fieldMapping) {
+            if ($discriminatorField == $fieldMapping['name']) {
+                throw MappingException::discriminatorFieldConflict($this->name, $discriminatorField);
+            }
+        }
+
+        $this->discriminatorField = $discriminatorField;
+    }
+
+    /**
+     * Sets the discriminator values used by this class.
+     * Used for JOINED and SINGLE_TABLE inheritance mapping strategies.
+     *
+     * @param array $map
+     *
+     * @throws MappingException
+     */
+    public function setDiscriminatorMap(array $map)
+    {
+        foreach ($map as $value => $className) {
+            if (strpos($className, '\\') === false && strlen($this->namespace)) {
+                $className = $this->namespace . '\\' . $className;
+            }
+            $this->discriminatorMap[$value] = $className;
+            if ($this->name == $className) {
+                $this->discriminatorValue = $value;
+            } else {
+                if ( ! class_exists($className)) {
+                    throw MappingException::invalidClassInDiscriminatorMap($className, $this->name);
+                }
+                if (is_subclass_of($className, $this->name)) {
+                    $this->subClasses[] = $className;
+                }
+            }
+        }
+    }
+
+    /**
+     * Sets the default discriminator value to be used for this class
+     * Used for JOINED and SINGLE_TABLE inheritance mapping strategies if the document has no discriminator value
+     *
+     * @param string $defaultDiscriminatorValue
+     *
+     * @throws MappingException
+     */
+    public function setDefaultDiscriminatorValue($defaultDiscriminatorValue)
+    {
+        if ($defaultDiscriminatorValue === null) {
+            $this->defaultDiscriminatorValue = null;
+
+            return;
+        }
+
+        if (!array_key_exists($defaultDiscriminatorValue, $this->discriminatorMap)) {
+            throw MappingException::invalidDiscriminatorValue($defaultDiscriminatorValue, $this->name);
+        }
+
+        $this->defaultDiscriminatorValue = $defaultDiscriminatorValue;
+    }
+
+    /**
+     * INTERNAL:
+     * Adds a field mapping without completing/validating it.
+     * This is mainly used to add inherited field mappings to derived classes.
+     *
+     * @param array $fieldMapping
+     */
+    public function addInheritedFieldMapping(array $fieldMapping)
+    {
+        $this->fieldMappings[$fieldMapping['fieldName']] = $fieldMapping;
+
+        if (isset($fieldMapping['association'])) {
+            $this->associationMappings[$fieldMapping['fieldName']] = $fieldMapping;
+        }
+    }
+
+    /**
+     * INTERNAL:
+     * Adds an association mapping without completing/validating it.
+     * This is mainly used to add inherited association mappings to derived classes.
+     *
+     * @param array $mapping
+     *
+     * @return void
+     *
+     * @throws MappingException
+     */
+    public function addInheritedAssociationMapping(array $mapping/*, $owningClassName = null*/)
+    {
+        $this->associationMappings[$mapping['fieldName']] = $mapping;
+    }
+
+    /**
      * Creates a new instance of the mapped class, without invoking the constructor.
      *
      * @return object
@@ -734,11 +961,31 @@ class ClassMetadata implements BaseClassMetadata
     }
 
     /**
-     * @return bool
+     * @return boolean
      */
     public function isInheritanceTypeNone()
     {
         return $this->inheritanceType == self::INHERITANCE_TYPE_NONE;
+    }
+
+    /**
+     * Checks whether the mapped class uses the SINGLE_COLLECTION inheritance mapping strategy.
+     *
+     * @return boolean
+     */
+    public function isInheritanceTypeSingleCollection()
+    {
+        return $this->inheritanceType == self::INHERITANCE_TYPE_SINGLE_COLLECTION;
+    }
+
+    /**
+     * Checks whether the mapped class uses the COLLECTION_PER_CLASS inheritance mapping strategy.
+     *
+     * @return boolean
+     */
+    public function isInheritanceTypeCollectionPerClass()
+    {
+        return $this->inheritanceType == self::INHERITANCE_TYPE_COLLECTION_PER_CLASS;
     }
 
     /**
