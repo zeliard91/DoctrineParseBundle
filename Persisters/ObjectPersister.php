@@ -323,4 +323,20 @@ class ObjectPersister
             $collection->add($reference);
         }
     }
+
+    /**
+     * Load a referebce object.
+     *
+     * @param  string $fieldName
+     * @param  object $object
+     * @return object|null
+     */
+    public function loadReference($fieldName, $object)
+    {
+        return $this->om->createQueryBuilder($this->class->name)
+            ->field($fieldName)->references($object)
+            ->getQuery()
+            ->getSingleResult()
+        ;
+    }
 }

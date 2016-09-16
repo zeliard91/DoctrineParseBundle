@@ -1379,6 +1379,10 @@ class UnitOfWork implements PropertyChangedListener
                 $ref_oid = spl_object_hash($value);
                 $assoc = $class->associationMappings[$name];
 
+                // skip if it is not the owning side
+                if ( ! $assoc['isOwningSide']) {
+                    continue;
+                }
                 // if not found, we transform the object in a ParseObject if there is a cascade persist
                 if (!isset($this->originalObjectData[$ref_oid])) {
                     if ($assoc['isCascadePersist']) {

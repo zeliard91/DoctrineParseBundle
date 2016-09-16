@@ -53,9 +53,13 @@ class ParseObjectHydrator
                 // load referenceOne
                 case ($assoc['type'] === ClassMetadata::ONE):
                     if ( ! $assoc['isOwningSide']) {
-                        throw new \Exception("@todo : Loading not owning side oneToOne : ".json_encode($assoc));
-                        $class->reflFields[$field]->setValue($object, $this->om->getUnitOfWork()->getObjectPersister($assoc['targetDocument'])->loadOneToOneObject($assoc, $object));
-                        continue;
+
+                        // Try to load the owning side
+                        $targetObject = $this->om->getUnitOfWork()->getObjectPersister($assoc['targetDocument'])->loadReference($assoc['mappedBy'], $object);
+
+                        if (null !== $targetObject) {
+                            $this->class->reflFields[$field]->setValue($object, $targetObject);
+                        }
                     }
 
                     // Get object or set Proxy

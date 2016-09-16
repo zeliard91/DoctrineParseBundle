@@ -852,6 +852,26 @@ class ClassMetadata implements BaseClassMetadata
     }
 
     /**
+     * Gets the mapping of an association.
+     *
+     * @see ClassMetadataInfo::$associationMappings
+     *
+     * @param string $fieldName The field name that represents the association in
+     *                          the object model.
+     *
+     * @return array The mapping.
+     *
+     * @throws MappingException
+     */
+    public function getAssociationMapping($fieldName)
+    {
+        if ( ! isset($this->associationMappings[$fieldName])) {
+            throw MappingException::mappingNotFound($this->name, $fieldName);
+        }
+        return $this->associationMappings[$fieldName];
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function getTypeOfField($fieldName)
