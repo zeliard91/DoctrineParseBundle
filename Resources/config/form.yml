@@ -12,3 +12,13 @@ services:
             - {name: form.type, alias: parse_file}
         arguments:
             - "@redking_parse.manager"
+
+
+    # Form Type Guesser
+    form.type_guesser.doctrine.parse:
+        class: Redking\ParseBundle\Form\DoctrineParseTypeGuesser
+        tags:
+            - {name: form.type_guesser}
+        arguments:
+            - "@doctrine_parse"
+    

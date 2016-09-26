@@ -836,6 +836,22 @@ class ClassMetadata implements BaseClassMetadata
     }
 
     /**
+     * Check if the field is not null.
+     *
+     * @param string $fieldName  The field name
+     *
+     * @return boolean  TRUE if the field is not null, FALSE otherwise.
+     */
+    public function isNullable($fieldName)
+    {
+        $mapping = $this->getFieldMapping($fieldName);
+        if ($mapping !== false) {
+            return isset($mapping['nullable']) && $mapping['nullable'] == true;
+        }
+        return false;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function getIdentifierFieldNames()
