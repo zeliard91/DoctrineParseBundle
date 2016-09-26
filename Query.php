@@ -228,7 +228,19 @@ class Query
             foreach ($this->query['query'] as $attribute => $operations) {
                 if ($attribute === '_objectId') {
                     $field = 'objectId';
-                } else {
+                } 
+                // If a field has the notation "attribute.id", we extract the attribute name and forge the value
+                elseif (preg_match('/(.+)\.id$/', $attribute, $matches) === 1) {
+                    $field = $this->_class->getNameOfField($matches[1]);
+                    
+                    // Try to find target collection name
+                    $targetClass = $this->_class->getAssociationTargetClass($matches[1]);
+                    $targetCollection = $this->_om->getClassMetadata($targetClass)->getCollection();
+                    foreach ($operations as $operator => &$value) {
+                        $value = (object)['__type' => 'Pointer', 'className' => $targetCollection, 'objectId' => $value];
+                    }
+                }
+                else {
                     $field = $this->_class->getNameOfField($attribute);
                     if ($field == '_objectId') {
                         $field = 'objectId';
