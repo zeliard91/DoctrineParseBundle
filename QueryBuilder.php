@@ -190,7 +190,11 @@ class QueryBuilder
             if (is_string($order)) {
                 $order = strtolower($order) === 'asc' ? 'asc' : 'desc';
             }
-            $this->query['sort'][$fieldName] = $order;
+            if ($fieldName === 'id') {
+                $this->query['sort']['objectId'] = $order;
+            } else {
+                $this->query['sort'][$fieldName] = $order;
+            }
         }
 
         return $this;
