@@ -58,6 +58,7 @@ abstract class Type
     // const INCREMENT = 'increment';
     // const OBJECTID = 'object_id';
     // const RAW = 'raw';
+    const GEOPOINT = 'geopoint';
 
     /** Map of already instantiated type objects. One instance per type (flyweight). */
     private static $typeObjects = array();
@@ -91,6 +92,7 @@ abstract class Type
         // self::INCREMENT => 'Doctrine\ODM\MongoDB\Types\IncrementType',
         // self::OBJECTID => 'Doctrine\ODM\MongoDB\Types\ObjectIdType',
         // self::RAW => 'Doctrine\ODM\MongoDB\Types\RawType',
+        self::GEOPOINT => 'Parse\ParseGeoPoint',
     );
 
     /* Prevent instantiation and force use of the factory method. */
