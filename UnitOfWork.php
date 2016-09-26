@@ -1947,6 +1947,18 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /**
+     * Detaches an object from the persistence management. It's persistence will
+     * no longer be managed by Doctrine.
+     *
+     * @param object $object The object to detach.
+     */
+    public function detach($object)
+    {
+        $visited = array();
+        $this->doDetach($object, $visited);
+    }
+
+    /**
      * Executes a detach operation on the given object.
      *
      * @param object $object
@@ -2004,5 +2016,17 @@ class UnitOfWork implements PropertyChangedListener
                 $this->doDetach($relatedObjects, $visited);
             }
         }
+    }
+
+    /**
+     * Gets the identifier of a document.
+     *
+     * @param object $document
+     * @return mixed The identifier value
+     */
+    public function getObjectIdentifier($object)
+    {
+        return isset($this->objectIdentifiers[spl_object_hash($object)]) ?
+            $this->objectIdentifiers[spl_object_hash($object)] : null;
     }
 }

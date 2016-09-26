@@ -311,4 +311,24 @@ class Query
 
         return $this->_parseQuery;
     }
+
+    /**
+     * Returns Iterator of the Query.
+     *
+     * @return Iterator
+     */
+    public function iterate()
+    {
+        return $this->execute()->getIterator();
+    }
+
+    /**
+     * Returns Object Manager.
+     *
+     * @return \Redking\ParseBundle\ObjectManager
+     */
+    public function getObjectManager()
+    {
+        return $this->_om;
+    }
 }
