@@ -31,6 +31,18 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         $container->setParameter('redking_parse.server_url', $config['server_url']);
         $container->setParameter('redking_parse.mount_path', $config['mount_path']);
 
+        // Define dummy doctrine_parse.connections in order to be compatible with doctrine event listener compiler pass
+        $connections = [];
+        $connections[] = [
+            'app_id' => $config['app_id'],
+            'rest_key' => $config['rest_key'],
+            'master_key' => $config['master_key'],
+            'server_url' => $config['server_url'],
+            'mount_path' => $config['mount_path'],
+        ];
+        $container->setParameter('doctrine_parse.connections', $connections);
+
+
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yml');
         $loader->load('form.yml');
