@@ -997,11 +997,14 @@ class UnitOfWork implements PropertyChangedListener
                 $this->recomputeSingleObjectChangeSet($class, $object);
             }
 
-            if (!empty($this->objectChangeSets[$oid])) {
+            if (!empty($this->objectChangeSets[$oid]) || !empty($this->getCollectionChangeSet($oid))) {
                 $persister->update($this->originalObjectData[$oid], $this->objectChangeSets[$oid]+$this->getCollectionChangeSet($oid));
             }
 
             unset($this->objectUpdates[$oid]);
+            if (isset($this->collectionChangeSets[$oid])) {
+                unset($this->collectionChangeSets[$oid]);
+            }
 
             if ($postUpdateInvoke != ListenersInvoker::INVOKE_NONE) {
                 $this->listenersInvoker->invoke($class, Events::postUpdate, $object, new LifecycleEventArgs($object, $this->om), $postUpdateInvoke);
