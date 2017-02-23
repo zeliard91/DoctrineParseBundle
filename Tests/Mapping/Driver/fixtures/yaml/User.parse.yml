@@ -1,0 +1,14 @@
+TestObjects\User:
+    collection: User
+    fields:
+        username:
+            type: string
+        tags:
+            type: array
+    referenceOne:
+        address:
+            targetDocument: TestObjects\Address
+    referenceMany:
+        phoneNumbers:
+            targetDocument: TestObjects\PhoneNumber
+            cascade: all

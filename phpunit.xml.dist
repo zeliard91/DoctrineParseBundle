@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<phpunit backupGlobals="false"
+         backupStaticAttributes="false"
+         colors="true"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         stopOnFailure="false"
+         syntaxCheck="false"
+         bootstrap="./Tests/bootstrap.php"
+>
+    <testsuites>
+        <testsuite name="Doctrine Parse Test Suite">
+            <directory>./Tests/</directory>
+        </testsuite>
+    </testsuites>
+
+    <filter>
+        <whitelist>
+            <directory>./</directory>
+            <exclude>
+                <directory>./Resources</directory>
+                <directory>./Tests</directory>
+            </exclude>
+        </whitelist>
+    </filter>
+
+    <php>
+        <const name="DOCTRINE_PARSE_SERVER_URL" value="http://localhost:1337" />
+        <const name="DOCTRINE_PARSE_APP_ID" value="u88dwhX625F5449gB64zc3AWNs64TUwMFVgRwgYkr" />
+        <const name="DOCTRINE_PARSE_MASTER_KEY" value="7TH7Pc7p8m2zw4P7turJp3pJ467iVMzVkkTU9RX66" />
+        <const name="DOCTRINE_PARSE_REST_KEY" value="8ecsH4q325EGuQu26FTbMAd83rSyQvyYV9g937Hc8" />
+        <const name="DOCTRINE_PARSE_MOUNT_PATH" value="parse" />
+    </php>
+</phpunit>
