@@ -4,6 +4,7 @@ namespace Redking\ParseBundle;
 
 use Doctrine\Common\Persistence\ObjectManager as BaseObjectManager;
 use Doctrine\Common\EventManager;
+use Parse\ParseClient;
 use Redking\ParseBundle\Mapping\ClassMetadataFactory;
 use Redking\ParseBundle\Proxy\ProxyFactory;
 
@@ -54,6 +55,21 @@ class ObjectManager implements BaseObjectManager
             $config->getProxyNamespace(),
             $config->getAutoGenerateProxyClasses()
         );
+
+        $this->initParseConnection();
+    }
+
+    /**
+     * Initialize Parse Connection.
+     *
+     * @return void
+     */
+    protected function initParseConnection()
+    {
+        $params = $this->config->getConnectionParameters();
+
+        ParseClient::initialize($params['app_id'], $params['rest_key'], $params['master_key']);
+        ParseClient::setServerURL($params['server_url'], $params['mount_path']);
     }
 
     public function getConfiguration()

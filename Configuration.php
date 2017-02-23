@@ -205,7 +205,7 @@ class Configuration
      */
     public function getLoggerCallable()
     {
-        return isset($this->attributes['loggerCallable']) ? $this->attributes['loggerCallable'] : null;
+        return isset($this->_attributes['loggerCallable']) ? $this->_attributes['loggerCallable'] : null;
     }
 
     /**
@@ -215,7 +215,7 @@ class Configuration
      */
     public function setLoggerCallable($loggerCallable)
     {
-        $this->attributes['loggerCallable'] = $loggerCallable;
+        $this->_attributes['loggerCallable'] = $loggerCallable;
     }
 
     /**
@@ -225,7 +225,7 @@ class Configuration
      */
     public function getProfilerCallable()
     {
-        return isset($this->attributes['profilerCallable']) ? $this->attributes['profilerCallable'] : null;
+        return isset($this->_attributes['profilerCallable']) ? $this->_attributes['profilerCallable'] : null;
     }
 
     /**
@@ -235,7 +235,7 @@ class Configuration
      */
     public function setProfilerCallable($profilerCallable)
     {
-        $this->attributes['profilerCallable'] = $profilerCallable;
+        $this->_attributes['profilerCallable'] = $profilerCallable;
     }
 
     /**
@@ -247,7 +247,7 @@ class Configuration
      */
     public function setObjectListenerResolver(ObjectListenerResolver $resolver)
     {
-        $this->attributes['ObjectListenerResolver'] = $resolver;
+        $this->_attributes['ObjectListenerResolver'] = $resolver;
     }
 
     /**
@@ -259,10 +259,34 @@ class Configuration
      */
     public function getObjectListenerResolver()
     {
-        if (!isset($this->attributes['ObjectListenerResolver'])) {
-            $this->attributes['ObjectListenerResolver'] = new DefaultObjectListenerResolver();
+        if (!isset($this->_attributes['ObjectListenerResolver'])) {
+            $this->_attributes['ObjectListenerResolver'] = new DefaultObjectListenerResolver();
         }
 
-        return $this->attributes['ObjectListenerResolver'];
+        return $this->_attributes['ObjectListenerResolver'];
+    }
+
+    /**
+     * Define Parse connection parameters.
+     *
+     * @param array $parameters
+     */
+    public function setConnectionParameters(array $parameters)
+    {
+        $this->_attributes['connectionParams'] = $parameters;
+    }
+
+    /**
+     * Get Parse connection parameters.
+     *
+     * @return array
+     */
+    public function getConnectionParameters()
+    {
+        if (!isset($this->_attributes['connectionParams'])) {
+            throw new \Exception("Connection parameters must be defined.");
+        }
+
+        return $this->_attributes['connectionParams'];
     }
 }

@@ -25,12 +25,6 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
-        $container->setParameter('redking_parse.app_id', $config['app_id']);
-        $container->setParameter('redking_parse.rest_key', $config['rest_key']);
-        $container->setParameter('redking_parse.master_key', $config['master_key']);
-        $container->setParameter('redking_parse.server_url', $config['server_url']);
-        $container->setParameter('redking_parse.mount_path', $config['mount_path']);
-
         // Define dummy doctrine_parse.connections in order to be compatible with doctrine event listener compiler pass
         $connections = [];
         $connections[] = [
@@ -66,6 +60,7 @@ class RedkingParseExtension extends AbstractDoctrineExtension
             'setAutoGenerateProxyClasses' => $config['auto_generate_proxy_classes'],
             // 'setClassMetadataFactoryName' => $entityManager['class_metadata_factory_name'],
             // 'setDefaultRepositoryClassName' => $entityManager['default_repository_class'],
+            'setConnectionParameters' => $connections[0],
         );
 
         // logging
