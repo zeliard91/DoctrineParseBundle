@@ -2,6 +2,8 @@
 
 namespace Redking\ParseBundle;
 
+use Redking\ParseBundle\Mapping\Annotations as ORM;
+
 /**
  * Common fields for all Doctrine Parse Object
  * The method getId has to be defined in the Object class.
@@ -10,16 +12,19 @@ trait ObjectTrait
 {
     /**
      * @var string
+     * @ORM\Id
      */
     protected $id;
 
     /**
      * @var \DateTime
+     * @ORM\Field(type="DateTime")
      */
     protected $createdAt;
 
     /**
      * @var \DateTime
+     * @ORM\Field(type="DateTime")
      */
     protected $updatedAt;
 

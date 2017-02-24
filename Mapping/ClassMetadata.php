@@ -1217,4 +1217,16 @@ class ClassMetadata implements BaseClassMetadata
 
         $this->associationMappings[$sourceFieldName] = $assocMapping;
     }
+
+    /**
+     * Checks whether a mapped field is inherited from an entity superclass.
+     *
+     * @param string $fieldName
+     *
+     * @return bool TRUE if the field is inherited, FALSE otherwise.
+     */
+    public function isInheritedField($fieldName)
+    {
+        return isset($this->fieldMappings[$fieldName]['inherited']);
+    }
 }

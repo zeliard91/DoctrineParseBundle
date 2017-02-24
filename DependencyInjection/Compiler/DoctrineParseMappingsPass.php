@@ -12,6 +12,7 @@
 
 namespace Redking\ParseBundle\DependencyInjection\Compiler;
 
+use Redking\ParseBundle\Mapping\Driver\AnnotationDriver;
 use Symfony\Bridge\Doctrine\DependencyInjection\CompilerPass\RegisterMappingsPass;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
@@ -136,13 +137,12 @@ class DoctrineParseMappingsPass extends RegisterMappingsPass
      *
      * @return self
      */
-    /*public static function createAnnotationMappingDriver(array $namespaces, array $directories, array $managerParameters = array(), $enabledParameter = false, array $aliasMap = array())
+    public static function createAnnotationMappingDriver(array $namespaces, array $directories, array $managerParameters = array(), $enabledParameter = false, array $aliasMap = array())
     {
-        $reader = new Reference('annotation_reader');
-        $driver = new Definition('Doctrine\ORM\Mapping\Driver\AnnotationDriver', array($reader, $directories));
+        $driver = new Definition(AnnotationDriver::class, [new Reference('annotation_reader'), $directories]);
 
-        return new DoctrineOrmMappingsPass($driver, $namespaces, $managerParameters, $enabledParameter, $aliasMap);
-    }*/
+        return new self($driver, $namespaces, $managerParameters, $enabledParameter, $aliasMap);
+    }
 
     /*
      * @param array    $namespaces        List of namespaces that are handled with static php mapping
