@@ -124,6 +124,11 @@ abstract class AbstractDriverTest extends \PHPUnit_Framework_TestCase
             'isCascadeRefresh' => false,
             'isCascadeMerge' => false,
             'isCascadeDetach' => false,
+            'discriminatorField' => null,
+            'discriminatorMap' => null,
+            'defaultDiscriminatorValue' => null,
+            'sort' => [],
+            'criteria' => [],
             'fetch' => ClassMetadata::FETCH_LAZY,
         ), $classMetadata->fieldMappings['address']);
 
@@ -156,6 +161,11 @@ abstract class AbstractDriverTest extends \PHPUnit_Framework_TestCase
             'isCascadeRefresh' => true,
             'isCascadeMerge' => true,
             'isCascadeDetach' => true,
+            'discriminatorField' => null,
+            'discriminatorMap' => null,
+            'defaultDiscriminatorValue' => null,
+            'sort' => [],
+            'criteria' => [],
             'fetch' => ClassMetadata::FETCH_LAZY,
             'implementation' => ClassMetadata::ASSOCIATION_IMPL_ARRAY
         ), $classMetadata->fieldMappings['phoneNumbers']);

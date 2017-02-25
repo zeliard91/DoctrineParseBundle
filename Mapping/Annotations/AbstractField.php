@@ -9,5 +9,4 @@ abstract class AbstractField extends Annotation
     public $name;
     public $type = 'string';
     public $nullable = false;
-    public $options = array();
 }

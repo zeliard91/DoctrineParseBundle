@@ -2,33 +2,61 @@
 
 namespace TestObjects;
 
+use Redking\ParseBundle\Mapping\Annotations as ORM;
+
+/**
+ * @ORM\ParseObject(collection="user")
+ */
 class User
 {
+    /**
+     * @ORM\Id
+     */
     protected $id;
 
+    /**
+     * @ORM\Field(type="string")
+     */
     protected $username;
 
     protected $password;
 
+    /**
+     * @ORM\Field(type="DateTime")
+     */
     protected $createdAt;
 
+    /**
+     * @ORM\Field(type="DateTime")
+     */
+    protected $updatedAt;
+
+    /**
+     * @ORM\ReferenceOne(targetDocument="TestObjects\Address")
+     */
     protected $address;
 
     protected $profile;
 
-    protected $phonenumbers;
+    /**
+     * @ORM\ReferenceMany(targetDocument="TestObjects\PhoneNumber", cascade="all")
+     */
+    protected $phoneNumbers;
 
     protected $groups;
 
     protected $account;
 
+    /**
+     * @ORM\Field(type="array")
+     */
     protected $tags = array();
 
     protected $test;
 
     public function __construct()
     {
-        $this->phonenumbers = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->phoneNumbers = new \Doctrine\Common\Collections\ArrayCollection();
         $this->groups = array();
         $this->createdAt = new \DateTime();
     }
@@ -98,14 +126,14 @@ class User
         return $this->account;
     }
 
-    public function getPhonenumbers()
+    public function getPhoneNumbers()
     {
-        return $this->phonenumbers;
+        return $this->phoneNumbers;
     }
 
-    public function addPhonenumber(Phonenumber $phonenumber)
+    public function addPhoneNumber(Phonenumber $phonenumber)
     {
-        $this->phonenumbers[] = $phonenumber;
+        $this->phoneNumbers[] = $phonenumber;
     }
 
     public function getGroups()

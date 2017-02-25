@@ -447,6 +447,11 @@ class ClassMetadata implements BaseClassMetadata
      */
     public function mapField(array $mapping)
     {
+        // remove from annotation
+        if (array_key_exists('value', $mapping)) {
+            unset($mapping['value']);
+        }
+
         if (!isset($mapping['fieldName']) && isset($mapping['name'])) {
             $mapping['fieldName'] = $mapping['name'];
         }

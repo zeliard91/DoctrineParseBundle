@@ -268,25 +268,16 @@ class YamlDriver extends FileDriver
             'repositoryMethod' => isset($reference['repositoryMethod']) ? (string) $reference['repositoryMethod'] : null,
             'limit' => isset($reference['limit']) ? (integer) $reference['limit'] : null,
             'skip' => isset($reference['skip']) ? (integer) $reference['skip'] : null,
+            'discriminatorField' => isset($reference['discriminatorField']) ? $this->parseDiscriminatorField($reference['discriminatorField']) : null,
+            'discriminatorMap' => isset($reference['discriminatorMap']) ? $reference['discriminatorMap'] : null,
+            'defaultDiscriminatorValue' => isset($reference['defaultDiscriminatorValue']) ? $reference['defaultDiscriminatorValue'] : null,
+            'sort' => isset($reference['sort']) ? $reference['sort'] : [],
+            'criteria' => isset($reference['criteria']) ? $reference['criteria'] : [],
         );
         if (isset($reference['name'])) {
             $mapping['name'] = $reference['name'];
         }
-        if (isset($reference['discriminatorField'])) {
-            $mapping['discriminatorField'] = $this->parseDiscriminatorField($reference['discriminatorField']);
-        }
-        if (isset($reference['discriminatorMap'])) {
-            $mapping['discriminatorMap'] = $reference['discriminatorMap'];
-        }
-        if (isset($reference['defaultDiscriminatorValue'])) {
-            $mapping['defaultDiscriminatorValue'] = $reference['defaultDiscriminatorValue'];
-        }
-        if (isset($reference['sort'])) {
-            $mapping['sort'] = $reference['sort'];
-        }
-        if (isset($reference['criteria'])) {
-            $mapping['criteria'] = $reference['criteria'];
-        }
+
         if (isset($reference['fetch'])) {
             $mapping['fetch'] = constant('Redking\ParseBundle\Mapping\ClassMetadata::FETCH_' . $reference['fetch']);
         }
