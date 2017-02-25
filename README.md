@@ -1,6 +1,8 @@
 Redking Doctrine Parse Bundle
 =============================
 
+[![Build Status](https://travis-ci.org/zeliard91/DoctrineParseBundle.svg?branch=master)](https://travis-ci.org/zeliard91/DoctrineParseBundle)
+
 This bundle provides object-relational mapping for the [Parse.com API](https://github.com/ParsePlatform/parse-php-sdk).
 
 It has been made by adapting code from Doctrine ORM and MongoDB bundles so that we can use models the same way as in Doctrine.

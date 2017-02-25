@@ -1,0 +1,33 @@
+language: php
+
+services:
+  - docker
+  - mongodb
+
+php:
+  - 5.6
+  - 7.0
+
+env: 
+  - SYMFONY_VERSION=2.8.*
+  - SYMFONY_VERSION=3.0.*
+  - DOCTRINE_PARSE_APP_ID='u88dwhX625F5449gB64zc3AWNs64TUwMFVgRwgYkr'
+  - DOCTRINE_PARSE_MASTER_KEY='7TH7Pc7p8m2zw4P7turJp3pJ467iVMzVkkTU9RX66'
+
+cache:
+    directories:
+        - $HOME/.composer/cache
+
+before_install:
+  - composer self-update
+  - phpenv config-rm xdebug.ini || true
+  - docker run -d -e APP_ID=${DOCTRINE_PARSE_APP_ID} -e MASTER_KEY=${DOCTRINE_PARSE_MASTER_KEY} -p 1337:1337 yongjhih/parse-server
+  - composer require --no-update symfony/symfony:${SYMFONY_VERSION}
+
+install: composer update --prefer-dist
+
+script: vendor/bin/phpunit
+
+notifications:
+  email:
+    - damien.matabon@gmail.com
