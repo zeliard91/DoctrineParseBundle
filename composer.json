@@ -1,9 +1,9 @@
 {
-    "name": "redking/parse-bundle",
+    "name": "redking/doctrine-parse-bundle",
     "description": "Doctrine ORM Bundle for Parse.com API",
     "type": "symfony-bundle",
     "license": "MIT",
-    "homepage": "https://bitbucket.org/redkingteam/redkingparsebundle",
+    "homepage": "https://github.com/zeliard91/DoctrineParseBundle",
     "keywords": [ "parse", "symfony", "orm", "doctrine", "bundle"],
     "authors": [
         {
