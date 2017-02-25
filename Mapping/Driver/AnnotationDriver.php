@@ -176,6 +176,8 @@ class AnnotationDriver extends AbstractAnnotationDriver
         if ($reader === null) {
             $reader = new AnnotationReader();
         }
+        self::registerAnnotationClasses();
+
         return new self($reader, $paths);
     }
 }
