@@ -19,7 +19,7 @@ before_install:
   - composer self-update
   - phpenv config-rm xdebug.ini || true
   - docker run -d -p 27017:27017 --name mongo mongo
-  - docker run -d -e APP_ID=${DOCTRINE_PARSE_APP_ID} -e MASTER_KEY=${DOCTRINE_PARSE_MASTER_KEY} --link mongo --name parse-server -p 1337:1337 yongjhih/parse-server
+  - docker run -d -e APP_ID=${DOCTRINE_PARSE_APP_ID} -e MASTER_KEY=${DOCTRINE_PARSE_MASTER_KEY} -e ALLOW_CLIENT_CLASS_CREATION=1 --link mongo --name parse-server -p 1337:1337 yongjhih/parse-server
   - composer require --no-update symfony/symfony:${SYMFONY_VERSION}
 
 install: composer update --prefer-dist

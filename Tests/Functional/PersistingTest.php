@@ -12,6 +12,7 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
     protected static $modelSets = [
         'Redking\ParseBundle\Tests\Models\Blog\User',
         'Redking\ParseBundle\Tests\Models\Blog\Post',
+        'Redking\ParseBundle\Tests\Models\Blog\Picture',
     ];
 
     public function testSave()
