@@ -330,7 +330,7 @@ class UnitOfWork implements PropertyChangedListener
      *
      * @return bool
      *
-     * @throws ORMInvalidArgumentException
+     * @throws RedkingParseException
      */
     public function removeFromIdentityMap($object)
     {
@@ -339,7 +339,7 @@ class UnitOfWork implements PropertyChangedListener
         $idHash = implode(' ', [$this->objectIdentifiers[$oid]]);
 
         if ($idHash === '') {
-            throw ORMInvalidArgumentException::entityHasNoIdentity($object, 'remove from identity map');
+            throw RedkingParseException::objectHasNoIdentity($object, 'remove from identity map');
         }
 
         $className = $classMetadata->rootEntityName;
@@ -535,7 +535,7 @@ class UnitOfWork implements PropertyChangedListener
      * @return bool TRUE if the registration was successful, FALSE if the identity of
      *              the object in question is already managed.
      *
-     * @throws ORMInvalidArgumentException
+     * @throws RedkingParseException
      */
     public function addToIdentityMap($object)
     {
@@ -543,7 +543,7 @@ class UnitOfWork implements PropertyChangedListener
         $idHash = implode(' ', [$this->objectIdentifiers[spl_object_hash($object)]]);
 
         if ($idHash === '') {
-            throw ORMInvalidArgumentException::entityWithoutIdentity($classMetadata->name, $object);
+            throw RedkingParseException::objectWithoutIdentity($classMetadata->name, $object);
         }
 
         $className = $classMetadata->rootEntityName;
@@ -1433,7 +1433,7 @@ class UnitOfWork implements PropertyChangedListener
      * @param array $assoc
      * @param mixed $value The value of the association.
      *
-     * @throws ORMInvalidArgumentException
+     * @throws RedkingParseException
      * @throws ORMException
      */
     private function computeAssociationChanges($assoc, $value)
@@ -1569,7 +1569,7 @@ class UnitOfWork implements PropertyChangedListener
      * @param object $object  The object to delete.
      * @param array  $visited The map of the already visited entities.
      *
-     * @throws ORMInvalidArgumentException If the instance is a detached object.
+     * @throws RedkingParseException If the instance is a detached object.
      * @throws UnexpectedValueException
      */
     private function doRemove($object, array &$visited)
@@ -1684,7 +1684,7 @@ class UnitOfWork implements PropertyChangedListener
      *
      * @return void
      *
-     * @throws ORMInvalidArgumentException
+     * @throws RedkingParseException
      */
     public function scheduleForUpdate($object)
     {
@@ -1834,14 +1834,14 @@ class UnitOfWork implements PropertyChangedListener
      *
      * @return void
      *
-     * @throws ORMInvalidArgumentException If the passed object is not MANAGED.
+     * @throws RedkingParseException If the passed object is not MANAGED.
      */
     public function recomputeSingleObjectChangeSet(ClassMetadata $class, $object, $fromPostUpdate = false)
     {
         $oid = spl_object_hash($object);
 
         if ( ! isset($this->objectStates[$oid]) || $this->objectStates[$oid] != self::STATE_MANAGED) {
-            throw ORMInvalidArgumentException::entityNotManaged($object);
+            throw RedkingParseException::objectNotManaged($object);
         }
 
         // skip if change tracking is "NOTIFY"

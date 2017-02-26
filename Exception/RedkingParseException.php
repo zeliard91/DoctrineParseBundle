@@ -42,7 +42,7 @@ class RedkingParseException extends \Exception
      * @param object $object
      * @param string $operation
      *
-     * @return ORMInvalidArgumentException
+     * @return RedkingParseException
      */
     static public function objectIsRemoved($object, $operation)
     {
@@ -186,7 +186,7 @@ class RedkingParseException extends \Exception
      * @param array  $assoc
      * @param object $entry
      *
-     * @return ORMInvalidArgumentException
+     * @return RedkingParseException
      */
     static public function newObjectFoundThroughRelationship(array $assoc, $entry)
     {
@@ -200,12 +200,48 @@ class RedkingParseException extends \Exception
      * @param array  $assoc
      * @param object $entry
      *
-     * @return ORMInvalidArgumentException
+     * @return RedkingParseException
      */
     static public function detachedObjectFoundThroughRelationship(array $assoc, $entry)
     {
         return new self("A detached object of type " . $assoc['targetDocument'] . " (" . self::objToStr($entry) . ") "
                         . " was found through the relationship '#" . $assoc['fieldName'] . "' "
                         . "during cascading a persist operation.");
+    }
+
+    /**
+     * @param object $object
+     *
+     * @return RedkingParseException
+     */
+    static public function objectNotManaged($object)
+    {
+        return new self("Object " . self::objToStr($object) . " is not managed. An object is managed if its fetched " .
+                "from the database or registered as new through ObjectManager#persist");
+    }
+
+    /**
+     * @param object $object
+     * @param string $operation
+     *
+     * @return RedkingParseException
+     */
+    static public function objectHasNoIdentity($object, $operation)
+    {
+        return new self("Object has no identity, therefore " . $operation ." cannot be performed. " . self::objToStr($object));
+    }
+
+    /**
+     * @param string $className
+     * @param object $object
+     *
+     * @return RedkingParseException
+     */
+    static public function objectWithoutIdentity($className, $object)
+    {
+        return new self(
+            "The given object of type '" . $className . "' (".self::objToStr($object).") has no identity/no " .
+            "id values set. It cannot be added to the identity map."
+        );
     }
 }
