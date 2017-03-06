@@ -558,25 +558,25 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /**
-     * Gets the state of a document with regard to the current unit of work.
+     * Gets the state of a object with regard to the current unit of work.
      *
-     * @param object   $document
+     * @param object   $object
      * @param int|null $assume   The state to assume if the state is not yet known (not MANAGED or REMOVED).
-     *                           This parameter can be set to improve performance of document state detection
+     *                           This parameter can be set to improve performance of object state detection
      *                           by potentially avoiding a database lookup if the distinction between NEW and DETACHED
      *                           is either known or does not matter for the caller of the method.
      *
-     * @return int The document state.
+     * @return int The object state.
      */
-    public function getObjectState($document, $assume = null)
+    public function getObjectState($object, $assume = null)
     {
-        $oid = spl_object_hash($document);
+        $oid = spl_object_hash($object);
 
         if (isset($this->objectStates[$oid])) {
             return $this->objectStates[$oid];
         }
 
-        $class = $this->om->getClassMetadata(get_class($document));
+        $class = $this->om->getClassMetadata(get_class($object));
 
         if ($assume !== null) {
             return $assume;
@@ -589,19 +589,19 @@ class UnitOfWork implements PropertyChangedListener
          * the state may "change" between NEW/DETACHED without the UoW being
          * aware of it.
          */
-        $id = $class->getIdentifierObject($document);
+        $id = $class->getIdentifierObject($object);
 
         if ($id === null) {
             return self::STATE_NEW;
         }
 
         // Last try before DB lookup: check the identity map.
-        if ($this->tryGetById($id, $class)) {
+        if ($this->tryGetById($id, $class->rootEntityName)) {
             return self::STATE_DETACHED;
         }
 
         // DB lookup
-        if ($this->getDocumentPersister($class->name)->exists($document)) {
+        if ($this->getObjectPersister($class->name)->exists($object)) {
             return self::STATE_DETACHED;
         }
 
@@ -1486,7 +1486,7 @@ class UnitOfWork implements PropertyChangedListener
                 case self::STATE_REMOVED:
                     // Consume the $value as array (it's either an array or an ArrayAccess)
                     // and remove the element from Collection.
-                    if ($assoc['type'] & ClassMetadata::MANY) {
+                    if ($assoc['type'] === ClassMetadata::MANY) {
                         unset($value[$key]);
                     }
                     break;

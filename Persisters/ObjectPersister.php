@@ -339,4 +339,17 @@ class ObjectPersister
             ->getSingleResult()
         ;
     }
+
+    /**
+     * Checks whether the given managed object exists in the database.
+     *
+     * @param object $object
+     * @return boolean TRUE if the object exists in the database, FALSE otherwise.
+     */
+    public function exists($object)
+    {
+        $id = $this->class->getIdentifierObject($object);
+
+        return (boolean) $this->load(['_objectId' => $id]);
+    }
 }

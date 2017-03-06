@@ -26,6 +26,11 @@ class User
      */
     private $pictures;
 
+    /**
+     * @ORM\ReferenceOne(targetDocument="Redking\ParseBundle\Tests\Models\Blog\Picture")
+     */
+    private $avatar;
+
     public function __construct()
     {
         $this->posts = new \Doctrine\Common\Collections\ArrayCollection();
@@ -107,5 +112,27 @@ class User
     public function getPictures()
     {
         return $this->pictures;
+    }
+
+    /**
+     * Set avatar
+     *
+     * @param Redking\ParseBundle\Tests\Models\Blog\Picture $avatar
+     */
+    public function setAvatar(\Redking\ParseBundle\Tests\Models\Blog\Picture $avatar)
+    {
+        $this->avatar = $avatar;
+
+        return $this;
+    }
+
+    /**
+     * Get avatar
+     *
+     * @return Redking\ParseBundle\Tests\Models\Blog\Picture $avatar
+     */
+    public function getAvatar()
+    {
+        return $this->avatar;
     }
 }

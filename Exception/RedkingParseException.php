@@ -221,17 +221,6 @@ class RedkingParseException extends \Exception
     }
 
     /**
-     * @param object $object
-     * @param string $operation
-     *
-     * @return RedkingParseException
-     */
-    static public function objectHasNoIdentity($object, $operation)
-    {
-        return new self("Object has no identity, therefore " . $operation ." cannot be performed. " . self::objToStr($object));
-    }
-
-    /**
      * @param string $className
      * @param object $object
      *
@@ -243,5 +232,16 @@ class RedkingParseException extends \Exception
             "The given object of type '" . $className . "' (".self::objToStr($object).") has no identity/no " .
             "id values set. It cannot be added to the identity map."
         );
+    }
+
+    /**
+     * @param object $object
+     * @param string $operation
+     *
+     * @return ORMInvalidArgumentException
+     */
+    static public function detachedObjectCannot($object, $operation)
+    {
+        return new self("A detached object was found during " . $operation . " " . self::objToStr($object));
     }
 }

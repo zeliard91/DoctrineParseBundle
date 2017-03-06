@@ -1234,4 +1234,16 @@ class ClassMetadata implements BaseClassMetadata
     {
         return isset($this->fieldMappings[$fieldName]['inherited']);
     }
+
+    /**
+     * Extracts the identifier value of an object.
+     *
+     * @param object $object
+     *
+     * @return array
+     */
+    public function getIdentifierObject($object)
+    {
+        return $this->reflFields[$this->identifier]->getValue($object);
+    }
 }
