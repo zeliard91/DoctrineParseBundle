@@ -27,7 +27,7 @@ class ParseAuthenticator implements SimpleFormAuthenticatorInterface
         $data = ['username' => $user->getUsername(), 'password' => $token->getCredentials()];
 
         try {
-            $result = ParseClient::_request('GET', 'login', '', $data);
+            $result = ParseClient::_request('GET', 'login', '', $data, true);
         } catch (ParseException $e) {
             throw new BadCredentialsException('The presented password is invalid.');
         }

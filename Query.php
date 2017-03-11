@@ -190,7 +190,7 @@ class Query
 
         switch ($this->getType()) {
             case self::TYPE_FIND:
-                $results = $this->_parseQuery->find();
+                $results = $this->_parseQuery->find(true);
                 $this->logQuery();
 
                 if ($this->hydrate === false) {
@@ -206,7 +206,7 @@ class Query
                 break;
 
             case self::TYPE_COUNT:
-                $nb_results = $results = $this->_parseQuery->count();
+                $nb_results = $results = $this->_parseQuery->count(true);
                 $this->logQuery();
                 return $nb_results;
 
@@ -295,7 +295,7 @@ class Query
         $this->profileQuery();
         $this->applyQuery();
 
-        $result = $this->_parseQuery->first();
+        $result = $this->_parseQuery->first(true);
         $this->logQuery();
 
         // return null if there is no result
