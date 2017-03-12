@@ -1424,7 +1424,7 @@ class UnitOfWork implements PropertyChangedListener
 
             if (!$class->isIdentifier($name) && $name !== 'createdAt' && $name !== 'updatedAt') {
                 // Force string if needed
-                if ($class->getTypeOfField($name) === Type::STRING) {
+                if ($class->getTypeOfField($name) === Type::STRING && null !== $value) {
                     $actualData->set($class->getNameOfField($name), (string)$value);
                 } else {
                     $actualData->set($class->getNameOfField($name), $value);
