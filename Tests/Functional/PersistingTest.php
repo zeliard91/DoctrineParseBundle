@@ -25,7 +25,7 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
 
         $collection = $this->om->getClassMetaData(User::class)->getCollection();
         $query = new ParseQuery($collection);
-        $raw_user = $query->get($user->getId());
+        $raw_user = $query->get($user->getId(), true);
 
         $this->assertInstanceOf('Parse\ParseObject', $raw_user);
         $this->assertEquals($user->getName(), $raw_user->get('name'));

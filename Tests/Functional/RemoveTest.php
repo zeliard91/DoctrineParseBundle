@@ -33,7 +33,7 @@ class RemoveTest extends \Redking\ParseBundle\Tests\TestCase
 
         $collection = $this->om->getClassMetaData(User::class)->getCollection();
         $query = new ParseQuery($collection);
-        $users = $query->equalTo('objectId', $userId)->find();
+        $users = $query->equalTo('objectId', $userId)->find(true);
 
         $this->assertEmpty($users);
         
