@@ -270,7 +270,7 @@ class Query
             $this->_parseQuery->limit($this->query['limit']);
         } else {
             // Force a high limit : the API has "100" as default
-            $this->_parseQuery->limit(PHP_INT_MAX);
+            $this->_parseQuery->limit(999999999999);
         }
 
         if (isset($this->query['skip']) && null !== $this->query['skip']) {
