@@ -35,6 +35,25 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
         $this->assertCount(0, $user->getPosts());
     }
 
+    public function testSaveWithNumericString()
+    {
+        $user = new User();
+        $user->setName(31);
+
+        $this->om->persist($user);
+        $this->om->flush();
+
+        $collection = $this->om->getClassMetaData(User::class)->getCollection();
+        $query = new ParseQuery($collection);
+        $raw_user = $query->get($user->getId(), true);
+
+        $this->assertInstanceOf('Parse\ParseObject', $raw_user);
+        $this->assertEquals($user->getName(), $raw_user->get('name'));
+
+        $user = $this->om->getRepository(User::class)->findOneByName($raw_user->get('name'));
+        $this->assertInstanceOf(User::class, $user);
+    }
+
     public function testSaveWithoutCascade()
     {
         $user = new User();

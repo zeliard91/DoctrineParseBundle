@@ -15,6 +15,7 @@ use Redking\ParseBundle\Hydrator\ParseObjectHydrator;
 use Redking\ParseBundle\Proxy\Proxy;
 use Redking\ParseBundle\Mapping\ClassMetadata;
 use Redking\ParseBundle\Event\ListenersInvoker;
+use Redking\ParseBundle\Types\Type;
 use Parse\ParseObject;
 
 /**
@@ -1422,7 +1423,12 @@ class UnitOfWork implements PropertyChangedListener
             }
 
             if (!$class->isIdentifier($name) && $name !== 'createdAt' && $name !== 'updatedAt') {
-                $actualData->set($class->getNameOfField($name), $value);
+                // Force string if needed
+                if ($class->getTypeOfField($name) === Type::STRING) {
+                    $actualData->set($class->getNameOfField($name), (string)$value);
+                } else {
+                    $actualData->set($class->getNameOfField($name), $value);
+                }
             }
         }
     }
