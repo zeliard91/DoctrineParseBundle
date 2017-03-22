@@ -416,7 +416,7 @@ class PersistentCollection implements Collection
         $this->changed();
 
         if ($this->association !== null &&
-            $this->association['type'] & ClassMetadata::TO_MANY &&
+            $this->association['type'] & ClassMetadata::MANY &&
             $this->owner &&
             $this->association['orphanRemoval']) {
             $this->om->getUnitOfWork()->scheduleOrphanRemoval($element);

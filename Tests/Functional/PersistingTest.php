@@ -35,6 +35,37 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
         $this->assertCount(0, $user->getPosts());
     }
 
+    public function testSingleFlush()
+    {
+        $user1 = new User();
+        $user1->setName('Foo');
+        $this->om->persist($user1);
+
+        $user2 = new User();
+        $user2->setName('Bar');
+        $this->om->persist($user2);
+
+        $this->om->flush();
+
+        $collection = $this->om->getClassMetaData(User::class)->getCollection();
+        $query = new ParseQuery($collection);
+        $users = $query->find(true);
+        $this->assertCount(2, $users);
+
+        $user1->setName('Foo Edited');
+        $user2->setName('Bar Edited');
+
+        // Only save the changes on one object.
+        $this->om->flush($user1);
+
+        $collection = $this->om->getClassMetaData(User::class)->getCollection();
+        $query = new ParseQuery($collection);
+        $users = $query->find(true);
+        $this->assertCount(2, $users);
+        $this->assertEquals($user1->getName(), $users[0]->get('name'));
+        $this->assertEquals('Bar', $users[1]->get('name'));
+    }
+
     public function testSaveWithNumericString()
     {
         $user = new User();

@@ -1062,6 +1062,50 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /**
+     * Only flush the given object according to a ruleset that keeps the UoW consistent.
+     *
+     * 1. All objects scheduled for insertion and (orphan) removals are processed as well!
+     * 2. Proxies are skipped.
+     * 3. Only if object is properly managed.
+     *
+     * @param  object $object
+     * @throws \InvalidArgumentException If the document is not STATE_MANAGED
+     * @return void
+     */
+    private function computeSingleObjectChangeSet($object)
+    {
+        $state = $this->getObjectState($object);
+
+        if ($state !== self::STATE_MANAGED && $state !== self::STATE_REMOVED) {
+            throw new \InvalidArgumentException("Object has to be managed or scheduled for removal for single computation " . RedkingParseException::objToStr($object));
+        }
+
+        $class = $this->om->getClassMetadata(get_class($object));
+
+        if ($state === self::STATE_MANAGED && $class->isChangeTrackingDeferredImplicit()) {
+            $this->persist($object);
+        }
+
+        // Compute changes for INSERTed and UPSERTed object first. This must always happen even in this case.
+        $this->computeScheduleInsertsChangeSets();
+
+        // Ignore uninitialized proxy objects
+        if ($object instanceof Proxy && ! $object->__isInitialized__) {
+            return;
+        }
+
+        // Only MANAGED objects that are NOT SCHEDULED FOR INSERTION OR DELETION are processed here.
+        $oid = spl_object_hash($object);
+
+        if ( ! isset($this->objectInsertions[$oid])
+            && ! isset($this->objectDeletions[$oid])
+            && isset($this->objectStates[$oid])
+        ) {
+            $this->computeChangeSet($class, $object);
+        }
+    }
+
+    /**
      * Computes all the changes that have been done to entities and collections
      * since the last commit and stores these changes in the _entityChangeSet map
      * temporarily for access by the persisters, until the UoW commit is finished.
