@@ -161,19 +161,32 @@ class Query
     private function logQuery()
     {
         if (null !== $this->_om->getConfiguration()->getLoggerCallable()) {
-            $loggable_query = [];
-            $loggable_query['className'] = $this->_class->getCollection();
-            $query = $this->_parseQuery->_getOptions();
-            if (isset($query['where'])) {
-                foreach ($query['where'] as $key => &$value) {
-                    if ($value instanceof ParseObject) {
-                        $value = $value->getClassName().'.'.$value->getObjectId();
-                    }
+            call_user_func_array($this->_om->getConfiguration()->getLoggerCallable(), array($this->toArray()));
+        }
+    }
+
+    /**
+     * Export Query to array.
+     *
+     * @return array
+     */
+    public function toArray()
+    {
+        $loggable_query = [];
+        $loggable_query['className'] = $this->_class->getCollection();
+        $query = $this->getParseQuery()->_getOptions();
+
+        if (isset($query['where'])) {
+            foreach ($query['where'] as $key => &$value) {
+                if ($value instanceof ParseObject) {
+                    $value = $value->getClassName().'.'.$value->getObjectId();
                 }
             }
-            $loggable_query += $query;
-            call_user_func_array($this->_om->getConfiguration()->getLoggerCallable(), array($loggable_query));
         }
+
+        $loggable_query += $query;
+
+        return $loggable_query;
     }
 
     /**

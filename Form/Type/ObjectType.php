@@ -4,7 +4,7 @@ namespace Redking\ParseBundle\Form\Type;
 
 use Doctrine\Common\Persistence\ObjectManager;
 use Symfony\Bridge\Doctrine\Form\Type\DoctrineType;
-// use Doctrine\ORM\QueryBuilder;
+use Redking\ParseBundle\QueryBuilder;
 use Redking\ParseBundle\Form\ChoiceList\ParseQueryBuilderLoader;
 use Symfony\Component\Form\Exception\UnexpectedTypeException;
 use Symfony\Component\OptionsResolver\Options;
@@ -23,7 +23,7 @@ class ObjectType extends DoctrineType
                 $queryBuilder = call_user_func($queryBuilder, $options['em']->getRepository($options['class']));
 
                 if (null !== $queryBuilder && !$queryBuilder instanceof QueryBuilder) {
-                    throw new UnexpectedTypeException($queryBuilder, 'Doctrine\ORM\QueryBuilder');
+                    throw new UnexpectedTypeException($queryBuilder, 'Redking\ParseBundle\QueryBuilder');
                 }
             }
 
@@ -31,7 +31,7 @@ class ObjectType extends DoctrineType
         };
 
         $resolver->setNormalizer('query_builder', $queryBuilderNormalizer);
-        $resolver->setAllowedTypes('query_builder', array('null', 'callable', 'Doctrine\ORM\QueryBuilder'));
+        $resolver->setAllowedTypes('query_builder', array('null', 'callable', 'Redking\ParseBundle\QueryBuilder'));
     }
 
     /**
@@ -78,8 +78,7 @@ class ObjectType extends DoctrineType
     public function getQueryBuilderPartsForCachingHash($queryBuilder)
     {
         return array(
-                $queryBuilder->getQuery()->getSQL(),
-                $queryBuilder->getParameters()->toArray(),
+                $queryBuilder->getQuery()->toArray(),
         );
     }
 }
