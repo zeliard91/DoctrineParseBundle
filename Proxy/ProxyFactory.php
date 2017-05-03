@@ -26,10 +26,10 @@ use Doctrine\Common\Util\ClassUtils;
 use Doctrine\Common\Proxy\Proxy as BaseProxy;
 use Doctrine\Common\Proxy\ProxyGenerator;
 // use Doctrine\ORM\ORMInvalidArgumentException;
-use Redking\ParseBundle\Persisters\ObjectPersister;
+use Redking\ParseBundle\Exception\ParseObjectNotFoundException;
 use Redking\ParseBundle\ObjectManager;
+use Redking\ParseBundle\Persisters\ObjectPersister;
 
-// use Doctrine\ORM\EntityNotFoundException;
 
 /**
  * This factory is used to create proxy objects for entities at runtime.
@@ -112,7 +112,7 @@ class ProxyFactory extends AbstractProxyFactory
      *
      * @return \Closure
      *
-     * @throws \Doctrine\ORM\EntityNotFoundException
+     * @throws \Redking\ParseBundle\Exception\ParseObjectNotFoundException
      */
     private function createInitializer(ClassMetadata $classMetadata, ObjectPersister $objectPersister)
     {
@@ -144,7 +144,7 @@ class ProxyFactory extends AbstractProxyFactory
                     $proxy->__setCloner($cloner);
                     $proxy->__setInitialized(false);
 
-                    throw new EntityNotFoundException();
+                    throw ParseObjectNotFoundException::objectNotFound(get_class($proxy), $classMetadata->getIdentifierValues($proxy));
                 }
             };
         }
@@ -175,7 +175,7 @@ class ProxyFactory extends AbstractProxyFactory
                 $proxy->__setCloner($cloner);
                 $proxy->__setInitialized(false);
 
-                throw new EntityNotFoundException();
+                throw ParseObjectNotFoundException::objectNotFound(get_class($proxy), $classMetadata->getIdentifierValues($proxy));
             }
         };
     }
@@ -188,7 +188,7 @@ class ProxyFactory extends AbstractProxyFactory
      *
      * @return \Closure
      *
-     * @throws \Doctrine\ORM\EntityNotFoundException
+     * @throws \Redking\ParseBundle\Exception\ParseObjectNotFoundException
      */
     private function createCloner(ClassMetadata $classMetadata, ObjectPersister $objectPersister)
     {
@@ -203,7 +203,7 @@ class ProxyFactory extends AbstractProxyFactory
             $original = $objectPersister->load($classMetadata->getIdentifierValues($proxy));
 
             if (null === $original) {
-                throw new EntityNotFoundException();
+                throw ParseObjectNotFoundException::objectNotFound(get_class($proxy), $classMetadata->getIdentifierValues($proxy));
             }
 
             foreach ($class->getReflectionClass()->getProperties() as $reflectionProperty) {
