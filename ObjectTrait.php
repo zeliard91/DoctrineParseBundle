@@ -18,13 +18,13 @@ trait ObjectTrait
 
     /**
      * @var \DateTime
-     * @ORM\Field(type="DateTime")
+     * @ORM\Field(type="date")
      */
     protected $createdAt;
 
     /**
      * @var \DateTime
-     * @ORM\Field(type="DateTime")
+     * @ORM\Field(type="date")
      */
     protected $updatedAt;
 

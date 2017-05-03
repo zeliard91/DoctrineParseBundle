@@ -17,6 +17,11 @@ class User
     private $name;
 
     /**
+     * @ORM\Field(type="date")
+     */
+    private $birthday;
+
+    /**
      * @ORM\ReferenceMany(targetDocument="Redking\ParseBundle\Tests\Models\Blog\Post", mappedBy="user")
      */
     private $posts;
@@ -134,5 +139,27 @@ class User
     public function getAvatar()
     {
         return $this->avatar;
+    }
+
+    /**
+     * Set birthday.
+     *
+     * @param \DateTime $birthday
+     */
+    public function setBirthday(\DateTime $birthday)
+    {
+        $this->birthday = $birthday;
+
+        return $this;
+    }
+
+    /**
+     * Get birthday.
+     *
+     * @return \DateTime|null
+     */
+    public function getBirthday()
+    {
+        return $this->birthday;
     }
 }

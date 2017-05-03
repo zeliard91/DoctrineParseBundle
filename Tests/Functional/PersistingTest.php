@@ -19,6 +19,8 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
     {
         $user = new User();
         $user->setName('Foo');
+        $birthday = new \DateTime('1981-02-04T11:00:59.012000Z');
+        $user->setBirthday($birthday);
 
         $this->om->persist($user);
         $this->om->flush();
@@ -29,6 +31,7 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
 
         $this->assertInstanceOf('Parse\ParseObject', $raw_user);
         $this->assertEquals($user->getName(), $raw_user->get('name'));
+        $this->assertEquals($user->getBirthday(), $raw_user->get('birthday'));
 
         $user = $this->om->getRepository(User::class)->findOneByName('Foo');
         $this->assertInstanceOf(User::class, $user);
@@ -60,7 +63,7 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
 
         $collection = $this->om->getClassMetaData(User::class)->getCollection();
         $query = new ParseQuery($collection);
-        $users = $query->find(true);
+        $users = $query->descending('name')->find(true);
         $this->assertCount(2, $users);
         $this->assertEquals($user1->getName(), $users[0]->get('name'));
         $this->assertEquals('Bar', $users[1]->get('name'));

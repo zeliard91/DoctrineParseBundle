@@ -183,8 +183,6 @@ abstract class Type
         if (is_object($variable)) {
             if ($variable instanceof \DateTime) {
                 return self::getType('date');
-            } elseif ($variable instanceof \MongoId) {
-                return self::getType('id');
             }
         } else {
             $type = gettype($variable);

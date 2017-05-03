@@ -152,7 +152,7 @@ The `field` type can be one the following :
 - integer
 - float
 - boolean
-- DateTime
+- date
 - array (simple collection)
 - hash (key-value array)
 - geopoint ([Parse\ParseGeoPoint](https://github.com/ParsePlatform/parse-php-sdk/blob/master/src/Parse/ParseGeoPoint.php))
