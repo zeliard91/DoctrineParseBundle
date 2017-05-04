@@ -87,6 +87,11 @@ class ClassMetadata implements BaseClassMetadata
     const FETCH_EXTRA_LAZY = 4;
 
     /**
+     * READ-ONLY: The name of the Parse "table" the object is mapped to.
+     */
+    public $collection;
+
+    /**
      * READ-ONLY: The name of the entity class.
      *
      * @var string
