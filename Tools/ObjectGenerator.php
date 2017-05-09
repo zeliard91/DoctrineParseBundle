@@ -819,12 +819,6 @@ public function <methodName>()
 
             $type = null;
             switch ($fieldMapping['association']) {
-                case ClassMetadata::EMBED_ONE:
-                    $type = 'EmbedOne';
-                    break;
-                case ClassMetadata::EMBED_MANY:
-                    $type = 'EmbedMany';
-                    break;
                 case ClassMetadata::REFERENCE_ONE:
                     $type = 'ReferenceOne';
                     break;

@@ -203,4 +203,15 @@ class Expr
     {
         return $this->operator('matchesQuery', $query->getParseQuery());
     }
+
+    /**
+     * Search on an attribute with a regular expression
+     * 
+     * @param  string $value Regular expression
+     * @return $this
+     */
+    public function regex($value)
+    {
+        return $this->operator('contains', $value);
+    }
 }

@@ -387,4 +387,16 @@ class QueryBuilder
         $this->expr->matchQuery($query);
         return $this;
     }
+
+    /**
+     * Search on an attribute with a regular expression
+     * 
+     * @param  string  $value
+     * @return $this
+     */
+    public function regex($value)
+    {
+        $this->expr->regex($value);
+        return $this;
+    }
 }
