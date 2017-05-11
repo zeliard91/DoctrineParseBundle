@@ -20,7 +20,7 @@ class DoctrineParseObjectGenerator extends Generator
         $this->registry = $registry;
     }
 
-    public function generate(BundleInterface $bundle, $object, $format, array $fields, $withRepository, $updateExisting = false)
+    public function generate(BundleInterface $bundle, $object, $format, array $fields, $withRepository, $updateExisting = false, $toStringField = null)
     {
         // configure the bundle (needed if the bundle does not contain any Entities yet)
         $config = $this->registry->getManager(null)->getConfiguration();
@@ -59,9 +59,9 @@ class DoctrineParseObjectGenerator extends Generator
         if ('annotation' === $format) {
             $objectGenerator->setGenerateAnnotations(true);
             if (!$generateCodeUpdate) {
-                $objectCode = $objectGenerator->generateObjectClass($class);
+                $objectCode = $objectGenerator->generateObjectClass($class, $toStringField);
             } else {
-                $objectCode = $objectGenerator->generateUpdatedObjectClass($class, $objectPath);
+                $objectCode = $objectGenerator->generateUpdatedObjectClass($class, $objectPath, $toStringField);
             }
             $mappingPath = $mappingCode = false;
         } else {
@@ -76,9 +76,9 @@ class DoctrineParseObjectGenerator extends Generator
             $mappingCode = $exporter->exportClassMetadata($class);
             $objectGenerator->setGenerateAnnotations(false);
             if (!$generateCodeUpdate) {
-                $objectCode = $objectGenerator->generateObjectClass($class);
+                $objectCode = $objectGenerator->generateObjectClass($class, $toStringField);
             } else {
-                $objectCode = $objectGenerator->generateUpdatedObjectClass($class, $objectPath);
+                $objectCode = $objectGenerator->generateUpdatedObjectClass($class, $objectPath, $toStringField);
             }
         }
 

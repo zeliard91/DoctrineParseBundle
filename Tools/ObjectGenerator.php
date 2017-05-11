@@ -62,6 +62,9 @@ class ObjectGenerator
     /** Whether or not to re-generate document class if it exists already */
     private $regenerateObjectIfExists = false;
 
+    /** Attribute used in the __toString method */
+    private $toStringField = null;
+
     protected $typeAlias = array(
         Type::DATE => '\DateTime',
         Type::GEOPOINT => '\Parse\ParseGeoPoint',
@@ -143,6 +146,13 @@ public function <methodName>()
 }
 ';
 
+    private static $toStringMethodTemplate =
+    'public function __toString()
+{
+<spaces>return $this-><fieldName>."";
+}
+';
+
     /**
      * Generate and write document classes for the given array of ClassMetadata instances.
      *
@@ -204,8 +214,12 @@ public function <methodName>()
      *
      * @return string $code
      */
-    public function generateObjectClass(ClassMetadata $metadata)
+    public function generateObjectClass(ClassMetadata $metadata, $toStringField = null)
     {
+        if ($metadata->hasField($toStringField)) {
+            $this->toStringField = $toStringField;
+        }
+
         $placeHolders = array(
             '<namespace>',
             '<imports>',
@@ -235,8 +249,12 @@ public function <methodName>()
      *
      * @return string $code;
      */
-    public function generateUpdatedObjectClass(ClassMetadata $metadata, $path)
+    public function generateUpdatedObjectClass(ClassMetadata $metadata, $path, $toStringField = null)
     {
+        if ($metadata->hasField($toStringField)) {
+            $this->toStringField = $toStringField;
+        }
+
         $currentCode = file_get_contents($path);
 
         $body = $this->generateObjectBody($metadata);
@@ -368,6 +386,10 @@ public function <methodName>()
         }
 
         $code[] = $this->generateObjectConstructor($metadata);
+
+        if (null !== $this->toStringField) {
+            $code[] = $this->generateToStringMethod($metadata);
+        }
 
         if ($stubMethods) {
             $code[] = $stubMethods;
@@ -783,6 +805,25 @@ public function <methodName>()
             array_keys($replacements),
             array_values($replacements),
             self::$$templateVar
+        );
+
+        return $this->prefixCodeWithSpaces($method);
+    }
+
+    private function generateToStringMethod(ClassMetadata $metadata)
+    {
+        if ($this->hasMethod('__toString', $metadata)) {
+            return;
+        }
+
+        $replacements = array(
+            '<fieldName>' => $this->toStringField,
+        );
+
+        $method = str_replace(
+            array_keys($replacements),
+            array_values($replacements),
+            self::$toStringMethodTemplate
         );
 
         return $this->prefixCodeWithSpaces($method);
