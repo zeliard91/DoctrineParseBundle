@@ -44,7 +44,7 @@ class ObjectRepository implements BaseObjectRepository, Selectable
      * @param string $method
      * @param array  $arguments
      *
-     * @throws MongoDBException
+     * @throws RedkingParseException
      * @throws \BadMethodCallException If the method called is an invalid find* method
      *                                 or no find* method at all and therefore an invalid
      *                                 method call.
@@ -67,7 +67,7 @@ class ObjectRepository implements BaseObjectRepository, Selectable
         }
 
         if (!isset($arguments[0])) {
-            throw MongoDBException::findByRequiresParameter($method.$by);
+            throw RedkingParseException::findByRequiresParameter($method.$by);
         }
 
         $fieldName = lcfirst(\Doctrine\Common\Util\Inflector::classify($by));
