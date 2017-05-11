@@ -284,11 +284,12 @@ class ObjectPersister
      */
     public function createReferenceManyInverseSideQuery(PersistentCollection $collection)
     {
+        $mapping = $collection->getMapping();
+
         $sort = (isset($mapping['sort'])) ? $mapping['sort'] : null;
         $limit = (isset($mapping['limit'])) ? $mapping['limit'] : null;
         $skip = (isset($mapping['skip'])) ? $mapping['skip'] : null;
 
-        $mapping = $collection->getMapping();
         $owner = $collection->getOwner();
         $ownerClass = $this->om->getClassMetadata(get_class($owner));
         $targetClass = $collection->getTypeClass();
