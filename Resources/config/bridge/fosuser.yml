@@ -1,12 +1,13 @@
 parameters:
     redking_parse.fos_user.manager.class: 'Redking\ParseBundle\Bridge\FOSUser\UserManager'
+    redking_parse.fos_user.base_manager.class: 'Redking\ParseBundle\Bridge\FOSUser\BaseUserManager'
     redking_parse.fos_user.mailer.class: 'Redking\ParseBundle\Bridge\FOSUser\Mailer'
 
 services:
 
 ### FOSUSER PARSE BRIDGE USER MANAGER ###
-    redking_parse.fos_user.manager:
-        class: "%redking_parse.fos_user.manager.class%"
+    redking_parse.fos_user.base_manager:
+        class: "%redking_parse.fos_user.base_manager.class%"
         public: false
         arguments: 
             - "@security.encoder_factory"
@@ -14,6 +15,9 @@ services:
             - "@fos_user.util.email_canonicalizer"
             - "@redking_parse.manager"
             - "%fos_user.model.user.class%"
+    redking_parse.fos_user.manager:
+        class: "%redking_parse.fos_user.manager.class%"
+        parent: redking_parse.fos_user.base_manager
 
 ### FOSUSER PARSE BRIDGE MAILER ###
     redking_parse.fos_user.mailer: 
