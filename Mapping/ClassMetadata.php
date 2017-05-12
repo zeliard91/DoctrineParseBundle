@@ -510,10 +510,6 @@ class ClassMetadata implements BaseClassMetadata
         if (isset($mapping['type']) && $mapping['type'] === 'file') {
             $mapping['file'] = true;
         }
-        if (isset($mapping['file']) && $mapping['file'] === true) {
-            $this->file = $mapping['fieldName'];
-            $mapping['name'] = 'file';
-        }
         if (isset($mapping['distance']) && $mapping['distance'] === true) {
             $this->distance = $mapping['fieldName'];
         }
