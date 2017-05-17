@@ -60,7 +60,7 @@ class ParseFileType extends FileType
                     $invoke = $listenersInvoker->getSubscribedSystems($class, Events::preUpload);
 
                     if ($invoke !== ListenersInvoker::INVOKE_NONE) {
-                        $listenersInvoker->invoke($class, Events::preUpload, $parent, new PreUploadEventArgs($parent, $this->om, $object, $form->getConfig()->getName()), $invoke);
+                        $listenersInvoker->invoke($class, Events::preUpload, $parent, new PreUploadEventArgs($parent, $this->om, $object, $form->getConfig()->getName(), $parseFile), $invoke);
                     }
                 } // reset ParseFile if widget has not been filled
                 elseif (null === $object && $form->getData() instanceof ParseFile) {
