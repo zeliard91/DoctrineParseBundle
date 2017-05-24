@@ -3,6 +3,7 @@
 namespace Redking\ParseBundle\Tests\Functional;
 
 use Parse\ParseQuery;
+use Parse\ParseGeoPoint;
 use Redking\ParseBundle\Tests\Models\Blog\User;
 use Redking\ParseBundle\Tests\Models\Blog\Post;
 use Redking\ParseBundle\Tests\Models\Blog\Picture;
@@ -128,6 +129,33 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
         $user = $this->om->getRepository(User::class)->findOneByName('Foo');
         $this->assertInstanceOf(User::class, $user);
         $this->assertCount(2, $user->getPictures());
+
+    }
+
+    public function testSaveGeoPoint()
+    {
+        $picture = new Picture();
+        $picture->setFile('Test');
+        $picture->setLocation(new ParseGeoPoint(40.123456789, -50));
+
+        $this->om->persist($picture);
+        $this->om->flush();
+        $this->om->clear();
+
+        $picture = $this->om->getRepository(Picture::class)->findOneByFile('Test');
+        $this->assertInstanceOf(Picture::class, $picture);
+        $this->assertInstanceOf(ParseGeoPoint::class, $picture->getLocation());
+        $this->assertEquals(40.123456789, $picture->getLocation()->getLatitude());
+        $this->assertEquals(-50, $picture->getLocation()->getLongitude());
+
+        // Test update
+        $picture->getLocation()->setLatitude(66.6666);
+        $this->om->persist($picture);
+        $this->om->flush();
+        $this->om->clear();
+
+        $picture = $this->om->getRepository(Picture::class)->findOneByFile('Test');
+        $this->assertEquals(66.6666, $picture->getLocation()->getLatitude());
 
     }
 

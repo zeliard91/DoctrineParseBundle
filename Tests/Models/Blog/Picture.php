@@ -21,6 +21,11 @@ class Picture
      */
     private $user;
 
+    /**
+     * @ORM\Field(type="geopoint")
+     */
+    private $location;
+
     public function getId()
     {
         return $this->id;
@@ -34,6 +39,18 @@ class Picture
     public function setFile($file)
     {
         $this->file = $file;
+
+        return $this;
+    }
+
+    public function getLocation()
+    {
+        return $this->location;
+    }
+
+    public function setLocation($location)
+    {
+        $this->location = $location;
 
         return $this;
     }

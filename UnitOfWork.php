@@ -16,6 +16,8 @@ use Redking\ParseBundle\Proxy\Proxy;
 use Redking\ParseBundle\Mapping\ClassMetadata;
 use Redking\ParseBundle\Event\ListenersInvoker;
 use Redking\ParseBundle\Types\Type;
+use Parse\ParseFile;
+use Parse\ParseGeoPoint;
 use Parse\ParseObject;
 
 /**
@@ -1463,6 +1465,13 @@ class UnitOfWork implements PropertyChangedListener
                 if (is_array($value)) {
                     $actualData->setAssociativeArray($class->getNameOfField($name), $value);
                 }
+                continue;
+            }
+
+            if ($value instanceof ParseGeoPoint
+                && $actualData->get($class->getNameOfField($name)) instanceof ParseGeoPoint
+                && $value->_encode() === $actualData->get($class->getNameOfField($name))->_encode()
+            ) {
                 continue;
             }
 

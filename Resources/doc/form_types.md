@@ -60,3 +60,19 @@ If you want to hard code the file name, you can use the `force_name` option :
             ;
     }
 ```
+
+
+## GeoPointType
+
+This form type handles `geopoint` field types by providing 2 text inputs for latitude and longitude
+
+```php
+    use Redking\ParseBundle\Form\Type\GeoPointType;
+
+    public function buildForm(FormBuilderInterface $builder, array $options)
+    {
+        $builder
+            ->add('location', GeoPointType::class)
+            ;
+    }
+```

@@ -5,6 +5,7 @@ namespace Redking\ParseBundle\Hydrator;
 use Redking\ParseBundle\ObjectManager;
 use Redking\ParseBundle\Mapping\ClassMetadata;
 use Redking\ParseBundle\PersistentCollection;
+use Redking\ParseBundle\Types\Type;
 use Doctrine\Common\Collections\ArrayCollection;
 
 class ParseObjectHydrator
@@ -41,7 +42,11 @@ class ParseObjectHydrator
         $this->class->reflFields['updatedAt']->setValue($object, $data->getUpdatedAt());
         foreach ($this->class->fieldMappings as $key => $mapping) {
             if ($data->has($mapping['name']) && !isset($mapping['reference'])) {
-                $this->class->reflFields[$key]->setValue($object, $data->get($mapping['name']));
+                if ($mapping['type'] === Type::GEOPOINT && null !== $data->get($mapping['name'])) {
+                    $this->class->reflFields[$key]->setValue($object, clone $data->get($mapping['name']));
+                } else {
+                    $this->class->reflFields[$key]->setValue($object, $data->get($mapping['name']));
+                }
             }
         }
 
