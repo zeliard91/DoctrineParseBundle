@@ -1479,7 +1479,16 @@ class UnitOfWork implements PropertyChangedListener
                 // Force string if needed
                 if ($class->getTypeOfField($name) === Type::STRING && null !== $value) {
                     $actualData->set($class->getNameOfField($name), (string)$value);
-                } else {
+                }
+                // Force integer if needed
+                elseif ($class->getTypeOfField($name) === Type::INTEGER && null !== $value) {
+                    $actualData->set($class->getNameOfField($name), (int)$value);
+                }
+                // Force float if needed
+                elseif ($class->getTypeOfField($name) === Type::FLOAT && null !== $value) {
+                    $actualData->set($class->getNameOfField($name), (float)$value);
+                }
+                else {
                     $actualData->set($class->getNameOfField($name), $value);
                 }
             }
