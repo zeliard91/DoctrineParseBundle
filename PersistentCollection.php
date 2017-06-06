@@ -391,7 +391,7 @@ class PersistentCollection implements Collection
      */
     public function removeElement($element)
     {
-        if ( ! $this->initialized && $this->association['fetch'] === Mapping\ClassMetadataInfo::FETCH_EXTRA_LAZY) {
+        if ( ! $this->initialized && $this->association['fetch'] === ClassMetadata::FETCH_EXTRA_LAZY) {
             if ($this->coll->contains($element)) {
                 return $this->coll->removeElement($element);
             }
@@ -440,7 +440,7 @@ class PersistentCollection implements Collection
      */
     public function contains($element)
     {
-        if ( ! $this->initialized && $this->association['fetch'] === Mapping\ClassMetadataInfo::FETCH_EXTRA_LAZY) {
+        if ( ! $this->initialized && $this->association['fetch'] === ClassMetadata::FETCH_EXTRA_LAZY) {
             $persister = $this->om->getUnitOfWork()->getCollectionPersister($this->association);
 
             return $this->coll->contains($element) || $persister->contains($this, $element);
@@ -477,8 +477,8 @@ class PersistentCollection implements Collection
     public function get($key)
     {
         if ( ! $this->initialized
-            && $this->association['type'] === Mapping\ClassMetadataInfo::ONE_TO_MANY
-            && $this->association['fetch'] === Mapping\ClassMetadataInfo::FETCH_EXTRA_LAZY
+            && $this->association['type'] === ClassMetadata::ONE_TO_MANY
+            && $this->association['fetch'] === ClassMetadata::FETCH_EXTRA_LAZY
             && isset($this->association['indexBy'])
         ) {
             if (!$this->typeClass->isIdentifierComposite && $this->typeClass->isIdentifier($this->association['indexBy'])) {
@@ -765,7 +765,7 @@ class PersistentCollection implements Collection
      */
     public function slice($offset, $length = null)
     {
-        if ( ! $this->initialized && ! $this->isDirty && $this->association['fetch'] === Mapping\ClassMetadataInfo::FETCH_EXTRA_LAZY) {
+        if ( ! $this->initialized && ! $this->isDirty && $this->association['fetch'] === ClassMetadata::FETCH_EXTRA_LAZY) {
             $persister = $this->om->getUnitOfWork()->getCollectionPersister($this->association);
 
             return $persister->slice($this, $offset, $length);
