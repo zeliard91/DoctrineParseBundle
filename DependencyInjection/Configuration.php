@@ -2,6 +2,7 @@
 
 namespace Redking\ParseBundle\DependencyInjection;
 
+use Symfony\Bridge\Doctrine\DataFixtures\ContainerAwareLoader;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
@@ -44,6 +45,13 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode('hydrator_namespace')->defaultValue('Hydrators')->end()
                 ->scalarNode('hydrator_dir')->defaultValue('%kernel.cache_dir%/doctrine/parse/Hydrators')->end()
                 ->scalarNode('auto_generate_hydrator_classes')->defaultValue(false)->end()
+                ->scalarNode('fixture_loader')
+                    ->defaultValue(ContainerAwareLoader::class)
+                    ->beforeNormalization()
+                        ->ifTrue(function($v) {return !($v == ContainerAwareLoader::class || in_array(ContainerAwareLoader::class, class_parents($v)));})
+                        ->then(function($v) { throw new \LogicException(sprintf("The %s class is not a subclass of the ContainerAwareLoader", $v));})
+                    ->end()
+                ->end()
                 ->arrayNode('mappings')
                     ->useAttributeAsKey('name')
                     ->prototype('array')

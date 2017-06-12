@@ -9,6 +9,7 @@ parameters:
     doctrine.parse.listeners.resolve_target_object.class: 'Redking\ParseBundle\Tools\ResolveTargetObjectListener'
     parse_authenticator.class: 'Redking\ParseBundle\Security\ParseAuthenticator'
     doctrine_parse.validator.unique.class: 'Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntityValidator'
+    doctrine_parse.fixtures_dirs: []
 
 services:
     # Registry

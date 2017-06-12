@@ -94,3 +94,10 @@ security:
             logout:       true
             anonymous:    true
 ```
+
+
+## Doctrine Fixtures
+
+[Doctrine Fixtures](https://github.com/doctrine/data-fixtures) can be loaded with the command `doctrine:parse:fixtures:load`.
+
+The files have to be defined in directories `DataFixtures/Parse`.
