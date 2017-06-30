@@ -124,7 +124,11 @@ class QueryBuilder
     public function setCriteria(array $criteria)
     {
         foreach ($criteria as $key => $value) {
-            $this->field($key)->equals($value);
+            if (is_object($value) && $this->_om->getUnitOfWork()->isInIdentityMap($value)) {
+                $this->field($key)->references($value);
+            } else {
+                $this->field($key)->equals($value);
+            }
         }
 
         return $this;
