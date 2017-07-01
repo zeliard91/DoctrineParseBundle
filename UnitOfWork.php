@@ -1461,7 +1461,7 @@ class UnitOfWork implements PropertyChangedListener
                 continue;
             }
 
-            if ($class->isFieldAnHash($name)) {
+            if ($class->isFieldAnHash($name) || $class->isFieldAnObject($name)) {
                 if (is_array($value)) {
                     $actualData->setAssociativeArray($class->getNameOfField($name), $value);
                 }

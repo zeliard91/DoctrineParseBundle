@@ -159,5 +159,31 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
 
     }
 
+    public function testSavedObjectField()
+    {
+        $picture = new Picture();
+        $picture->setFile('Test');
+        $exif = [
+            'location' => [
+                'city' => 'Marigot',
+                'zipCode' => 97150
+            ],
+            'resolution' => [
+                'width' => 1920,
+                'height' => 1080,
+            ]
+        ];
+        $picture->setExif($exif);
+
+        $this->om->persist($picture);
+        $this->om->flush();
+        $this->om->clear();
+
+        $picture = $this->om->getRepository(Picture::class)->findOneByFile('Test');
+        $this->assertInstanceOf(Picture::class, $picture);
+        $this->assertEquals($exif, $picture->getExif());
+
+    }
+
     
 }

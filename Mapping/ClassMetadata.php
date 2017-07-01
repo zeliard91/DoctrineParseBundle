@@ -1169,6 +1169,14 @@ class ClassMetadata implements BaseClassMetadata
     }
 
     /**
+     * @return boolean
+     */
+    public function isFieldAnObject($fieldName)
+    {
+        return $this->fieldMappings[$fieldName]['type'] == Type::TOBJECT;
+    }
+
+    /**
      * Adds a one-to-one mapping.
      *
      * @param array $mapping The mapping.

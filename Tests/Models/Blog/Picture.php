@@ -26,6 +26,11 @@ class Picture
      */
     private $location;
 
+    /**
+     * @ORM\Field(type="object")
+     */
+    private $exif;
+
     public function getId()
     {
         return $this->id;
@@ -53,5 +58,17 @@ class Picture
         $this->location = $location;
 
         return $this;
+    }
+
+    public function setExif($exif)
+    {
+        $this->exif = $exif;
+
+        return $this;
+    }
+
+    public function getExif()
+    {
+        return $this->exif;
     }
 }
