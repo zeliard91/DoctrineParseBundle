@@ -20,14 +20,14 @@ class ObjectRepository implements BaseObjectRepository, Selectable
     protected $_om;
 
     /**
-     * @var \Doctrine\ODM\MongoDB\Mapping\ClassMetadata
+     * @var \Redking\ParseBundle\Mapping\ClassMetadata
      */
     protected $_class;
 
     /**
-     * Initializes a new <tt>DocumentRepository</tt>.
+     * Initializes a new <tt>ObjectRepository</tt>.
      *
-     * @param DocumentManager       $dm            The DocumentManager to use.
+     * @param ObjectManager         $dm            The ObjectManager to use.
      * @param UnitOfWork            $uow           The UnitOfWork to use.
      * @param Mapping\ClassMetadata $classMetadata The class descriptor.
      */
@@ -101,6 +101,14 @@ class ObjectRepository implements BaseObjectRepository, Selectable
     public function getObjectManager()
     {
         return $this->_om;
+    }
+
+    /**
+     * @return \Redking\ParseBundle\Mapping\ClassMetadata
+     */
+    public function getClassMetadata()
+    {
+        return $this->_class;
     }
 
     /**
