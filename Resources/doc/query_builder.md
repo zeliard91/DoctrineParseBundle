@@ -27,6 +27,8 @@ You can query against a field with the following methods (inspired by Doctrine M
 - gte (greater than or equals)
 - lt (lower than)
 - lte (lower than or equals)
+- contains (string contained in the attribute)
+- regex (Regular expression with the delimiters `\Q` and `\E`)
 
 ## Querying associations
 

@@ -249,8 +249,8 @@ class Query
                     // Try to find target collection name
                     $targetClass = $this->_class->getAssociationTargetClass($matches[1]);
                     $targetCollection = $this->_om->getClassMetadata($targetClass)->getCollection();
-                    foreach ($operations as $operator => &$value) {
-                        $value = (object)['__type' => 'Pointer', 'className' => $targetCollection, 'objectId' => $value];
+                    foreach ($operations as $operator => &$queryArg) {
+                        $queryArg = (object)['__type' => 'Pointer', 'className' => $targetCollection, 'objectId' => $queryArg->getValue()];
                     }
                 }
                 else {
@@ -262,8 +262,8 @@ class Query
                 if (null === $field) {
                     throw RedkingParseException::nonMappedFieldInQuery($this->_class->name, $attribute);
                 }
-                foreach ($operations as $operator => $value) {
-                    $this->_parseQuery->$operator($field, $value);
+                foreach ($operations as $operator => $queryArg) {
+                    $this->_parseQuery->$operator($field, $queryArg->getValue(), $queryArg->getArgument());
                 }
             }
         }

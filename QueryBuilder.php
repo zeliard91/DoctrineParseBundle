@@ -393,14 +393,27 @@ class QueryBuilder
     }
 
     /**
-     * Search on an attribute with a regular expression
+     * Search if a string is in an attribute.
      * 
      * @param  string  $value
      * @return $this
      */
-    public function regex($value)
+    public function contains($value)
     {
-        $this->expr->regex($value);
+        $this->expr->contains($value);
+        return $this;
+    }
+
+    /**
+     * Search on an attribute with a regular expression
+     * 
+     * @param  string  $value
+     * @param  string $modifiers Modifies the search, supports i, m
+     * @return $this
+     */
+    public function regex($value, $modifiers = '')
+    {
+        $this->expr->regex($value, $modifiers);
         return $this;
     }
 }

@@ -28,17 +28,18 @@ class Expr
      *
      * @param string $operator
      * @param mixed  $value
+     * @param mixed  $options
      *
      * @return self
      */
-    public function operator($operator, $value)
+    public function operator($operator, $value, $options = null)
     {
         // $this->wrapEqualityCriteria();
 
         if ($this->currentField) {
-            $this->query[$this->currentField][$operator] = $value;
+            $this->query[$this->currentField][$operator] = new QueryArg($value, $options);
         } else {
-            $this->query[$operator] = $value;
+            $this->query[$operator] = new QueryArg($value, $options);
         }
 
         return $this;
@@ -205,13 +206,25 @@ class Expr
     }
 
     /**
-     * Search on an attribute with a regular expression
+     * Search if a string is in an attribute.
      * 
      * @param  string $value Regular expression
      * @return $this
      */
-    public function regex($value)
+    public function contains($value)
     {
         return $this->operator('contains', $value);
+    }
+
+    /**
+     * Search on an attribute with a regular expression.
+     * 
+     * @param  string $value     Regular expression
+     * @param  string $modifiers Modifies the search, supports i, m
+     * @return $this
+     */
+    public function regex($value, $modifiers = '')
+    {
+        return $this->operator('matches', $value, $modifiers);
     }
 }
