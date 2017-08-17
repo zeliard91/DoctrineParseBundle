@@ -238,6 +238,18 @@ class Query
     protected function applyQuery()
     {
         if (isset($this->query['query']) && is_array($this->query['query'])) {
+            // If there is a "or" statement, do it first to replace current ParseQuery
+            foreach ($this->query['query'] as $attribute => $operations) {
+                if ($attribute === '$or' && is_array($operations)) {
+                    $queries = [];
+                    foreach ($operations as $operation) {
+                        $query = new Query($this->_om, $this->_class, ['type' => $this->type, 'query' => $operation]);
+                        $queries[] = $query->getParseQuery();
+                    }
+                    $this->_parseQuery = $this->_parseQuery->orQueries($queries);
+                }
+            }
+
             foreach ($this->query['query'] as $attribute => $operations) {
                 if ($attribute === '_objectId') {
                     $field = 'objectId';
@@ -252,6 +264,9 @@ class Query
                     foreach ($operations as $operator => &$queryArg) {
                         $queryArg = (object)['__type' => 'Pointer', 'className' => $targetCollection, 'objectId' => $queryArg->getValue()];
                     }
+                }
+                elseif ($attribute === '$or') {
+                    continue;
                 }
                 else {
                     $field = $this->_class->getNameOfField($attribute);

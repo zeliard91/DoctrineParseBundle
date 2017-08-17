@@ -98,3 +98,14 @@ $posts =  $om->getRepository('AcmeFooBundle:Post')
     ->execute()
 ;
 ```
+
+
+## Compound queries
+
+You can use `OR` conditions :
+
+```php
+$qb = $om->getRepository('AcmeFooBundle:User')->createQueryBuilder();
+$qb->addOr($qb->expr()->field('firstname')->equals('Foo'));
+$qb->addOr($qb->expr()->field('enabled')->equals(true));
+```

@@ -58,6 +58,32 @@ class QueryBuilder
     }
 
     /**
+     * Create a new Expr instance that can be used to build partial expressions
+     * for other operator methods.
+     *
+     * @return Expr $expr
+     */
+    public function expr()
+    {
+        return new Expr();
+    }
+
+    /**
+     * Add an $or clause to the current query.
+     *
+     * You can create a new expression using the {@link Builder::expr()} method.
+     *
+     * @see Expr::addOr()
+     * @param array|Expr $expression
+     * @return $this
+     */
+    public function addOr($expression)
+    {
+        $this->expr->addOr($expression);
+        return $this;
+    }
+
+    /**
      * Force cloning of expr.
      *
      */

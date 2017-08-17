@@ -145,4 +145,32 @@ class QueryTest extends \Redking\ParseBundle\Tests\TestCase
         $this->assertCount(1, $results);
     }
 
+    public function testOr()
+    {
+        $birthday1 = new \DateTime('1981-02-04T11:00:59.012000Z');
+        $birthday2 = new \DateTime('2009-04-12T00:00:59.012000Z');
+
+        $user = new User();
+        $user->setName('Foo');
+        $user->setBirthday($birthday1);
+        $this->om->persist($user);
+        $user = new User();
+        $user->setName('Bar');
+        $user->setBirthday($birthday2);
+        $this->om->persist($user);
+
+        $this->om->flush();
+
+        $qb = $this->getUserQB();
+        $qb->addOr($qb->expr()->field('name')->equals('Nawak'));
+        $qb->addOr($qb->expr()->field('birthday')->equals($birthday1));
+
+        $results = $qb
+            ->getQuery()
+            ->execute();
+
+        $this->assertCount(1, $results);
+        $this->assertEquals('Foo', $results[0]->getName());
+    }
+
 }

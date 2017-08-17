@@ -227,4 +227,17 @@ class Expr
     {
         return $this->operator('matches', $value, $modifiers);
     }
+
+    /**
+     * Add an $or clause to the current query.
+     *
+     * @see Builder::addOr()
+     * @param array|Expr $expression
+     * @return $this
+     */
+    public function addOr($expression)
+    {
+        $this->query['$or'][] = $expression instanceof Expr ? $expression->getQuery() : $expression;
+        return $this;
+    }
 }
