@@ -262,7 +262,7 @@ class Query
                     $targetClass = $this->_class->getAssociationTargetClass($matches[1]);
                     $targetCollection = $this->_om->getClassMetadata($targetClass)->getCollection();
                     foreach ($operations as $operator => &$queryArg) {
-                        $queryArg = (object)['__type' => 'Pointer', 'className' => $targetCollection, 'objectId' => $queryArg->getValue()];
+                        $queryArg->setValue((object)['__type' => 'Pointer', 'className' => $targetCollection, 'objectId' => $queryArg->getValue()]);
                     }
                 }
                 elseif ($attribute === '$or') {

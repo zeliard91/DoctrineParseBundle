@@ -173,4 +173,30 @@ class QueryTest extends \Redking\ParseBundle\Tests\TestCase
         $this->assertEquals('Foo', $results[0]->getName());
     }
 
+    public function testReferenceId()
+    {
+        $avatar = new Picture();
+        $avatar->setFile('test.jpg');
+        $this->om->persist($avatar);
+        $this->om->flush();
+
+        $avatarId = $avatar->getId();
+
+        $user = new User();
+        $user->setName('Foo');
+        $user->setAvatar($avatar);
+
+        $this->om->persist($user);
+        $this->om->flush();
+
+        $results = $this->getUserQB()
+            ->field('avatar.id')->equals($avatarId)
+            ->getQuery()
+            ->execute()
+        ;
+
+        $this->assertCount(1, $results);
+        $this->assertEquals('Foo', $results[0]->getName());
+    }
+
 }

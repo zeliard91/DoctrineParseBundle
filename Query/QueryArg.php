@@ -25,6 +25,17 @@ class QueryArg
     }
 
     /**
+     * @param mixed $value
+     * @return self
+     */
+    public function setValue($value)
+    {
+        $this->value = $value;
+
+        return $this;
+    }
+
+    /**
      * @return mixed
      */
     public function getValue()
@@ -38,5 +49,16 @@ class QueryArg
     public function getArgument()
     {
         return $this->argument;
+    }
+
+    /**
+     * @param mixed $argument
+     * @return self
+     */
+    public function setArgument($argument)
+    {
+        $this->argument = $argument;
+
+        return $this;
     }
 }
