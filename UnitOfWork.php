@@ -850,7 +850,6 @@ class UnitOfWork implements PropertyChangedListener
             }
         }
 
-
         // Apply collection changes to originalData and treats them as updates.
         
         // Collection deletions (deletions of complete collections)
@@ -1258,82 +1257,7 @@ class UnitOfWork implements PropertyChangedListener
                 ? $this->objectChangeSets[$oid]
                 : array();
 
-            // foreach ($actualData as $propName => $actualValue) {
-            foreach ($class->fieldMappings as $fieldName) {
-                $propName = $fieldName['name'];
-                
-                $actualValue = $actualData->get($propName);
-
-                $orgValue = $originalData->get($propName);
-
-                // skip if value haven't changed
-                if ($orgValue === $actualValue) {
-                    continue;
-                }
-
-                // if regular field
-                if (!isset($class->associationMappings[$fieldName['fieldName']])) {
-                    if ($isChangeTrackingNotify) {
-                        continue;
-                    }
-
-                    $changeSet[$propName] = array($orgValue, $actualValue);
-
-                    continue;
-                }
-
-                $assoc = $class->associationMappings[$fieldName['fieldName']];
-
-                // Persistent collection was exchanged with the "originally"
-                // created one. This can only mean it was cloned and replaced
-                // on another entity.
-                if ($actualValue instanceof PersistentCollection) {
-                    $owner = $actualValue->getOwner();
-                    if ($owner === null) { // cloned
-                        $actualValue->setOwner($object, $assoc);
-                    } elseif ($owner !== $object) { // no clone, we have to fix
-                        if (!$actualValue->isInitialized()) {
-                            $actualValue->initialize(); // we have to do this otherwise the cols share state
-                        }
-                        $newValue = clone $actualValue;
-                        $newValue->setOwner($object, $assoc);
-                        $class->reflFields[$propName]->setValue($object, $newValue);
-                    }
-                }
-
-                if ($orgValue instanceof PersistentCollection) {
-                    // A PersistentCollection was de-referenced, so delete it.
-                    $coid = spl_object_hash($orgValue);
-
-                    if (isset($this->collectionDeletions[$coid])) {
-                        continue;
-                    }
-
-                    $this->collectionDeletions[$coid] = $orgValue;
-                    $changeSet[$propName] = $orgValue; // Signal changeset, to-many assocs will be ignored.
-
-                    continue;
-                }
-
-                if ($assoc['type'] & ClassMetadata::ONE) {
-                    if ($assoc['isOwningSide']) {
-                        // Skip if both values are the same uninitialized ParseObjects
-                        if ($orgValue instanceof ParseObject &&
-                            $actualValue instanceof ParseObject &&
-                            $orgValue->getClassName() === $actualValue->getClassName() &&
-                            $orgValue->getObjectId() === $actualValue->getObjectId() &&
-                            $orgValue->isDataAvailable() === false &&
-                            $actualValue->isDataAvailable() === false ) {
-                            continue;
-                        }
-                        $changeSet[$propName] = array($orgValue, $actualValue);
-                    }
-
-                    if ($orgValue !== null && $assoc['orphanRemoval']) {
-                        $this->scheduleOrphanRemoval($orgValue);
-                    }
-                }
-            }
+            $changeSet = $this->getChangesetFromParseObjects($class, $actualData, $originalData, $changeSet);
 
             if ($changeSet) {
                 $this->objectChangeSets[$oid] = $changeSet;
@@ -1354,7 +1278,7 @@ class UnitOfWork implements PropertyChangedListener
 
                     $this->originalObjectData[$oid]->set($key, $values[1]);
                 }
-                $actualData = $this->originalObjectData;
+                $actualData = $this->originalObjectData[$oid];
 
                 $this->objectUpdates[$oid] = $object;
             }
@@ -1930,19 +1854,7 @@ class UnitOfWork implements PropertyChangedListener
         $this->applyChangesToParseObject($class, $actualData, $object);
 
         $originalData = $this->originalObjectData[$oid];
-        $changeSet = array();
-
-        foreach ($class->fieldMappings as $fieldName) {
-            $propName = $fieldName['name'];
-            
-            $actualValue = $actualData->get($propName);
-
-            $orgValue = $originalData->get($propName);
-
-            if ($orgValue !== $actualValue) {
-                $changeSet[$propName] = array($orgValue, $actualValue);
-            }
-        }
+        $changeSet = $this->getChangesetFromParseObjects($class, $actualData, $originalData);
 
         if ($changeSet) {
             if (isset($this->objectChangeSets[$oid]) && $fromPostUpdate === false) {
@@ -1975,6 +1887,98 @@ class UnitOfWork implements PropertyChangedListener
                 $this->scheduleExtraUpdate($object, $changeSet);
             }
         }
+    }
+
+    /**
+     * Compute changeset between 2 ParseObjects.
+     *
+     * @param  ClassMetadata $class
+     * @param  ParseObject   $actualData
+     * @param  ParseObject   $originalData
+     * @param  array         $changeSet
+     * @return array
+     */
+    public function getChangesetFromParseObjects(ClassMetadata $class, ParseObject $actualData, ParseObject $originalData, $changeSet = [])
+    {
+        foreach ($class->fieldMappings as $fieldName) {
+            $propName = $fieldName['name'];
+
+            $actualValue = $actualData->get($propName);
+            $orgValue = $originalData->get($propName);
+
+            // skip if value is a number and they haven't changed
+            if (in_array($fieldName['type'], [Type::FLOAT, Type::INTEGER]) && (abs($orgValue-$actualValue) < 0.000000000001)) {
+                continue;
+            }
+
+            // skip if value haven't changed
+            if ($orgValue === $actualValue) {
+                continue;
+            }
+
+            // if regular field
+            if (!isset($class->associationMappings[$fieldName['fieldName']])) {
+                if ($class->isChangeTrackingNotify()) {
+                    continue;
+                }
+
+                $changeSet[$propName] = array($orgValue, $actualValue);
+
+                continue;
+            }
+
+            $assoc = $class->associationMappings[$fieldName['fieldName']];
+
+            // Persistent collection was exchanged with the "originally"
+            // created one. This can only mean it was cloned and replaced
+            // on another entity.
+            if ($actualValue instanceof PersistentCollection) {
+                $owner = $actualValue->getOwner();
+                if ($owner === null) { // cloned
+                    $actualValue->setOwner($object, $assoc);
+                } elseif ($owner !== $object) { // no clone, we have to fix
+                    if (!$actualValue->isInitialized()) {
+                        $actualValue->initialize(); // we have to do this otherwise the cols share state
+                    }
+                    $newValue = clone $actualValue;
+                    $newValue->setOwner($object, $assoc);
+                    $class->reflFields[$propName]->setValue($object, $newValue);
+                }
+            }
+
+            if ($orgValue instanceof PersistentCollection) {
+                // A PersistentCollection was de-referenced, so delete it.
+                $coid = spl_object_hash($orgValue);
+
+                if (isset($this->collectionDeletions[$coid])) {
+                    continue;
+                }
+
+                $this->collectionDeletions[$coid] = $orgValue;
+                $changeSet[$propName] = $orgValue; // Signal changeset, to-many assocs will be ignored.
+
+                continue;
+            }
+
+            if ($assoc['type'] & ClassMetadata::ONE) {
+                if ($assoc['isOwningSide']) {
+                    // Skip if both values are the same uninitialized ParseObjects
+                    if ($orgValue instanceof ParseObject &&
+                        $actualValue instanceof ParseObject &&
+                        $orgValue->getClassName() === $actualValue->getClassName() &&
+                        $orgValue->getObjectId() === $actualValue->getObjectId()) {
+                        continue;
+                    }
+                    $changeSet[$propName] = array($orgValue, $actualValue);
+                }
+
+                if ($orgValue !== null && $assoc['orphanRemoval']) {
+                    $this->scheduleOrphanRemoval($orgValue);
+                }
+            }
+        }
+
+        return $changeSet;
     }
 
     /**
