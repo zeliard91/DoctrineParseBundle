@@ -181,7 +181,7 @@ class ObjectPersister
         $this->profileQuery();
 
         try {
-            $object->save(true);
+            $object->save($this->om->isMasterRequest());
         } catch (\Parse\ParseException $e) {
             throw new WrappedParseException($e);
         }
@@ -227,7 +227,7 @@ class ObjectPersister
             $fields = json_decode($parseObject->_encode());
 
             try {
-                $parseObject->save(true);
+                $parseObject->save($this->om->isMasterRequest());
             } catch (\Parse\ParseException $e) {
                 throw new WrappedParseException($e);
             }
@@ -254,7 +254,7 @@ class ObjectPersister
         $object_id = $object->getObjectId();
 
         try {
-            $object->destroy(true);
+            $object->destroy($this->om->isMasterRequest());
         } catch (\Parse\ParseException $e) {
             throw new WrappedParseException($e);
         }

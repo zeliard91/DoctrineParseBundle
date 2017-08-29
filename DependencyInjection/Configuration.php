@@ -30,6 +30,7 @@ class Configuration implements ConfigurationInterface
                 ->booleanNode('mount_path')->defaultValue('parse')->end()
                 ->scalarNode('auto_mapping')->defaultFalse()->end()
                 ->booleanNode('logging')->defaultValue('%kernel.debug%')->end()
+                ->booleanNode('always_master')->defaultTrue()->end()
                 ->arrayNode('profiler')
                     ->addDefaultsIfNotSet()
                     ->treatTrueLike(array('enabled' => true))

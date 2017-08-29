@@ -289,4 +289,24 @@ class Configuration
 
         return $this->_attributes['connectionParams'];
     }
+
+    /**
+     * Gets the alwaysMaster.
+     *
+     * @return boolean
+     */
+    public function getAlwaysMaster()
+    {
+        return isset($this->_attributes['alwaysMaster']) ? $this->_attributes['alwaysMaster'] : true;
+    }
+
+    /**
+     * Set the alwaysMaster.
+     *
+     * @param boolean $alwaysMaster
+     */
+    public function setAlwaysMaster($alwaysMaster)
+    {
+        $this->_attributes['alwaysMaster'] = $alwaysMaster;
+    }
 }

@@ -267,4 +267,14 @@ class ObjectManager implements BaseObjectManager
     {
         return new QueryBuilder($this, $objectName);
     }
+
+    /**
+     * Tells if a request should be called with master key.
+     *
+     * @return boolean
+     */
+    public function isMasterRequest()
+    {
+        return $this->config->getAlwaysMaster() || !is_null(ParseUser::getCurrentUser());
+    }
 }

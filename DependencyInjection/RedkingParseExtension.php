@@ -61,6 +61,7 @@ class RedkingParseExtension extends AbstractDoctrineExtension
             // 'setClassMetadataFactoryName' => $entityManager['class_metadata_factory_name'],
             // 'setDefaultRepositoryClassName' => $entityManager['default_repository_class'],
             'setConnectionParameters' => $connections[0],
+            'setAlwaysMaster' => $config['always_master'],
         );
 
         // logging

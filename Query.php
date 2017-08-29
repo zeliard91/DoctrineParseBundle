@@ -2,11 +2,12 @@
 
 namespace Redking\ParseBundle;
 
-use Redking\ParseBundle\Mapping\ClassMetadata;
-use Parse\ParseQuery;
-use Parse\ParseObject;
 use Doctrine\Common\Collections\ArrayCollection;
+use Parse\ParseObject;
+use Parse\ParseQuery;
+use Parse\ParseUser;
 use Redking\ParseBundle\Exception\RedkingParseException;
+use Redking\ParseBundle\Mapping\ClassMetadata;
 
 class Query
 {
@@ -203,7 +204,7 @@ class Query
 
         switch ($this->getType()) {
             case self::TYPE_FIND:
-                $results = $this->_parseQuery->find(true);
+                $results = $this->_parseQuery->find($this->_om->isMasterRequest());
                 $this->logQuery();
 
                 if ($this->hydrate === false) {
@@ -219,7 +220,7 @@ class Query
                 break;
 
             case self::TYPE_COUNT:
-                $nb_results = $results = $this->_parseQuery->count(true);
+                $nb_results = $results = $this->_parseQuery->count($this->_om->isMasterRequest());
                 $this->logQuery();
                 return $nb_results;
 
@@ -331,7 +332,7 @@ class Query
         $this->profileQuery();
         $this->applyQuery();
 
-        $result = $this->_parseQuery->first(true);
+        $result = $this->_parseQuery->first($this->_om->isMasterRequest());
         $this->logQuery();
 
         // return null if there is no result
