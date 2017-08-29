@@ -5,6 +5,7 @@ namespace Redking\ParseBundle\Tests;
 use Doctrine\Common\EventManager;
 use Parse\ParseObject;
 use Parse\ParseQuery;
+use Parse\ParseMemoryStorage;
 use Redking\ParseBundle\Configuration;
 use Redking\ParseBundle\Mapping\Driver\AnnotationDriver;
 use Redking\ParseBundle\ObjectManager;
@@ -48,8 +49,8 @@ abstract class TestCase extends \PHPUnit_Framework_TestCase
         $config->setMetadataDriverImpl($this->createMetadataDriverImpl());
 
         $eventManager = new EventManager();
-
-        $om = new ObjectManager($config, $eventManager);
+        $storage = new ParseMemoryStorage();
+        $om = new ObjectManager($config, $eventManager, $storage);
 
         return $om;
     }

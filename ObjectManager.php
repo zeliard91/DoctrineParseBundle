@@ -5,6 +5,8 @@ namespace Redking\ParseBundle;
 use Doctrine\Common\Persistence\ObjectManager as BaseObjectManager;
 use Doctrine\Common\EventManager;
 use Parse\ParseClient;
+use Parse\ParseUser;
+use Parse\ParseStorageInterface;
 use Redking\ParseBundle\Mapping\ClassMetadataFactory;
 use Redking\ParseBundle\Proxy\ProxyFactory;
 
@@ -38,7 +40,7 @@ class ObjectManager implements BaseObjectManager
      */
     private $proxyFactory;
 
-    public function __construct(Configuration $config, EventManager $eventManager)
+    public function __construct(Configuration $config, EventManager $eventManager, ParseStorageInterface $parseStorage)
     {
         $this->metadataFactory = new ClassMetadataFactory();
         $this->metadataFactory->setObjectManager($this);
@@ -56,20 +58,22 @@ class ObjectManager implements BaseObjectManager
             $config->getAutoGenerateProxyClasses()
         );
 
-        $this->initParseConnection();
+        $this->initParseConnection($parseStorage);
     }
 
     /**
      * Initialize Parse Connection.
      *
+     * @param  \Parse\ParseStorageInterface $parseStorage
      * @return void
      */
-    protected function initParseConnection()
+    protected function initParseConnection(ParseStorageInterface $parseStorage)
     {
         $params = $this->config->getConnectionParameters();
 
         ParseClient::initialize($params['app_id'], $params['rest_key'], $params['master_key']);
         ParseClient::setServerURL($params['server_url'], $params['mount_path']);
+        ParseClient::setStorage($parseStorage);
     }
 
     public function getConfiguration()

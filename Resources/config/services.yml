@@ -10,6 +10,7 @@ parameters:
     parse_authenticator.class: 'Redking\ParseBundle\Security\ParseAuthenticator'
     doctrine_parse.validator.unique.class: 'Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntityValidator'
     doctrine_parse.fixtures_dirs: []
+    doctrine_parse.session_storage.class: 'Redking\ParseBundle\Bridge\Parse\Storage\ParseSessionStorage'
 
 services:
     # Registry
@@ -25,6 +26,7 @@ services:
         arguments:
             - "@redking_parse.configuration"
             - "@redking_parse.event_manager"
+            - "@doctrine_parse.session_storage"
 
     redking_parse.event_manager:
         class: Doctrine\Common\EventManager
@@ -89,3 +91,9 @@ services:
             - "@doctrine_parse"
         tags:
             - {name: validator.constraint_validator, alias: doctrine_parse.unique}
+
+    # parse session storage
+    doctrine_parse.session_storage:
+        class: %doctrine_parse.session_storage.class%
+        arguments:
+            - "@session"
