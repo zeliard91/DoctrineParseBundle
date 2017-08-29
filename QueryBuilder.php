@@ -248,6 +248,23 @@ class QueryBuilder
     }
 
     /**
+     * Add constraint for parse relation.
+     *
+     * @param string $field
+     *
+     * @return self
+     */
+    public function relatedTo($key, $value)
+    {
+        if (!isset($this->query['relatedTo'])) {
+            $this->query['relatedTo'] = [];
+        }
+        $this->query['relatedTo'][$key] = $value;
+
+        return $this;
+    }
+
+    /**
      * Set the current field for building the expression.
      *
      * @see Expr::field()

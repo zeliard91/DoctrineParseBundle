@@ -313,6 +313,12 @@ class Query
                 $this->_parseQuery->includeKey($field);
             }
         }
+
+        if (isset($this->query['relatedTo']) && is_array($this->query['relatedTo'])) {
+            foreach ($this->query['relatedTo'] as $key => $value) {
+                $this->_parseQuery->relatedTo($key, $value);
+            }
+        }
     }
 
     /**
