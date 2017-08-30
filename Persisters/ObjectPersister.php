@@ -6,6 +6,7 @@ use Redking\ParseBundle\ObjectManager;
 use Redking\ParseBundle\Mapping\ClassMetadata;
 use Parse\ParseQuery;
 use Parse\ParseObject;
+use Parse\ParseRelation;
 use Redking\ParseBundle\Exception\WrappedParseException;
 use Redking\ParseBundle\PersistentCollection;
 
@@ -352,5 +353,96 @@ class ObjectPersister
         $id = $this->class->getIdentifierObject($object);
 
         return (boolean) $this->load(['_objectId' => $id]);
+    }
+    
+    /**
+     * Load objects in the collection from a ParseRelation
+     *
+     * @param  PersistentCollection $collection
+     */
+    public function loadReferenceManyCollectionFromRelation(PersistentCollection $collection)
+    {
+        $owner = $collection->getOwner();
+        $mapping = $collection->getMapping();
+        $originalData = $this->om->getUnitOfWork()->getOriginalObjectData($owner);
+        $fieldName = $mapping['name'];
+
+        $relation = $originalData->get($fieldName);
+        
+        if (!$mapping['isOwningSide']) {
+            $query = $this->getQueryForInversedRelation($collection);
+        } else {
+            if (!$relation instanceof ParseRelation) {
+                return;
+            }
+
+            $query = $this->getQueryForRelation($collection);
+        }
+
+        $objects = $query->execute()->toArray(false);
+        
+        foreach ($objects as $object) {
+            $collection->add($object);
+        }
+    }
+
+    /**
+     * Build Query to load a ParseRelation
+     * @param  PersistentCollection $collection
+     * @return Query
+     */
+    public function getQueryForRelation(PersistentCollection $collection)
+    {
+        $owner = $collection->getOwner();
+        $mapping = $collection->getMapping();
+        $originalData = $this->om->getUnitOfWork()->getOriginalObjectData($owner);
+
+        $sort = (isset($mapping['sort'])) ? $mapping['sort'] : null;
+        $limit = (isset($mapping['limit'])) ? $mapping['limit'] : null;
+        $skip = (isset($mapping['skip'])) ? $mapping['skip'] : null;
+
+        $qb = $this->om->createQueryBuilder($this->class->name);
+
+        $qb->relatedTo('key', $mapping['fieldName']);
+        $qb->relatedTo('object', $originalData->_toPointer());
+
+        if (null !== $limit) {
+            $qb->limit($limit);
+        }
+        if (null !== $skip) {
+            $qb->skip($skip);
+        }
+        if (null !== $sort) {
+            $qb->sort($sort);
+        }
+
+        return $qb->getQuery();
+    }
+
+    public function getQueryForInversedRelation(PersistentCollection $collection)
+    {
+        $owner = $collection->getOwner();
+        $mapping = $collection->getMapping();
+        $originalData = $this->om->getUnitOfWork()->getOriginalObjectData($owner);
+
+        $sort = (isset($mapping['sort'])) ? $mapping['sort'] : null;
+        $limit = (isset($mapping['limit'])) ? $mapping['limit'] : null;
+        $skip = (isset($mapping['skip'])) ? $mapping['skip'] : null;
+
+        $qb = $this->om->createQueryBuilder($this->class->name);
+
+        $qb->field($mapping['mappedBy'])->equals($originalData);
+
+        if (null !== $limit) {
+            $qb->limit($limit);
+        }
+        if (null !== $skip) {
+            $qb->skip($skip);
+        }
+        if (null !== $sort) {
+            $qb->sort($sort);
+        }
+
+        return $qb->getQuery();
     }
 }

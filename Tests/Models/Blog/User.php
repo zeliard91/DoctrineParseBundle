@@ -36,10 +36,16 @@ class User
      */
     private $avatar;
 
+    /**
+     * @ORM\ReferenceMany(targetDocument="Redking\ParseBundle\Tests\Models\Blog\Address", cascade="all", implementation="relation", inversedBy="users")
+     */
+    private $addresses;
+
     public function __construct()
     {
         $this->posts = new \Doctrine\Common\Collections\ArrayCollection();
         $this->pictures = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->addresses = new \Doctrine\Common\Collections\ArrayCollection();
     }
 
     public function getId()
@@ -161,5 +167,52 @@ class User
     public function getBirthday()
     {
         return $this->birthday;
+    }
+
+    /**
+     * Add address
+     *
+     * @param Redking\ParseBundle\Tests\Models\Blog\Address $address
+     */
+    public function addAddress(\Redking\ParseBundle\Tests\Models\Blog\Address $address)
+    {
+        $this->addresses[] = $address;
+    }
+
+    /**
+     * Remove address
+     *
+     * @param Redking\ParseBundle\Tests\Models\Blog\Address $address
+     */
+    public function removeAddress(\Redking\ParseBundle\Tests\Models\Blog\Address $address)
+    {
+        $this->addresses->removeElement($address);
+    }
+
+    /**
+     * Get addresses
+     *
+     * @return \Doctrine\Common\Collections\Collection $addresses
+     */
+    public function getAddresses()
+    {
+        return $this->addresses;
+    }
+
+    /**
+     * Get address by city.
+     *
+     * @param  string $city
+     * @return Address|null
+     */
+    public function getAddressByCity($city)
+    {
+        foreach ($this->addresses as $address) {
+            if ($address->getCity() === $city) {
+                return $address;
+            }
+        }
+
+        return null;
     }
 }

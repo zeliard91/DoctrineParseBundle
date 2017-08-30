@@ -626,7 +626,7 @@ class UnitOfWork implements PropertyChangedListener
             return $this->originalObjectData[$oid];
         }
 
-        return array();
+        return null;
     }
 
     /**
@@ -1022,8 +1022,12 @@ class UnitOfWork implements PropertyChangedListener
         foreach ($this->extraUpdates as $oid => $update) {
             list ($object, $changeset) = $update;
 
-            $this->objectUpdates[$oid] = $changeset;
-            $this->getObjectPersister(get_class($object))->update($this->originalObjectData[$oid], $changeset);
+            if ($object instanceof Collection) {
+                $this->getCollectionPersister($object->getMapping())->updateAndSave($object);
+            } else {
+                $this->objectUpdates[$oid] = $changeset;
+                $this->getObjectPersister(get_class($object))->update($this->originalObjectData[$oid], $changeset);
+            }
         }
     }
 
@@ -1796,13 +1800,17 @@ class UnitOfWork implements PropertyChangedListener
         $assoc     = $collection->getMapping();
         $persister = $this->getObjectPersister($assoc['targetDocument']);
 
-        if (isset($assoc['repositoryMethod']) && $assoc['repositoryMethod']) {
-            $persister->loadReferenceManyWithRepositoryMethod($collection);
+        if ($assoc['implementation'] === ClassMetadata::ASSOCIATION_IMPL_RELATION) {
+            $persister->loadReferenceManyCollectionFromRelation($collection);
         } else {
-            if ($assoc['isOwningSide']) {
-                $persister->loadReferenceManyCollectionOwningSide($collection);
+            if (isset($assoc['repositoryMethod']) && $assoc['repositoryMethod']) {
+                $persister->loadReferenceManyWithRepositoryMethod($collection);
             } else {
-                $persister->loadReferenceManyCollectionInverseSide($collection);
+                if ($assoc['isOwningSide']) {
+                    $persister->loadReferenceManyCollectionOwningSide($collection);
+                } else {
+                    $persister->loadReferenceManyCollectionInverseSide($collection);
+                }
             }
         }
         $collection->setInitialized(true);
