@@ -275,6 +275,6 @@ class ObjectManager implements BaseObjectManager
      */
     public function isMasterRequest()
     {
-        return $this->config->getAlwaysMaster() || !is_null(ParseUser::getCurrentUser());
+        return $this->config->getAlwaysMaster() || is_null(ParseUser::getCurrentUser());
     }
 }
