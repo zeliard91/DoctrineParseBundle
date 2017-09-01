@@ -1406,7 +1406,7 @@ class UnitOfWork implements PropertyChangedListener
                 continue;
             }
 
-            if (!$class->isIdentifier($name) && $name !== 'createdAt' && $name !== 'updatedAt') {
+            if (!$class->isIdentifier($name) && $name !== 'createdAt') {
                 // Force string if needed
                 if ($class->getTypeOfField($name) === Type::STRING && null !== $value) {
                     $actualData->set($class->getNameOfField($name), (string)$value);
@@ -1918,6 +1918,11 @@ class UnitOfWork implements PropertyChangedListener
 
             // skip if value is a number and they haven't changed
             if (in_array($fieldName['type'], [Type::FLOAT, Type::INTEGER]) && (abs($orgValue-$actualValue) < 0.000000000001)) {
+                continue;
+            }
+
+            // skip if updatedAt has been set but is equals as the original
+            if ($propName === 'updatedAt' && $actualValue === $originalData->getUpdatedAt()) {
                 continue;
             }
 
