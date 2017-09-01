@@ -16,9 +16,12 @@ use Redking\ParseBundle\Proxy\Proxy;
 use Redking\ParseBundle\Mapping\ClassMetadata;
 use Redking\ParseBundle\Event\ListenersInvoker;
 use Redking\ParseBundle\Types\Type;
+use Parse\ParseACL;
 use Parse\ParseFile;
 use Parse\ParseGeoPoint;
 use Parse\ParseObject;
+use Parse\ParseRole;
+use Parse\ParseUser;
 
 /**
  * The UnitOfWork is responsible for tracking changes to objects during an
@@ -1460,9 +1463,8 @@ class UnitOfWork implements PropertyChangedListener
             if (!($entry instanceof $assoc['targetDocument'])) {
                 throw new \Exception(
                     sprintf(
-                        'Found entity of type %s on association %s#%s, but expecting %s',
+                        'Found object of type %s on association %s, but expecting %s',
                         get_class($entry),
-                        $assoc['sourceEntity'],
                         $assoc['fieldName'],
                         $targetClass->name
                     )
@@ -2111,5 +2113,59 @@ class UnitOfWork implements PropertyChangedListener
     {
         return isset($this->objectIdentifiers[spl_object_hash($object)]) ?
             $this->objectIdentifiers[spl_object_hash($object)] : null;
+    }
+
+    /**
+     * Apply ParseACL on the original ParseObject.
+     * Should be called before saving.
+     * 
+     * @param  object $object
+     * @return
+     */
+    public function applyAcl($object)
+    {
+        $parseObject = $this->getOriginalObjectData($object);
+        if (null === $parseObject) {
+            return;
+        }
+
+        if (!method_exists($object, 'getPublicAcl')) {
+            return;
+        }
+
+        $acl = $object->getPublicAcl();
+        $isPublic = false;
+
+        if (null === $acl) {
+            $acl = new ParseACL();
+            $isPublic = true;
+        }
+
+        foreach ($object->getRolesAcl() as $key => $roles) {
+            $role = $this->getOriginalObjectData($roles['role']);
+            if ($role->getClassName() == '_Role') {
+                $isPublic = false;
+                $acl->setRoleReadAccess($role, $roles['write']);
+                $acl->setRoleWriteAccess($role, $roles['write']);
+            }
+        }
+
+        foreach ($object->getUsersAcl() as $key => $users) {
+            $user = $this->getOriginalObjectData($users['role']);
+            if ($user->getClassName() == '_User') {
+                $isPublic = false;
+                $acl->setUserReadAccess($user, $users['write']);
+                $acl->setUserWriteAccess($user, $users['write']);
+            }
+        }
+
+        if ($isPublic) {
+            $acl->setPublicReadAccess(true);
+            if ($parseObject->getClassName() !== '_User' && $parseObject->getClassName() !== '_Role') {
+                $acl->setPublicWriteAccess(true);
+            }
+        }
+
+        $parseObject->setAcl($acl);
     }
 }

@@ -7,6 +7,7 @@ use Redking\ParseBundle\Mapping\ClassMetadata;
 use Parse\ParseQuery;
 use Parse\ParseObject;
 use Parse\ParseRelation;
+use Parse\ParseRole;
 use Redking\ParseBundle\Exception\WrappedParseException;
 use Redking\ParseBundle\PersistentCollection;
 
@@ -168,6 +169,10 @@ class ObjectPersister
      */
     public function instanciateParseObject()
     {
+        if ($this->class->collection === '_Role') {
+            return new ParseRole();
+        }
+
         return new ParseObject($this->class->collection);
     }
 
@@ -219,6 +224,7 @@ class ObjectPersister
         $inserts = array();
 
         foreach ($this->queuedInserts as $oid => $object) {
+            $this->uow->applyAcl($object);
             $parseObject = $this->uow->getOriginalObjectData($object);
             if ($parseObject === null) {
                 throw new \Exception('Unable to get original data for insert');

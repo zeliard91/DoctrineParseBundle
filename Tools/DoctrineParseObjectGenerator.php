@@ -20,7 +20,7 @@ class DoctrineParseObjectGenerator extends Generator
         $this->registry = $registry;
     }
 
-    public function generate(BundleInterface $bundle, $object, $format, array $fields, $withRepository, $updateExisting = false, $toStringField = null)
+    public function generate(BundleInterface $bundle, $object, $format, array $fields, $withRepository, $updateExisting = false, $toStringField = null, $extends = null)
     {
         // configure the bundle (needed if the bundle does not contain any Entities yet)
         $config = $this->registry->getManager(null)->getConfiguration();
@@ -46,6 +46,9 @@ class DoctrineParseObjectGenerator extends Generator
         }
 
         $objectGenerator = $this->getObjectGenerator();
+        if (null !== $extends) {
+            $objectGenerator->setClassToExtend($extends);
+        }
         
         $generateCodeUpdate = false;
         if (file_exists($objectPath)) {

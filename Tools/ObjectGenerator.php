@@ -377,6 +377,8 @@ public function <methodName>()
 
         $code = array();
 
+        $code[] = $this->generateTraits();
+
         if ($fieldMappingProperties) {
             $code[] = $fieldMappingProperties;
         }
@@ -400,6 +402,11 @@ public function <methodName>()
         }
 
         return implode("\n", $code);
+    }
+
+    private function generateTraits()
+    {
+        return $this->spaces.'use \Redking\ParseBundle\ACLTrait;'."\n";
     }
 
     private function generateObjectConstructor(ClassMetadata $metadata)
@@ -893,6 +900,17 @@ public function <methodName>()
                 }
 
                 $typeOptions[] = 'cascade={'.implode(',', $cascades).'}';
+            }
+
+            if (isset($fieldMapping['implementation'])) {
+                $typeOptions[] = 'implementation="'.$fieldMapping['implementation'].'"';
+            }
+
+            if (isset($fieldMapping['inversedBy'])) {
+                $typeOptions[] = 'inversedBy="'.$fieldMapping['inversedBy'].'"';
+            }
+            if (isset($fieldMapping['mappedBy'])) {
+                $typeOptions[] = 'mappedBy="'.$fieldMapping['mappedBy'].'"';
             }
 
             $lines[] = $this->spaces.' * @ORM\\'.$type.'('.implode(', ', $typeOptions).')';

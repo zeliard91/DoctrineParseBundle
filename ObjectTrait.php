@@ -11,6 +11,11 @@ use Redking\ParseBundle\Mapping\Annotations as ORM;
 trait ObjectTrait
 {
     /**
+     * Import ACL Traits
+     */
+    use ACLTrait;
+
+    /**
      * @var string
      * @ORM\Id
      */
