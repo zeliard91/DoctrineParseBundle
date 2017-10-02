@@ -41,11 +41,17 @@ class User
      */
     private $addresses;
 
+    /**
+     * @ORM\ReferenceMany(targetDocument="Redking\ParseBundle\Tests\Models\Blog\Picture")
+     */
+    private $screenshots;
+
     public function __construct()
     {
         $this->posts = new \Doctrine\Common\Collections\ArrayCollection();
         $this->pictures = new \Doctrine\Common\Collections\ArrayCollection();
         $this->addresses = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->screenshots = new \Doctrine\Common\Collections\ArrayCollection();
     }
 
     public function getId()
@@ -214,5 +220,35 @@ class User
         }
 
         return null;
+    }
+
+    /**
+     * Add screenshot
+     *
+     * @param Redking\ParseBundle\Tests\Models\Blog\Picture $screenshot
+     */
+    public function addScreenshot(\Redking\ParseBundle\Tests\Models\Blog\Picture $screenshot)
+    {
+        $this->screenshots[] = $screenshot;
+    }
+
+    /**
+     * Remove screenshot
+     *
+     * @param Redking\ParseBundle\Tests\Models\Blog\Picture $screenshot
+     */
+    public function removeScreenshot(\Redking\ParseBundle\Tests\Models\Blog\Picture $screenshot)
+    {
+        $this->screenshots->removeElement($screenshot);
+    }
+
+    /**
+     * Get screenshots
+     *
+     * @return \Doctrine\Common\Collections\Collection $screenshots
+     */
+    public function getScreenshots()
+    {
+        return $this->screenshots;
     }
 }
