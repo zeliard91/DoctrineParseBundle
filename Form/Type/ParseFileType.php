@@ -2,17 +2,19 @@
 
 namespace Redking\ParseBundle\Form\Type;
 
+use Parse\ParseFile;
+use Redking\ParseBundle\Event\ListenersInvoker;
+use Redking\ParseBundle\Event\PreUploadEventArgs;
+use Redking\ParseBundle\Exception\WrappedParseException;
+use Redking\ParseBundle\Events;
+use Redking\ParseBundle\ObjectManager;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
+use Symfony\Component\Form\FormError;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Redking\ParseBundle\ObjectManager;
-use Redking\ParseBundle\Event\ListenersInvoker;
-use Redking\ParseBundle\Event\PreUploadEventArgs;
-use Redking\ParseBundle\Events;
-use Parse\ParseFile;
 
 class ParseFileType extends FileType
 {
@@ -48,7 +50,13 @@ class ParseFileType extends FileType
                         $fileName = $options['force_name'];
                     } else {
                         $fileName = $object->getClientOriginalName();
+                        $fileName = str_replace(' ', '-', $fileName);
+                        if (preg_match("/^[_a-zA-Z0-9][a-zA-Z0-9@\.\ ~_-]*$/", $fileName) !== 1) {
+                            $form->addError(new FormError('Filename contains invalid characters.'));
+                            return;
+                        }
                     }
+
                     $parseFile = ParseFile::createFromFile($object->getPathname(), $fileName);
                     $event->setData($parseFile);
 
