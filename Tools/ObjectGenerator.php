@@ -149,7 +149,7 @@ public function <methodName>()
     private static $toStringMethodTemplate =
     'public function __toString()
 {
-<spaces>return $this-><fieldName>."";
+<spaces>return <toStringCall>."";
 }
 ';
 
@@ -216,9 +216,7 @@ public function <methodName>()
      */
     public function generateObjectClass(ClassMetadata $metadata, $toStringField = null)
     {
-        if ($metadata->hasField($toStringField)) {
-            $this->toStringField = $toStringField;
-        }
+        $this->toStringField = $toStringField;
 
         $placeHolders = array(
             '<namespace>',
@@ -251,9 +249,7 @@ public function <methodName>()
      */
     public function generateUpdatedObjectClass(ClassMetadata $metadata, $path, $toStringField = null)
     {
-        if ($metadata->hasField($toStringField)) {
-            $this->toStringField = $toStringField;
-        }
+        $this->toStringField = $toStringField;
 
         $currentCode = file_get_contents($path);
 
@@ -374,10 +370,13 @@ public function <methodName>()
         $associationMappingProperties = $this->generateObjectAssociationMappingProperties($metadata);
         $stubMethods = $this->generateObjectStubMethods ? $this->generateObjectStubMethods($metadata) : null;
         $lifecycleCallbackMethods = $this->generateDocumentLifecycleCallbackMethods($metadata);
+        $traits = $this->generateTraits($metadata);
 
         $code = array();
 
-        $code[] = $this->generateTraits();
+        if ($traits) {
+            $code[] = $traits;
+        }
 
         if ($fieldMappingProperties) {
             $code[] = $fieldMappingProperties;
@@ -404,9 +403,16 @@ public function <methodName>()
         return implode("\n", $code);
     }
 
-    private function generateTraits()
+    private function generateTraits(ClassMetadata $metadata)
     {
-        return $this->spaces.'use \Redking\ParseBundle\ACLTrait;'."\n";
+        $existing_traits = array_keys($this->getTraits($metadata));
+
+        $traits = [];
+        if (!in_array('Redking\\ParseBundle\\ObjectTrait', $existing_traits) && !in_array('Redking\\ParseBundle\\ACLTrait', $existing_traits)) {
+            $traits[] = $this->spaces.'use \Redking\ParseBundle\ACLTrait;'."\n";
+        }
+
+        return implode("\n\n", $traits);
     }
 
     private function generateObjectConstructor(ClassMetadata $metadata)
@@ -824,7 +830,7 @@ public function <methodName>()
         }
 
         $replacements = array(
-            '<fieldName>' => $this->toStringField,
+            '<toStringCall>' => $this->toStringField,
         );
 
         $method = str_replace(
