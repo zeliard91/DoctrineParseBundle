@@ -45,7 +45,7 @@ namespace Acme\FooBundle\EventListener;
 
 use Acme\FooBundle\ParseObject\Post;
 use Doctrine\Common\EventSubscriber;
-use Doctrine\Common\Persistence\Event\LifecycleEventArgs;
+use Redking\ParseBundle\Event\LifecycleEventArgs;
 use Redking\ParseBundle\Events;
 
 class ParseObjectEventSubscriber implements EventSubscriber

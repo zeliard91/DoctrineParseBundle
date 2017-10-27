@@ -2,8 +2,11 @@
 
 namespace Redking\ParseBundle\Hydrator;
 
-use Redking\ParseBundle\ObjectManager;
+use Redking\ParseBundle\Event\LifecycleEventArgs;
+use Redking\ParseBundle\Event\PreLoadEventArgs;
+use Redking\ParseBundle\Events;
 use Redking\ParseBundle\Mapping\ClassMetadata;
+use Redking\ParseBundle\ObjectManager;
 use Redking\ParseBundle\PersistentCollection;
 use Redking\ParseBundle\Types\Type;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -24,6 +27,7 @@ class ParseObjectHydrator
     {
         $this->om = $om;
         $this->class = $class;
+        $this->evm = $this->om->getEventManager();
     }
 
     /**
@@ -37,6 +41,16 @@ class ParseObjectHydrator
      */
     public function hydrate($object, \Parse\ParseObject $data, array $hints)
     {
+        $metadata = $this->om->getClassMetadata(get_class($object));
+        // Invoke preLoad lifecycle events and listeners
+        if ( ! empty($metadata->lifecycleCallbacks[Events::preLoad])) {
+            $args = array(&$data);
+            $metadata->invokeLifecycleCallbacks(Events::preLoad, $object, $args);
+        }
+        if ($this->evm->hasListeners(Events::preLoad)) {
+            $this->evm->dispatchEvent(Events::preLoad, new PreLoadEventArgs($object, $this->om, $data));
+        }
+
         $this->class->reflFields['id']->setValue($object, $data->getObjectId());
         $this->class->reflFields['createdAt']->setValue($object, $data->getCreatedAt());
         $this->class->reflFields['updatedAt']->setValue($object, $data->getUpdatedAt());
@@ -100,6 +114,14 @@ class ParseObjectHydrator
 
                     break;
             }
+        }
+
+        // Invoke the postLoad lifecycle callbacks and listeners
+        if ( ! empty($metadata->lifecycleCallbacks[Events::postLoad])) {
+            $metadata->invokeLifecycleCallbacks(Events::postLoad, $object);
+        }
+        if ($this->evm->hasListeners(Events::postLoad)) {
+            $this->evm->dispatchEvent(Events::postLoad, new LifecycleEventArgs($object, $this->om));
         }
     }
 }

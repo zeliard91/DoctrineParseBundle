@@ -2,10 +2,9 @@
 
 namespace Redking\ParseBundle\Event;
 
-use Doctrine\Common\Persistence\Event\LifecycleEventArgs;
 use Doctrine\Common\Persistence\ObjectManager;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Parse\ParseFile;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
  * Lifecycle Events are triggered by the form type ParseFileType when upload is made
