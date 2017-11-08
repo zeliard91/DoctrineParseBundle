@@ -31,7 +31,7 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
         $raw_user = $query->get($user->getId(), true);
 
         $this->assertInstanceOf('Parse\ParseObject', $raw_user);
-        $this->assertEquals($user->getName(), $raw_user->get('name'));
+        $this->assertEquals($user->getName(), $raw_user->get('username'));
         $this->assertEquals($user->getBirthday(), $raw_user->get('birthday'));
 
         $user = $this->om->getRepository(User::class)->findOneByName('Foo');
@@ -64,10 +64,10 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
 
         $collection = $this->om->getClassMetaData(User::class)->getCollection();
         $query = new ParseQuery($collection);
-        $users = $query->descending('name')->find(true);
+        $users = $query->descending('username')->find(true);
         $this->assertCount(2, $users);
-        $this->assertEquals($user1->getName(), $users[0]->get('name'));
-        $this->assertEquals('Bar', $users[1]->get('name'));
+        $this->assertEquals($user1->getName(), $users[0]->get('username'));
+        $this->assertEquals('Bar', $users[1]->get('username'));
     }
 
     public function testSaveWithNumericString()
@@ -83,9 +83,9 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
         $raw_user = $query->get($user->getId(), true);
 
         $this->assertInstanceOf('Parse\ParseObject', $raw_user);
-        $this->assertEquals($user->getName(), $raw_user->get('name'));
+        $this->assertEquals($user->getName(), $raw_user->get('username'));
 
-        $user = $this->om->getRepository(User::class)->findOneByName($raw_user->get('name'));
+        $user = $this->om->getRepository(User::class)->findOneByName($raw_user->get('username'));
         $this->assertInstanceOf(User::class, $user);
     }
 

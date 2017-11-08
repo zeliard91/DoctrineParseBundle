@@ -5,16 +5,21 @@ namespace Redking\ParseBundle\Tests\Models\Blog;
 use Redking\ParseBundle\Mapping\Annotations as ORM;
 
 /**
- * @ORM\ParseObject(collection="blog_user")
+ * @ORM\ParseObject(collection="_User")
  */
 class User
 {
     use \Redking\ParseBundle\ObjectTrait;
 
     /**
-     * @ORM\Field(type="string")
+     * @ORM\Field(type="string", name="username")
      */
     private $name;
+
+    /**
+     * @ORM\Field(type="string")
+     */
+    private $password = 'foo';
 
     /**
      * @ORM\Field(type="date")
