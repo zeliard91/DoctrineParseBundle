@@ -1280,7 +1280,7 @@ class UnitOfWork implements PropertyChangedListener
                         }
                         continue;
                     }
-                    if ($class->isFieldAnHash($class->getFieldNameOfName($key))) {
+                    if ($class->isFieldAnHash($class->getFieldNameOfName($key)) || $class->isFieldAnObject($class->getFieldNameOfName($key))) {
                         if (is_array($values[1])) {
                             $this->originalObjectData[$oid]->setAssociativeArray($key, $values[1]);
                         }
@@ -1885,7 +1885,7 @@ class UnitOfWork implements PropertyChangedListener
                     }
                     continue;
                 }
-                if ($class->isFieldAnHash($class->getFieldNameOfName($key))) {
+                if ($class->isFieldAnHash($class->getFieldNameOfName($key)) || $class->isFieldAnObject($class->getFieldNameOfName($key))) {
                     if (is_array($values[1])) {
                         $this->originalObjectData[$oid]->setAssociativeArray($key, $values[1]);
                     }
