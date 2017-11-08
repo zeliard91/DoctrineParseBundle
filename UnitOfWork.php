@@ -1274,6 +1274,10 @@ class UnitOfWork implements PropertyChangedListener
                 $this->objectChangeSets[$oid] = $changeSet;
                 // apply changes on original data
                 foreach ($changeSet as $key => $values) {
+                    if ($key === '_ACL') {
+                        $this->originalObjectData[$oid]->setAcl($values);
+                        continue;
+                    }
                     if ($class->isFieldAnArray($class->getFieldNameOfName($key))) {
                         if (is_array($values[1])) {
                             $this->originalObjectData[$oid]->setArray($key, $values[1]);
@@ -1428,6 +1432,8 @@ class UnitOfWork implements PropertyChangedListener
                 }
             }
         }
+
+        $this->applyAcl($object, $actualData);
     }
 
     /**
@@ -1879,6 +1885,10 @@ class UnitOfWork implements PropertyChangedListener
             }
             // apply changes on original data
             foreach ($changeSet as $key => $values) {
+                if ($key === '_ACL') {
+                    $this->originalObjectData[$oid]->setAcl($values);
+                    continue;
+                }
                 if ($class->isFieldAnArray($class->getFieldNameOfName($key))) {
                     if (is_array($values[1])) {
                         $this->originalObjectData[$oid]->setArray($key, $values[1]);
@@ -1994,6 +2004,16 @@ class UnitOfWork implements PropertyChangedListener
                 if ($orgValue !== null && $assoc['orphanRemoval']) {
                     $this->scheduleOrphanRemoval($orgValue);
                 }
+            }
+        }
+
+        // Check ACL differences
+        if (null !== $actualData->getAcl() && null !== $originalData->getAcl()) {
+            $aclActual = $actualData->getAcl()->_encode();
+            $aclOriginal = $originalData->getAcl()->_encode();
+            $merge = array_merge($aclOriginal, $aclActual);
+            if (($merge != $aclActual || $merge != $aclOriginal)) {
+                $changeSet['_ACL'] = $actualData->getAcl();
             }
         }
 
@@ -2125,19 +2145,13 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /**
-     * Apply ParseACL on the original ParseObject.
-     * Should be called before saving.
+     * Returns ParseACL based on model's data.
      * 
      * @param  object $object
-     * @return
+     * @return null|ParseACL
      */
-    public function applyAcl($object)
+    public function getAcl($object)
     {
-        $parseObject = $this->getOriginalObjectData($object);
-        if (null === $parseObject) {
-            return;
-        }
-
         if (!method_exists($object, 'getPublicAcl')) {
             return;
         }
@@ -2151,30 +2165,62 @@ class UnitOfWork implements PropertyChangedListener
         }
 
         foreach ($object->getRolesAcl() as $key => $roles) {
-            $role = $this->getOriginalObjectData($roles['role']);
-            if ($role->getClassName() == '_Role') {
-                $isPublic = false;
-                $acl->setRoleReadAccess($role, $roles['write']);
-                $acl->setRoleWriteAccess($role, $roles['write']);
+            $isPublic = false;
+            if (is_scalar($roles['role'])) {
+                $acl->setRoleReadAccessWithName($roles['role'], $roles['read']);
+                $acl->setRoleWriteAccessWithName($roles['role'], $roles['write']);
+            } else {
+                $role = $this->getOriginalObjectData($roles['role']);
+                if ($role->getClassName() == '_Role') {
+                    $acl->setRoleReadAccess($role, $roles['read']);
+                    $acl->setRoleWriteAccess($role, $roles['write']);
+                }
             }
         }
 
         foreach ($object->getUsersAcl() as $key => $users) {
-            $user = $this->getOriginalObjectData($users['role']);
-            if ($user->getClassName() == '_User') {
-                $isPublic = false;
-                $acl->setUserReadAccess($user, $users['write']);
-                $acl->setUserWriteAccess($user, $users['write']);
+            $isPublic = false;
+            if (is_scalar($users['user'])) {
+                $acl->setReadAccess($users['user'], $users['read']);
+                $acl->setWriteAccess($users['user'], $users['write']);
+            } else {
+                $user = $this->getOriginalObjectData($users['user']);
+                if ($user->getClassName() == '_User') {
+                    $acl->setUserReadAccess($user, $users['read']);
+                    $acl->setUserWriteAccess($user, $users['write']);
+                }
             }
         }
 
         if ($isPublic) {
             $acl->setPublicReadAccess(true);
-            if ($parseObject->getClassName() !== '_User' && $parseObject->getClassName() !== '_Role') {
+            $collectionName = $this->om->getClassMetadata(get_class($object))->getCollection();
+            if (!in_array($collectionName, ['_User', '_Role'])) {
                 $acl->setPublicWriteAccess(true);
             }
         }
 
-        $parseObject->setAcl($acl);
+        return $acl;
+    }
+
+    /**
+     * Apply ParseACL on the original ParseObject.
+     * Should be called before saving.
+     * 
+     * @param  object      $object
+     * @param  ParseObject $parseObject
+     * @return
+     */
+    public function applyAcl($object, ParseObject $parseObject = null)
+    {
+        if (null === $parseObject) {
+            $parseObject = $this->getOriginalObjectData($object);
+        }
+
+        $acl = $this->getAcl($object);
+
+        if (null !== $acl && null !== $parseObject) {
+            $parseObject->setAcl($acl);
+        }
     }
 }

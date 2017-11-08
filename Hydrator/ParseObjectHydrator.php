@@ -2,6 +2,7 @@
 
 namespace Redking\ParseBundle\Hydrator;
 
+use Parse\ParseACL;
 use Redking\ParseBundle\Event\LifecycleEventArgs;
 use Redking\ParseBundle\Event\PreLoadEventArgs;
 use Redking\ParseBundle\Events;
@@ -113,6 +114,26 @@ class ParseObjectHydrator
                     // $this->om->getUnitOfWork()->originalObjectData[$oid][$field] = $pColl;
 
                     break;
+            }
+        }
+
+        // Load ACLs
+        if (method_exists($object, 'getPublicAcl')) {
+            $acl = $data->getAcl();
+            if (null !== $acl) {
+                $object->setPublicAcl($acl->getPublicReadAccess(), $acl->getPublicWriteAccess());
+                $encoded = $acl->_encode();
+                if (is_array($encoded)) {
+                    foreach ($encoded as $key => $permissions) {
+                        if ($key !== ParseACL::PUBLIC_KEY) {
+                            if (preg_match('/^role\:(\w+)$/', $key, $match) === 1) {
+                                $object->addRoleAcl($match[1], isset($permissions['read']), isset($permissions['write']));
+                            } else {
+                                $object->addUserAcl($key, isset($permissions['read']), isset($permissions['write']));
+                            }
+                        }
+                    }
+                }
             }
         }
 
