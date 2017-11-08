@@ -1936,7 +1936,7 @@ class UnitOfWork implements PropertyChangedListener
             }
 
             // skip if updatedAt has been set but is equals as the original
-            if ($propName === 'updatedAt' && $actualValue === $originalData->getUpdatedAt()) {
+            if ($propName === 'updatedAt' && $actualValue == $originalData->getUpdatedAt()) {
                 continue;
             }
 
