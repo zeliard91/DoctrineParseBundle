@@ -55,6 +55,10 @@ class QueryBuilder
             $this->setObjectName($objectName);
         }
         $this->expr = new Expr();
+
+        foreach ($this->_class->getLazyLoadKeys() as $key) {
+            $this->includeKey($key);
+        }
     }
 
     /**

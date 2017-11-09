@@ -9,6 +9,7 @@ final class ReferenceMany extends AbstractField
 {
     public $type = 'many';
     public $reference = true;
+    public $lazyLoad = true;
     public $simple = false;
     public $targetDocument;
     public $discriminatorField;

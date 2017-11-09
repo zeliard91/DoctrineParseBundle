@@ -111,6 +111,16 @@ class ParseObjectHydrator
                         $pColl->takeSnapshot();
                     }
 
+                    // The query should have added the includeKey, the references ParseObjects must be loaded
+                    if (!$assoc['lazyLoad'] && is_array($data->get($assoc['name']))) {
+                        foreach ($data->get($assoc['name']) as $reference) {
+                            if ($reference->isDataAvailable()) {
+                                $pColl->add($this->om->getUnitOfWork()->getOrCreateObject($assoc['targetDocument'], $reference, $hints));
+                            }
+                        }
+                        $pColl->takeSnapshot();
+                    }
+
                     // $this->om->getUnitOfWork()->originalObjectData[$oid][$field] = $pColl;
 
                     break;

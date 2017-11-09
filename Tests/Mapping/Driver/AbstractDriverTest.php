@@ -140,6 +140,7 @@ abstract class AbstractDriverTest extends \PHPUnit_Framework_TestCase
             'targetDocument' => 'TestObjects\PhoneNumber',
             'isInverseSide' => false,
             'isOwningSide' => true,
+            'lazyLoad' => true,
             'nullable' => false,
             'cascade' => [
                 'remove',
@@ -170,5 +171,4 @@ abstract class AbstractDriverTest extends \PHPUnit_Framework_TestCase
             'implementation' => ClassMetadata::ASSOCIATION_IMPL_ARRAY
         ), $classMetadata->fieldMappings['phoneNumbers']);
     }
-
 }

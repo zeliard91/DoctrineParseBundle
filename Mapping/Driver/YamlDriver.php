@@ -284,6 +284,7 @@ class YamlDriver extends FileDriver
 
         if ($type === ParseClassMetadata::MANY) {
             $mapping['implementation'] = isset($mapping['implementation']) ? constant('Redking\ParseBundle\Mapping\ClassMetadata::ASSOCIATION_IMPL_' . strtoupper($reference['implementation'])) : ParseClassMetadata::ASSOCIATION_IMPL_ARRAY;
+            $mapping['lazyLoad'] = isset($reference['lazyLoad']) ? $reference['lazyLoad'] : true;
         }
         $this->addFieldMapping($class, $mapping);
     }

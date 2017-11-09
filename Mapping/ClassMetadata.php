@@ -1255,4 +1255,23 @@ class ClassMetadata implements BaseClassMetadata
     {
         return $this->reflFields[$this->identifier]->getValue($object);
     }
+
+    /**
+     * Returns all the keys from array relations that need to be included in the query.
+     *
+     * @return array
+     */
+    public function getLazyLoadKeys()
+    {
+        $keys = [];
+        foreach ($this->getAssociationNames() as $association_key) {
+            if ($this->isOwningCollectionValuedAssociation($association_key) && 
+                $this->getAssociationMapping($association_key)['lazyLoad'] === false
+            ) {
+                $keys[] = $this->getNameOfField($association_key);
+            }
+        }
+
+        return $keys;
+    }
 }
