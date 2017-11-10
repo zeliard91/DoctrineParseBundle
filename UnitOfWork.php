@@ -971,7 +971,10 @@ class UnitOfWork implements PropertyChangedListener
                 $this->objectStates[$oid] = self::STATE_MANAGED;
                 $this->originalObjectData[$oid] = $results['parseObject'];
 
-                $this->addToIdentityMap($object);
+                if (isset($this->identityMap[$class->rootEntityName][$oid])) {
+                    unset($this->identityMap[$class->rootEntityName][$oid]);
+                }
+                $this->addToIdentityMap($results['object']);
             }
         }
 

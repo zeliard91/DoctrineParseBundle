@@ -26,6 +26,8 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
         $this->om->persist($user);
         $this->om->flush();
 
+        $this->assertNotFalse($this->om->getUnitOfWork()->tryGetById($user->getId(), User::class));
+
         $collection = $this->om->getClassMetaData(User::class)->getCollection();
         $query = new ParseQuery($collection);
         $raw_user = $query->get($user->getId(), true);
@@ -68,6 +70,12 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
         $this->assertCount(2, $users);
         $this->assertEquals($user1->getName(), $users[0]->get('username'));
         $this->assertEquals('Bar', $users[1]->get('username'));
+
+        // Test if users are in identityMap after update
+        $this->assertTrue($this->om->getUnitOfWork()->isInIdentityMap($user1));
+        $this->assertNotFalse($this->om->getUnitOfWork()->tryGetById($user1->getId(), User::class));
+        $this->assertTrue($this->om->getUnitOfWork()->isInIdentityMap($user2));
+        $this->assertNotFalse($this->om->getUnitOfWork()->tryGetById($user2->getId(), User::class));
     }
 
     public function testSaveWithNumericString()
