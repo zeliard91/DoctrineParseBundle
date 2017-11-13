@@ -1853,6 +1853,11 @@ class UnitOfWork implements PropertyChangedListener
      */
     public function recomputeSingleObjectChangeSet(ClassMetadata $class, $object, $fromPostUpdate = false)
     {
+        // Ignore uninitialized proxy objects
+        if ($object instanceof Proxy && ! $object->__isInitialized__) {
+            return;
+        }
+
         $oid = spl_object_hash($object);
 
         if ( ! isset($this->objectStates[$oid]) || $this->objectStates[$oid] != self::STATE_MANAGED) {
