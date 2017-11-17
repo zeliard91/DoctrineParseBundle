@@ -9,12 +9,14 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\PropertyChangedListener;
 use Redking\ParseBundle\Event\PreUpdateEventArgs;
 use Redking\ParseBundle\Event\LifecycleEventArgs;
-use Redking\ParseBundle\Exception\RedkingParseException;
-use Redking\ParseBundle\Persisters\ObjectPersister;
-use Redking\ParseBundle\Hydrator\ParseObjectHydrator;
-use Redking\ParseBundle\Proxy\Proxy;
-use Redking\ParseBundle\Mapping\ClassMetadata;
 use Redking\ParseBundle\Event\ListenersInvoker;
+use Redking\ParseBundle\Event\OnFlushEventArgs;
+use Redking\ParseBundle\Event\PostFlushEventArgs;
+use Redking\ParseBundle\Exception\RedkingParseException;
+use Redking\ParseBundle\Hydrator\ParseObjectHydrator;
+use Redking\ParseBundle\Mapping\ClassMetadata;
+use Redking\ParseBundle\Persisters\ObjectPersister;
+use Redking\ParseBundle\Proxy\Proxy;
 use Redking\ParseBundle\Types\Type;
 use Parse\ParseACL;
 use Parse\ParseFile;
@@ -853,6 +855,8 @@ class UnitOfWork implements PropertyChangedListener
             }
         }
 
+        $this->dispatchOnFlushEvent();
+
         // Apply collection changes to originalData and treats them as updates.
         
         // Collection deletions (deletions of complete collections)
@@ -1518,14 +1522,14 @@ class UnitOfWork implements PropertyChangedListener
     private function dispatchOnFlushEvent()
     {
         if ($this->evm->hasListeners(Events::onFlush)) {
-            $this->evm->dispatchEvent(Events::onFlush, new OnFlushEventArgs($this->em));
+            $this->evm->dispatchEvent(Events::onFlush, new OnFlushEventArgs($this->om));
         }
     }
 
     private function dispatchPostFlushEvent()
     {
         if ($this->evm->hasListeners(Events::postFlush)) {
-            $this->evm->dispatchEvent(Events::postFlush, new PostFlushEventArgs($this->em));
+            $this->evm->dispatchEvent(Events::postFlush, new PostFlushEventArgs($this->om));
         }
     }
 
