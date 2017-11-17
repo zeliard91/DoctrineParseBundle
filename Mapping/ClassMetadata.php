@@ -358,6 +358,18 @@ class ClassMetadata implements BaseClassMetadata
     }
 
     /**
+     * Gets a ReflectionProperty for a specific field of the mapped class.
+     *
+     * @param string $name
+     *
+     * @return \ReflectionProperty
+     */
+    public function getReflectionProperty($name)
+    {
+        return $this->reflFields[$name];
+    }
+
+    /**
      * Initializes a new ClassMetadata instance that will hold the object-relational mapping
      * metadata of the class with the given name.
      *

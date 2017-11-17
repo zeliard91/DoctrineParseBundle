@@ -328,6 +328,16 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /**
+     * Gets the identity map of the UnitOfWork.
+     *
+     * @return array
+     */
+    public function getIdentityMap()
+    {
+        return $this->objectIdentifiers;
+    }
+
+    /**
      * INTERNAL:
      * Removes an object from the identity map. This effectively detaches the
      * object from the persistence management of Doctrine.
@@ -749,7 +759,7 @@ class UnitOfWork implements PropertyChangedListener
             throw new \InvalidArgumentException('Removed object can not be scheduled for insertion.');
         }
         if (isset($this->objectInsertions[$oid])) {
-            throw new \InvalidArgumentException('Document can not be scheduled for insertion twice.');
+            throw new \InvalidArgumentException('Object can not be scheduled for insertion twice.');
         }
 
         $this->objectInsertions[$oid] = $object;
@@ -757,6 +767,36 @@ class UnitOfWork implements PropertyChangedListener
         if (isset($this->objectIdentifiers[$oid])) {
             $this->addToIdentityMap($object);
         }
+    }
+
+    /**
+     * Gets the currently scheduled object insertions in this UnitOfWork.
+     *
+     * @return array
+     */
+    public function getScheduleForInsert()
+    {
+        return $this->objectInsertions;
+    }
+
+    /**
+     * Gets the currently scheduled object updates in this UnitOfWork.
+     *
+     * @return array
+     */
+    public function getScheduleForUpdate()
+    {
+        return $this->objectUpdates;
+    }
+
+    /**
+     * Gets the currently scheduled object deletions in this UnitOfWork.
+     *
+     * @return array
+     */
+    public function getScheduleForDelete()
+    {
+        return $this->objectDeletions;
     }
 
     /**
@@ -1173,6 +1213,25 @@ class UnitOfWork implements PropertyChangedListener
                 }
             }
         }
+    }
+
+    /**
+     * Gets the changeset for an object.
+     *
+     * @param object $object
+     *
+     * @return array
+     */
+    public function & getObjectChangeSet($object)
+    {
+        $oid  = spl_object_hash($object);
+        $data = [];
+
+        if (!isset($this->objectChangeSets[$oid])) {
+            return $data;
+        }
+
+        return $this->objectChangeSets[$oid];
     }
 
     /**
@@ -2234,5 +2293,37 @@ class UnitOfWork implements PropertyChangedListener
         if (null !== $acl && null !== $parseObject) {
             $parseObject->setAcl($acl);
         }
+    }
+
+    /**
+     * INTERNAL:
+     * Sets a property value of the original ParseObject of an object.
+     *
+     * @ignore
+     *
+     * @param string $oid
+     * @param string $property
+     * @param mixed  $value
+     *
+     * @return void
+     */
+    public function setOriginalObjectProperty($oid, $property, $value)
+    {
+        if (isset($this->originalObjectData[$oid])) {
+            $this->originalObjectData[$oid]->set($property, $value);
+        }
+    }
+
+    /**
+     * INTERNAL:
+     * Clears the property changeset of the object with the given OID.
+     *
+     * @param string $oid The object's OID.
+     *
+     * @return void
+     */
+    public function clearObjectChangeSet($oid)
+    {
+        unset($this->objectChangeSets[$oid]);
     }
 }
