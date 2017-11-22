@@ -2002,7 +2002,7 @@ class UnitOfWork implements PropertyChangedListener
             $orgValue = $originalData->get($propName);
 
             // skip if value is a number and they haven't changed
-            if (in_array($fieldName['type'], [Type::FLOAT, Type::INTEGER]) && (abs($orgValue-$actualValue) < 0.000000000001)) {
+            if (in_array($fieldName['type'], [Type::FLOAT, Type::INTEGER]) && null !== $orgValue && null !== $actualValue && (abs($orgValue-$actualValue) < 0.000000000001)) {
                 continue;
             }
 

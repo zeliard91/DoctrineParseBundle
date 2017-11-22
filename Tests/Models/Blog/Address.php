@@ -21,6 +21,16 @@ class Address
      */
     private $users;
 
+    /**
+     * @ORM\Field(type="boolean")
+     */
+    private $isDefault = false;
+
+    /**
+     * @ORM\Field(type="float")
+     */
+    private $order;
+
     public function __construct()
     {
         $this->users = new \Doctrine\Common\Collections\ArrayCollection();
@@ -76,5 +86,41 @@ class Address
     public function removePost(\Redking\ParseBundle\Tests\Models\Blog\User $user)
     {
         $this->users->removeElement($user);
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getIsDefault()
+    {
+        return $this->isDefault;
+    }
+
+    /**
+     * @param boolean
+     */
+    public function setIsDefault($isDefault)
+    {
+        $this->isDefault = $isDefault;
+
+        return $this;
+    }
+
+    /**
+     * @return float
+     */
+    public function getOrder()
+    {
+        return $this->order;
+    }
+
+    /**
+     * @param float
+     */
+    public function setOrder($order)
+    {
+        $this->order = $order;
+
+        return $this;
     }
 }

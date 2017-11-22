@@ -4,6 +4,7 @@ namespace Redking\ParseBundle\Tests\Functional;
 
 use Parse\ParseQuery;
 use Parse\ParseGeoPoint;
+use Redking\ParseBundle\Tests\Models\Blog\Address;
 use Redking\ParseBundle\Tests\Models\Blog\User;
 use Redking\ParseBundle\Tests\Models\Blog\Post;
 use Redking\ParseBundle\Tests\Models\Blog\Picture;
@@ -14,6 +15,7 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
         'Redking\ParseBundle\Tests\Models\Blog\User',
         'Redking\ParseBundle\Tests\Models\Blog\Post',
         'Redking\ParseBundle\Tests\Models\Blog\Picture',
+        'Redking\ParseBundle\Tests\Models\Blog\Address',
     ];
 
     public function testSave()
@@ -191,6 +193,98 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
         $this->assertInstanceOf(Picture::class, $picture);
         $this->assertEquals($exif, $picture->getExif());
 
+    }
+
+    public function testSavingBoolean()
+    {
+        $adress = new Address();
+        $adress->setCity('Paris');
+
+        $this->om->persist($adress);
+        $this->om->flush();
+        $this->om->clear();
+
+        $adress = $this->om->getRepository(Address::class)->findOneByCity('Paris');
+        $this->assertNotNull($adress);
+        $this->assertFalse($adress->getIsDefault());
+
+        $adress->setIsDefault(true);
+        $this->om->flush();
+        $this->om->clear();
+
+        $adress = $this->om->getRepository(Address::class)->findOneByCity('Paris');
+        $this->assertTrue($adress->getIsDefault());
+        $this->om->clear();
+
+
+
+        $adress = new Address();
+        $adress->setCity('New York');
+        $adress->setIsDefault(true);
+        $this->om->persist($adress);
+        $this->om->flush();
+        $this->om->clear();
+
+        $adress = $this->om->getRepository(Address::class)->findOneByCity('New York');
+        $this->assertNotNull($adress);
+        $this->assertTrue($adress->getIsDefault());
+
+        $adress->setIsDefault(false);
+        $this->om->persist($adress);
+        $this->om->flush();
+        $this->om->clear();
+
+        $adress = $this->om->getRepository(Address::class)->findOneByCity('New York');
+        $this->assertNotNull($adress);
+        $this->assertFalse($adress->getIsDefault());
+    }
+
+    public function testSaveNumber()
+    {
+        $adress = new Address();
+        $adress->setCity('Paris');
+
+        $this->om->persist($adress);
+        $this->om->flush();
+        $this->om->clear();
+
+        $adress = $this->om->getRepository(Address::class)->findOneByCity('Paris');
+        $this->assertNull($adress->getOrder());
+
+        $adress->setOrder(0);
+        $this->om->persist($adress);
+        $this->om->flush();
+        $this->om->clear();
+
+        $adress = $this->om->getRepository(Address::class)->findOneByCity('Paris');
+        $this->assertEquals(0, $adress->getOrder());
+
+        $adress = new Address();
+        $adress->setCity('New York');
+        $adress->setOrder(5);
+
+        $this->om->persist($adress);
+        $this->om->flush();
+        $this->om->clear();
+
+        $adress = $this->om->getRepository(Address::class)->findOneByCity('New York');
+        $this->assertEquals(5, $adress->getOrder());
+
+        $adress->setOrder(0);
+        $this->om->persist($adress);
+        $this->om->flush();
+        $this->om->clear();
+
+        $adress = $this->om->getRepository(Address::class)->findOneByCity('New York');
+        $this->assertEquals(0, $adress->getOrder());
+
+        $adress->setOrder(null);
+        $this->om->persist($adress);
+        $this->om->flush();
+        $this->om->clear();
+
+        $adress = $this->om->getRepository(Address::class)->findOneByCity('New York');
+        $this->assertNull($adress->getOrder());
     }
 
     
