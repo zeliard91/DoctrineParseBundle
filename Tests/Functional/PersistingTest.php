@@ -119,6 +119,33 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
 
     }
 
+    public function testSaveWithUpdatedLinkedObject()
+    {
+        $avatar = new Picture();
+        $avatar->setFile('dummy.jpg');
+
+        $this->om->persist($avatar);
+        $this->om->flush();
+        $this->om->clear();
+
+        $avatar = $this->om->getRepository(Picture::class)->findOneByFile('dummy.jpg');
+        $this->assertNotNull($avatar);
+
+        $user = new User();
+        $user->setName('Foo');
+        $user->setAvatar($avatar);
+        $avatar->setFile('dummy2.jpg');
+
+        $this->om->persist($user);
+        $this->om->flush();
+        $this->om->clear();
+
+        $user = $this->om->getRepository(User::class)->findOneByName('Foo');
+        $this->assertInstanceOf(User::class, $user);
+        $this->assertEquals('dummy2.jpg', $user->getAvatar()->getFile());
+
+    }
+
     public function testSaveWithCascade()
     {
         $user = new User();

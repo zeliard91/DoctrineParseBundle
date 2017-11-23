@@ -490,6 +490,7 @@ class UnitOfWork implements PropertyChangedListener
             }
             if ($overrideLocalValues) {
                 $this->originalObjectData[$oid] = $data;
+                $this->clearObjectChangeSet($oid);
             }
 
             $hydrator = new ParseObjectHydrator($this->om, $class);
@@ -2199,6 +2200,78 @@ class UnitOfWork implements PropertyChangedListener
                 }
             } elseif ($relatedObjects !== null) {
                 $this->doDetach($relatedObjects, $visited);
+            }
+        }
+    }
+
+    /**
+     * Refreshes the state of the given object from the database, overwriting
+     * any local, unpersisted changes.
+     *
+     * @param object $object The object to refresh.
+     * @throws \InvalidArgumentException If the object is not MANAGED.
+     */
+    public function refresh($object)
+    {
+        $visited = array();
+        $this->doRefresh($object, $visited);
+    }
+
+    /**
+     * Executes a refresh operation on a object.
+     *
+     * @param object $object The object to refresh.
+     * @param array $visited The already visited objects during cascades.
+     * @throws \InvalidArgumentException If the object is not MANAGED.
+     */
+    private function doRefresh($object, array &$visited)
+    {
+        $oid = spl_object_hash($object);
+        if (isset($visited[$oid])) {
+            return; // Prevent infinite recursion
+        }
+
+        $visited[$oid] = $object; // mark visited
+
+        $class = $this->om->getClassMetadata(get_class($object));
+
+        if ($this->getObjectState($object) == self::STATE_MANAGED) {
+            $id = $this->objectIdentifiers[$oid];
+            $this->getObjectPersister($class->name)->refresh($id, $object);
+        } else {
+            throw new \InvalidArgumentException("object is not MANAGED.");
+        }
+
+        $this->cascadeRefresh($object, $visited);
+    }
+
+    /**
+     * Cascades a refresh operation to associated objects.
+     *
+     * @param object $object
+     * @param array $visited
+     */
+    private function cascadeRefresh($object, array &$visited)
+    {
+        $class = $this->om->getClassMetadata(get_class($object));
+
+        $associationMappings = array_filter(
+            $class->associationMappings,
+            function ($assoc) { return $assoc['isCascadeRefresh']; }
+        );
+
+        foreach ($associationMappings as $mapping) {
+            $relatedobjects = $class->reflFields[$mapping['fieldName']]->getValue($object);
+            if ($relatedobjects instanceof Collection || is_array($relatedobjects)) {
+                if ($relatedobjects instanceof PersistentCollection) {
+                    // Unwrap so that foreach() does not initialize
+                    $relatedobjects = $relatedobjects->unwrap();
+                }
+                foreach ($relatedobjects as $relatedobject) {
+                    $this->doRefresh($relatedobject, $visited);
+                }
+            } elseif ($relatedobjects !== null) {
+                $this->doRefresh($relatedobjects, $visited);
             }
         }
     }

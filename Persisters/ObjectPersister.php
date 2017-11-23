@@ -451,4 +451,16 @@ class ObjectPersister
 
         return $qb->getQuery();
     }
+
+    /**
+     * Refreshes a managed object.
+     *
+     * @param string $id The identifier of the object.
+     * @param object $object The object to refresh.
+     */
+    public function refresh($id, $object)
+    {
+        $this->load(['id' => $id], $object, null, ['doctrine.refresh']);
+    }
+
 }
