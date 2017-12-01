@@ -41,7 +41,14 @@ class CollectionRelationPersister extends AbstractCollectionPersister
         $originalData = $this->uow->getOriginalObjectData($coll->getOwner());
 
         $fieldName = $coll->getMapping()['name'];
-        foreach ($coll->getInsertDiff() as $object) {
+        
+        $toBeInserted = $coll->getInsertDiff();
+        // If Collection has been cleared, there is no insertDiff, we need to insert the coll values (snapshot have been removed)
+        if (empty($coll->getSnapshot()) && !empty($coll->getValues())) {
+            $toBeInserted = $coll->getValues();
+        }
+
+        foreach ($toBeInserted as $object) {
             $relatedObject = $this->uow->getOriginalObjectData($object);
             if (null === $relatedObject->getObjectId()) {
                 $this->uow->scheduleExtraUpdate($coll, [null, $object]);
@@ -84,5 +91,21 @@ class CollectionRelationPersister extends AbstractCollectionPersister
         }
 
         $this->uow->addToCollectionChangeSet($coll->getOwner(), $fieldName, [$originalData->get($fieldName), []]);
+    }
+
+    /**
+     * Remove previous relations
+     *
+     * @param  PersistentCollection $coll
+     */
+    public function clearSnapShot(PersistentCollection $coll)
+    {
+        $originalData = $this->uow->getOriginalObjectData($coll->getOwner());
+
+        $fieldName = $coll->getMapping()['name'];
+        foreach ($coll->getSnapshot() as $object) {
+            // echo 'Removing '.$object->getCity()."\n";
+            $originalData->getRelation($fieldName)->remove($this->uow->getOriginalObjectData($object));
+        }
     }
 }

@@ -140,4 +140,61 @@ class RelationTest extends \Redking\ParseBundle\Tests\TestCase
         $this->assertNotNull($adress);
         $this->assertCount(2, $adress->getUsers());
     }
+
+    public function testUpdateAfterClear()
+    {
+        $adress = new Address();
+        $adress->setCity('Paris');
+        $this->om->persist($adress);
+        $adress2 = new Address();
+        $adress2->setCity('Tokyo');
+        $this->om->persist($adress2);
+        $adress3 = new Address();
+        $adress3->setCity('London');
+        $this->om->persist($adress3);
+
+        $user = new User();
+        $user->setName('Foo');
+        $user->addAddress($adress);
+        $user->addAddress($adress2);
+        $this->om->persist($user);
+
+        $this->om->flush();
+        $this->om->clear();
+
+        $user = $this->om->getRepository(User::class)->findOneByName('Foo');
+        $this->assertNotNull($user);
+        $this->assertCount(2, $user->getAddresses());
+
+        $user->getAddresses()->clear();
+        $this->assertCount(0, $user->getAddresses());
+
+        $address4 = $this->om->getRepository(Address::class)->findOneByCity('Tokyo');
+        $this->assertNotNull($address4);
+        $user->addAddress($address4);
+        $address5 = $this->om->getRepository(Address::class)->findOneByCity('London');
+        $this->assertNotNull($address5);
+        $user->addAddress($address5);
+
+        $this->assertCount(2, $user->getAddresses());
+        $cities = [];
+        foreach ($user->getAddresses() as $address) {
+            $cities[] = $address->getCity();
+        }
+        $this->assertEquals(['Tokyo', 'London'], $cities, 'Test cities', 0.0, 10, true);
+
+        $this->om->persist($user);
+        $this->om->flush();
+        $this->om->clear();
+
+        $user = $this->om->getRepository(User::class)->findOneByName('Foo');
+        $this->assertNotNull($user);
+        $this->assertCount(2, $user->getAddresses());
+
+        $cities = [];
+        foreach ($user->getAddresses() as $address) {
+            $cities[] = $address->getCity();
+        }
+        $this->assertEquals(['Tokyo', 'London'], $cities, 'Test cities', 0.0, 10, true);
+    }
 }

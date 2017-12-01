@@ -1824,6 +1824,12 @@ class UnitOfWork implements PropertyChangedListener
             unset($this->collectionUpdates[$coid]);
         }
 
+        // Force emptying relation collections
+        $persister = $this->getCollectionPersister($coll->getMapping());
+        if ($persister instanceof Persisters\CollectionRelationPersister) {
+            $persister->clearSnapShot($coll);
+        }
+
         $this->collectionDeletions[$coid] = $coll;
     }
 
