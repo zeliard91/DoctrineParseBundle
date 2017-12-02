@@ -104,7 +104,6 @@ class CollectionRelationPersister extends AbstractCollectionPersister
 
         $fieldName = $coll->getMapping()['name'];
         foreach ($coll->getSnapshot() as $object) {
-            // echo 'Removing '.$object->getCity()."\n";
             $originalData->getRelation($fieldName)->remove($this->uow->getOriginalObjectData($object));
         }
     }
