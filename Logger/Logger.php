@@ -2,7 +2,7 @@
 
 namespace Redking\ParseBundle\Logger;
 
-use Symfony\Component\HttpKernel\Log\LoggerInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * A lightweight query logger.
