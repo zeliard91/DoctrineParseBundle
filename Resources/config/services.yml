@@ -16,6 +16,7 @@ services:
     # Registry
     doctrine_parse:
         class: Redking\ParseBundle\Registry
+        public: true
         arguments:
             - "@service_container"
             - "redking_parse.manager"
@@ -23,6 +24,7 @@ services:
     # Manager
     redking_parse.manager:
         class: Redking\ParseBundle\ObjectManager
+        public: true
         arguments:
             - "@redking_parse.configuration"
             - "@redking_parse.event_manager"
@@ -40,7 +42,7 @@ services:
 
     # Generate proxies classes on cache
     redking_parse.proxy_cache_warmer:
-        class: %doctrine.parse.proxy_cache_warmer.class%
+        class: "%doctrine.parse.proxy_cache_warmer.class%"
         public: false
         arguments:
             - "@redking_parse.manager"
@@ -49,11 +51,11 @@ services:
 
     # logger
     redking_parse.logger.aggregate:
-        class: %doctrine.parse.logger.aggregate.class%
+        class: "%doctrine.parse.logger.aggregate.class%"
         public: false
 
     redking_parse.logger:
-        class: %doctrine.parse.logger.class%
+        class: "%doctrine.parse.logger.class%"
         public: false
         arguments:
             - "@logger"
@@ -62,12 +64,12 @@ services:
 
     # listeners
     doctrine.parse.listeners.resolve_target_object:
-        class: %doctrine.parse.listeners.resolve_target_object.class%
+        class: "%doctrine.parse.listeners.resolve_target_object.class%"
         public: false
 
     # profiler
     redking_parse.data_collector:
-        class: %doctrine.parse.data_collector.class%
+        class: "%doctrine.parse.data_collector.class%"
         public: false
         arguments:
             - "@?debug.stopwatch"
@@ -86,7 +88,7 @@ services:
 
     # validators
     doctrine_parse.validator.unique:
-        class: %doctrine_parse.validator.unique.class%
+        class: "%doctrine_parse.validator.unique.class%"
         arguments:
             - "@doctrine_parse"
         tags:
@@ -94,6 +96,6 @@ services:
 
     # parse session storage
     doctrine_parse.session_storage:
-        class: %doctrine_parse.session_storage.class%
+        class: "%doctrine_parse.session_storage.class%"
         arguments:
             - "@session"

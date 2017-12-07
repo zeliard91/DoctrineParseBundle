@@ -2,12 +2,14 @@ services:
     # Form Type
     redking_parse.form.object:
         class: Redking\ParseBundle\Form\Type\ObjectType
+        public: true
         tags:
             - {name: form.type, alias: object}
         arguments:
             - "@doctrine_parse"
     redking_parse.form.file:
         class: Redking\ParseBundle\Form\Type\ParseFileType
+        public: true
         tags:
             - {name: form.type, alias: parse_file}
         arguments:

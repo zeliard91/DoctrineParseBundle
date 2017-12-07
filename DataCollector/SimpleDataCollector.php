@@ -45,6 +45,13 @@ class SimpleDataCollector extends DataCollector
         $this->queryTimes[] = $queryTime;
     }
 
+    public function reset()
+    {
+        $this->data = array();
+        $this->queries = array();
+        $this->queryTimes = array();
+    }
+
     public function startQuery()
     {
         if (null !== $this->stopwatch) {

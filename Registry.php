@@ -2,6 +2,7 @@
 
 namespace Redking\ParseBundle;
 
+use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Bridge\Doctrine\ManagerRegistry;
 use Redking\ParseBundle\Exception\RedkingParseException;
@@ -10,7 +11,15 @@ class Registry extends ManagerRegistry
 {
     public function __construct(ContainerInterface $container, $manager_name)
     {
-        $this->setContainer($container);
+        $parentTraits = class_uses(parent::class);
+        if (isset($parentTraits[ContainerAwareTrait::class])) {
+            // this case should be removed when Symfony 3.4 becomes the lowest supported version
+            // and then also, the constructor should type-hint Psr\Container\ContainerInterface
+            $this->setContainer($container);
+        } else {
+            $this->container = $container;
+        }
+
         parent::__construct('Parse', [], ['default' => $manager_name], null, 'default', 'Redking\ParseBundle\Proxy\Proxy');
     }
     /**

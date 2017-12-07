@@ -102,7 +102,12 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         $bundles = $container->getParameter('kernel.bundles');
 
         if (isset($bundles['FOSUserBundle'])) {
-            $loader->load('bridge/fosuser.yml');
+            $loader->load('bridge/fosuser/email.yml');
+            if (interface_exists('FOS\\UserBundle\\Util\\PasswordUpdaterInterface')) {
+                $loader->load('bridge/fosuser/managerV2.yml');
+            } else {
+                $loader->load('bridge/fosuser/managerV1.yml');
+            }
         }
 
         $container->setAlias('doctrine.parse.object_manager', 'redking_parse.manager');

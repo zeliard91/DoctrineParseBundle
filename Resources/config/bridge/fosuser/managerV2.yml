@@ -1,0 +1,18 @@
+parameters:
+    redking_parse.fos_user.manager.class: 'Redking\ParseBundle\Bridge\FOSUser\UserManager'
+    redking_parse.fos_user.base_manager.class: 'Redking\ParseBundle\Bridge\FOSUser\BaseUserManager'
+
+services:
+
+### FOSUSER PARSE BRIDGE USER MANAGER ###
+    redking_parse.fos_user.base_manager:
+        class: "%redking_parse.fos_user.base_manager.class%"
+        public: false
+        arguments: 
+            - "@fos_user.util.password_updater"
+            - "@fos_user.util.canonical_fields_updater"
+            - "@redking_parse.manager"
+            - "%fos_user.model.user.class%"
+    redking_parse.fos_user.manager:
+        class: "%redking_parse.fos_user.manager.class%"
+        parent: redking_parse.fos_user.base_manager
