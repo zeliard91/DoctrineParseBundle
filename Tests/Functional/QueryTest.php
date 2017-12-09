@@ -199,4 +199,33 @@ class QueryTest extends \Redking\ParseBundle\Tests\TestCase
         $this->assertEquals('Foo', $results[0]->getName());
     }
 
+    public function testSort()
+    {
+        $user = new User();
+        $user->setName('Foo');
+        $this->om->persist($user);
+        $user = new User();
+        $user->setName('Bar');
+        $this->om->persist($user);
+
+        $this->om->flush();
+
+        $results = $this->getUserQB()
+            ->sort('name', 'asc')
+            ->getQuery()
+            ->execute()
+        ;
+
+        $this->assertCount(2, $results);
+        $this->assertEquals('Bar', $results[0]->getName());
+
+        $results = $this->getUserQB()
+            ->sort('id', 'asc')
+            ->getQuery()
+            ->execute()
+        ;
+        $this->assertCount(2, $results);
+
+    }
+
 }

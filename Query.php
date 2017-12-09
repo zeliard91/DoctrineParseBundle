@@ -289,6 +289,9 @@ class Query
         if (isset($this->query['sort']) && is_array($this->query['sort'])) {
             foreach ($this->query['sort'] as $attribute => $order) {
                 $field = $this->_class->getNameOfField($attribute);
+                if ($attribute === 'objectId') {
+                    $field = 'objectId';
+                }
                 if ($order === 'asc') {
                     $this->_parseQuery->addAscending($field);
                 } else {
