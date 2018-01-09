@@ -2089,6 +2089,12 @@ class UnitOfWork implements PropertyChangedListener
         if (null !== $actualData->getAcl() && null !== $originalData->getAcl()) {
             $aclActual = $actualData->getAcl()->_encode();
             $aclOriginal = $originalData->getAcl()->_encode();
+            if (!is_array($aclActual)) {
+                $aclActual = [];
+            }
+            if (!is_array($aclOriginal)) {
+                $aclOriginal = [];
+            }
             $merge = array_merge($aclOriginal, $aclActual);
             if (($merge != $aclActual || $merge != $aclOriginal)) {
                 $changeSet['_ACL'] = $actualData->getAcl();
