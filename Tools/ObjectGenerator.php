@@ -50,6 +50,9 @@ class ObjectGenerator
     /** The class all generated documents should extend */
     private $classToExtend;
 
+    /** Interfaces the generated object have to implement */
+    private $interfacesToImplement = [];
+
     /** Whether or not to generate annotations */
     private $generateAnnotations = false;
 
@@ -338,6 +341,38 @@ public function <methodName>()
     }
 
     /**
+     * @param array $interfaces
+     */
+    public function setInterfacesToImplement(array $interfaces)
+    {
+        $this->interfacesToImplement = $interfaces;
+    }
+
+    /**
+     * @param string $interface
+     */
+    public function addInterfaceToImplement($interface)
+    {
+        $this->interfacesToImplement[] = $interface;
+    }
+
+    /**
+     * @return array
+     */
+    public function getInterfacesToImplement()
+    {
+        return $this->interfacesToImplement;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function hasInterfacesToImplement()
+    {
+        return count($this->interfacesToImplement) > 0;
+    }
+
+    /**
      * @param string $type
      *
      * @return string
@@ -361,7 +396,9 @@ public function <methodName>()
     private function generateObjectClassName(ClassMetadata $metadata)
     {
         return 'class '.$this->getClassName($metadata).
-            ($this->extendsClass() ? ' extends '.$this->getClassToExtendName() : null);
+            ($this->extendsClass() ? ' extends '.$this->getClassToExtendName() : null).
+            ($this->hasInterfacesToImplement() ? ' implements '.implode(', ', $this->getInterfacesToImplement()) : null )
+        ;
     }
 
     private function generateObjectBody(ClassMetadata $metadata)
