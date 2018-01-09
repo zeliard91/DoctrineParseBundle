@@ -144,6 +144,16 @@ trait ACLTrait
     }
 
     /**
+     * @param array $rolesAcl
+     */
+    public function setRolesAcl(array $rolesAcl)
+    {
+        $this->_rolesAcl = $rolesAcl;
+
+        return $this;
+    }
+
+    /**
      * @param  object|string $role
      * @return boolean
      */
@@ -197,6 +207,16 @@ trait ACLTrait
     public function getUsersAcl()
     {
         return $this->_usersAcl;
+    }
+
+    /**
+     * @param array $usersAcl
+     */
+    public function setUsersAcl(array $usersAcl)
+    {
+        $this->_usersAcl = $usersAcl;
+
+        return $this;
     }
 
     /**
