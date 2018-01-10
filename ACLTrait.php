@@ -62,6 +62,19 @@ trait ACLTrait
     }
 
     /**
+     * Redefine public ACL.
+     *
+     * @param  ParseACL $acl
+     * @return self
+     */
+    public function publicAcl(ParseACL $acl)
+    {
+        $this->_publicAcl = $acl;
+
+        return $this;
+    }
+
+    /**
      * @return null|ParseACL
      */
     public function getPublicAcl()
