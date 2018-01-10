@@ -4,6 +4,7 @@ namespace Redking\ParseBundle;
 
 use Exception;
 use UnexpectedValueException;
+use DeepCopy\DeepCopy;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\PropertyChangedListener;
@@ -247,11 +248,19 @@ class UnitOfWork implements PropertyChangedListener
      */
     private $listenersInvoker;
 
+    /**
+     * ParseObject cloner.
+     *
+     * @var \DeepCopy\DeepCopy
+     */
+    private $cloner;
+
     public function __construct(ObjectManager $om)
     {
         $this->om = $om;
         $this->evm = $om->getEventManager();
         $this->listenersInvoker = new ListenersInvoker($this->om);
+        $this->cloner = new DeepCopy();
     }
 
     /**
@@ -1298,7 +1307,7 @@ class UnitOfWork implements PropertyChangedListener
         }
 
         if (isset($this->originalObjectData[$oid])) {
-            $actualData = clone $this->originalObjectData[$oid];
+            $actualData = $this->cloner->copy($this->originalObjectData[$oid]);
         } else {
             $actualData = $this->getObjectPersister(get_class($object))->instanciateParseObject();
         }
@@ -1944,7 +1953,7 @@ class UnitOfWork implements PropertyChangedListener
         }
 
         if (isset($this->originalObjectData[$oid])) {
-            $actualData = clone $this->originalObjectData[$oid];
+            $actualData = $this->cloner->copy($this->originalObjectData[$oid]);
         } else {
             throw new \RuntimeException('Cannot call recomputeSingleObjectChangeSet before computeChangeSet on an object.');
         }
@@ -2013,6 +2022,26 @@ class UnitOfWork implements PropertyChangedListener
                 continue;
             }
 
+            // skip if fields are GeoPoint and are the same
+            if ($fieldName['type'] === Type::GEOPOINT
+                && (
+                    (null === $actualValue && null === $orgValue) ||
+                    ($actualValue instanceof ParseGeoPoint && $orgValue instanceof ParseGeoPoint && $actualValue->_encode() == $orgValue->_encode())
+                )
+            ) {
+                continue;
+            }
+
+            // skip if fields are Files and are the same
+            if ($fieldName['type'] === Type::FILE
+                && (
+                    (null === $actualValue && null === $orgValue) ||
+                    ($actualValue instanceof ParseFile && $orgValue instanceof ParseFile && $actualValue->_encode() == $orgValue->_encode())
+                )
+            ) {
+                continue;
+            }
+
             // skip if updatedAt has been set but is equals as the original
             if ($propName === 'updatedAt' && $actualValue == $originalData->getUpdatedAt()) {
                 continue;
@@ -2047,7 +2076,7 @@ class UnitOfWork implements PropertyChangedListener
                     if (!$actualValue->isInitialized()) {
                         $actualValue->initialize(); // we have to do this otherwise the cols share state
                     }
-                    $newValue = clone $actualValue;
+                    $newValue = $this->cloner->copy($actualValue);
                     $newValue->setOwner($object, $assoc);
                     $class->reflFields[$propName]->setValue($object, $newValue);
                 }
@@ -2067,7 +2096,7 @@ class UnitOfWork implements PropertyChangedListener
                 continue;
             }
 
-            if ($assoc['type'] & ClassMetadata::ONE) {
+            if ($assoc['type'] === ClassMetadata::ONE) {
                 if ($assoc['isOwningSide']) {
                     // Skip if both values are the same uninitialized ParseObjects
                     if ($orgValue instanceof ParseObject &&
@@ -2097,7 +2126,7 @@ class UnitOfWork implements PropertyChangedListener
             }
             $merge = array_merge($aclOriginal, $aclActual);
             if (($merge != $aclActual || $merge != $aclOriginal)) {
-                $changeSet['_ACL'] = $actualData->getAcl();
+                $changeSet['_ACL'] = $this->cloner->copy($actualData->getAcl());
             }
         }
 
@@ -2312,7 +2341,7 @@ class UnitOfWork implements PropertyChangedListener
             return;
         }
 
-        $acl = $object->getPublicAcl();
+        $acl = $this->cloner->copy($object->getPublicAcl());
         $isPublic = false;
 
         if (null === $acl) {
