@@ -1503,6 +1503,12 @@ class UnitOfWork implements PropertyChangedListener
                 elseif ($class->getTypeOfField($name) === Type::FLOAT && null !== $value) {
                     $actualData->set($class->getNameOfField($name), (float)$value);
                 }
+                // Convert date to UTC
+                elseif ($class->getTypeOfField($name) === Type::DATE && null !== $value) {
+                    $date = clone $value;
+                    $date->setTimezone(new \DateTimeZone('UTC'));
+                    $actualData->set($class->getNameOfField($name), $date);
+                }
                 else {
                     $actualData->set($class->getNameOfField($name), $value);
                 }
@@ -2039,6 +2045,12 @@ class UnitOfWork implements PropertyChangedListener
                     ($actualValue instanceof ParseFile && $orgValue instanceof ParseFile && $actualValue->_encode() == $orgValue->_encode())
                 )
             ) {
+                continue;
+            }
+
+            // skip if fields are DateTime with the same values
+            if ($fieldName['type'] === Type::DATE && $actualValue instanceof \DateTime && $orgValue instanceof \DateTime
+                && $actualValue->format('U') == $orgValue->format('U')) {
                 continue;
             }
 

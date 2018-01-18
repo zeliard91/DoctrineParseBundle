@@ -314,5 +314,45 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
         $this->assertNull($adress->getOrder());
     }
 
-    
+    public function testSaveZonedDates()
+    {
+        $date = new \DateTime('1981-02-04T11:00:59.012000Z');
+        $birthday = clone $date;
+        $birthday->setTimezone(new \DateTimeZone('America/St_Barthelemy'));
+        // Should be store in parse in UTC
+
+        $user = new User();
+        $user->setName('foo');
+        $user->setBirthday($birthday);
+
+        $this->om->persist($user);
+        $this->om->flush();
+        $this->om->clear();
+
+        $dateZoned = clone $birthday;
+
+        // Check that we can refind it with a zoned date
+        $user = $this->om->getRepository(User::class)->findOneByBirthday($dateZoned);
+        $this->assertNotNull($user);
+        $this->assertNotNull($user->getBirthday());
+        $this->assertEquals($date->format('U'), $user->getBirthday()->format('U'));
+
+        // Check that we can refind it with a UTC date
+        $user = $this->om->getRepository(User::class)->findOneByBirthday($date);
+        $this->assertNotNull($user);
+        $this->assertNotNull($user->getBirthday());
+        $this->assertEquals($date->format('U'), $user->getBirthday()->format('U'));
+
+        // Check that if we change the timezone, no update is scheduled
+        $user->getBirthday()->setTimezone(new \DateTimeZone('Europe/Paris'));
+        $this->om->getUnitOfWork()->recomputeSingleObjectChangeSet($this->om->getClassMetaData(User::class, $user), $user);
+        $changes = $this->om->getUnitOfWork()->getObjectChangeSet($user);
+        $this->assertFalse(isset($changes['birthday']));
+        
+        // Add one minute, an update must be scheduled 
+        $user->getBirthday()->add(new \DateInterval('PT1M'));
+        $this->om->getUnitOfWork()->recomputeSingleObjectChangeSet($this->om->getClassMetaData(User::class, $user), $user);
+        $changes = $this->om->getUnitOfWork()->getObjectChangeSet($user);
+        $this->assertTrue(isset($changes['birthday']));
+    }
 }

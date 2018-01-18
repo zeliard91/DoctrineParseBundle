@@ -20,7 +20,13 @@ class QueryArg
      */
     public function __construct($value, $argument = null)
     {
-        $this->value = $value;
+        if ($value instanceof \DateTime) {
+            $date = clone $value;
+            $date->setTimeZone(new \DateTimeZone('UTC'));
+            $this->value = $date;
+        } else {
+            $this->value = $value;
+        }
         $this->argument = $argument;
     }
 
