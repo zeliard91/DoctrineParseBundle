@@ -67,7 +67,7 @@ class DoctrineParseTypeGuesser implements FormTypeGuesserInterface
             case Type::STRING:
                 return new TypeGuess('Symfony\Component\Form\Extension\Core\Type\TextType', array(), Guess::MEDIUM_CONFIDENCE);
             case Type::FILE:
-                return new TypeGuess('Redking\ParseBundle\Form\Type\FileType', array(), Guess::HIGH_CONFIDENCE);
+                return new TypeGuess('Redking\ParseBundle\Form\Type\ParseFileType', array(), Guess::HIGH_CONFIDENCE);
             default:
                 return new TypeGuess('Symfony\Component\Form\Extension\Core\Type\TextType', array(), Guess::LOW_CONFIDENCE);
         }
