@@ -58,6 +58,8 @@ class ParseFileType extends FileType
                     }
 
                     $parseFile = ParseFile::createFromFile($object->getPathname(), $fileName);
+                    // Attach UploadedFile to the created ParseFile so it can be used by validators
+                    $parseFile->_uploadedFile = $object;
                     $event->setData($parseFile);
 
                     // Dispatch preUpload Event on parent ParseObject

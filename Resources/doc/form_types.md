@@ -61,6 +61,30 @@ If you want to hard code the file name, you can use the `force_name` option :
     }
 ```
 
+Custom constraints `ParseFile` and `ParseFileImage` can also be used.
+
+They inherit respectivly from core Symfony constraints [`File`](https://symfony.com/doc/current/reference/constraints/File.html) and [`Image`](https://symfony.com/doc/current/reference/constraints/Image.html) and accept the same options.
+
+Ex:
+
+```php
+
+namespace AppBundle\ParseObject;
+
+use Redking\ParseBundle\Mapping\Annotations as ORM;
+use Redking\ParseBundle\Validator\Constraints as ParseAssert;
+
+class User
+{
+    // ...
+
+    /**
+     * @ORM\Field(type="file")
+     * @ParseAssert\ParseFileImage(maxSize="2M")
+     */
+    protected $avatar;
+}
+```
 
 ## GeoPointType
 
