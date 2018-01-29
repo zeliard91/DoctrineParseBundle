@@ -58,7 +58,9 @@ class CollectionRelationPersister extends AbstractCollectionPersister
             }
         }
         foreach ($coll->getDeleteDiff() as $object) {
-            $originalData->getRelation($fieldName)->remove($this->uow->getOriginalObjectData($object));
+            if (!in_array($object, $toBeInserted)) {
+                $originalData->getRelation($fieldName)->remove($this->uow->getOriginalObjectData($object));
+            }
         }
 
         $this->uow->addToCollectionChangeSet($coll->getOwner(), $fieldName, [$coll->getSnapshot(), $coll->toArray()]);
