@@ -42,10 +42,14 @@ class ObjectManager implements BaseObjectManager
 
     public function __construct(Configuration $config, EventManager $eventManager, ParseStorageInterface $parseStorage)
     {
+        $this->config = $config;
+
         $this->metadataFactory = new ClassMetadataFactory();
         $this->metadataFactory->setObjectManager($this);
+        if ($cacheDriver = $this->config->getMetadataCacheImpl()) {
+            $this->metadataFactory->setCacheDriver($cacheDriver);
+        }
 
-        $this->config = $config;
         $this->eventManager = $eventManager;
 
         $this->unitOfWork = new UnitOfWork($this);

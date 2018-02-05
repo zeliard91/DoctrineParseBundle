@@ -2,10 +2,11 @@
 
 namespace Redking\ParseBundle;
 
-use Redking\ParseBundle\Mapping\DefaultNamingStrategy;
-use Redking\ParseBundle\Mapping\DefaultObjectListenerResolver;
+use Doctrine\Common\Cache\Cache;
 use Doctrine\Common\Persistence\Mapping\Driver\MappingDriver;
 use Doctrine\Common\Proxy\AbstractProxyFactory;
+use Redking\ParseBundle\Mapping\DefaultNamingStrategy;
+use Redking\ParseBundle\Mapping\DefaultObjectListenerResolver;
 
 /**
  * Configuration container for the Doctrine DBAL.
@@ -308,5 +309,25 @@ class Configuration
     public function setAlwaysMaster($alwaysMaster)
     {
         $this->_attributes['alwaysMaster'] = $alwaysMaster;
+    }
+
+    /**
+     * Gets the cache driver implementation that is used for metadata caching.
+     *
+     * @return \Doctrine\Common\Cache\Cache
+     */
+    public function getMetadataCacheImpl()
+    {
+        return $this->attributes['metadataCacheImpl'] ?? null;
+    }
+
+    /**
+     * Sets the cache driver implementation that is used for metadata caching.
+     *
+     * @param \Doctrine\Common\Cache\Cache $cacheImpl
+     */
+    public function setMetadataCacheImpl(Cache $cacheImpl)
+    {
+        $this->attributes['metadataCacheImpl'] = $cacheImpl;
     }
 }

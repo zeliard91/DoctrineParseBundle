@@ -49,9 +49,10 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         $this->resolveDocuments($config, $container);
 
         $container->setParameter('doctrine.parse.auto_generate_proxy_classes', $config['auto_generate_proxy_classes']);
+        $this->loadObjectManagerCacheDriver($config, $container, 'metadata_cache');
 
         $methods = array(
-            // 'setMetadataCacheImpl' => new Reference(sprintf('doctrine.parse.%s_metadata_cache', $config['name'])),
+            'setMetadataCacheImpl' => new Reference(sprintf('doctrine.parse.%s_metadata_cache', $config['name'])),
             // 'setQueryCacheImpl' => new Reference(sprintf('doctrine.parse.%s_query_cache', $config['name'])),
             // 'setResultCacheImpl' => new Reference(sprintf('doctrine.parse.%s_result_cache', $config['name'])),
             'setMetadataDriverImpl' => new Reference('doctrine.parse.'.$config['name'].'_metadata_driver'),
