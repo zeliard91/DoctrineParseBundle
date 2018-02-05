@@ -318,7 +318,7 @@ class Configuration
      */
     public function getMetadataCacheImpl()
     {
-        return $this->attributes['metadataCacheImpl'] ?? null;
+        return isset($this->attributes['metadataCacheImpl']) ? $this->attributes['metadataCacheImpl'] : null;
     }
 
     /**
