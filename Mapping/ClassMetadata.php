@@ -1280,7 +1280,7 @@ class ClassMetadata implements BaseClassMetadata
             if ($this->isOwningCollectionValuedAssociation($association_key) && 
                 $this->getAssociationMapping($association_key)['lazyLoad'] === false
             ) {
-                $keys[] = $this->getNameOfField($association_key);
+                $keys[] = $association_key;
             }
         }
 
