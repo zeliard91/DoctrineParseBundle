@@ -15,14 +15,14 @@ class ObjectManager implements BaseObjectManager
     /**
      * The metadata factory, used to retrieve the ORM metadata of entity classes.
      *
-     * @var \Doctrine\ORM\Mapping\ClassMetadataFactory
+     * @var \Redking\ParseBundle\Mapping\ClassMetadataFactory
      */
     private $metadataFactory;
 
     /**
      * The used Configuration.
      *
-     * @var Redking\ParseBundle\Configuration
+     * @var \Redking\ParseBundle\Configuration
      */
     private $config;
 
@@ -39,6 +39,20 @@ class ObjectManager implements BaseObjectManager
      * @var \Redking\ParseBundle\Proxy\ProxyFactory
      */
     private $proxyFactory;
+
+    /**
+     * Unit of work.
+     *
+     * @var \Redking\ParseBundle\UnitOfWork
+     */
+    private $unitOfWork;
+
+    /**
+     * Repository Factory.
+     *
+     * @var \Redking\ParseBundle\RepositoryFactory
+     */
+    private $repositoryFactory;
 
     public function __construct(Configuration $config, EventManager $eventManager, ParseStorageInterface $parseStorage)
     {

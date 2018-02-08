@@ -2,6 +2,7 @@
 
 namespace Redking\ParseBundle;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Redking\ParseBundle\Mapping\ClassMetadata;
 

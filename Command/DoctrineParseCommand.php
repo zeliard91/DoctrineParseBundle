@@ -16,7 +16,7 @@ namespace Redking\ParseBundle\Command;
 
 use Redking\ParseBundle\Tools\DisconnectedClassMetadataFactory;
 use Redking\ParseBundle\Tools\ObjectGenerator;
-use Redking\ParseBundle\Tools\Command\Helper\ObjectManagerHelper;
+use Redking\ParseBundle\Command\Helper\ObjectManagerHelper;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\HttpKernel\Bundle\Bundle;

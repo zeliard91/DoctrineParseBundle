@@ -17,7 +17,7 @@
  * <http://www.doctrine-project.org>.
  */
 
-namespace Redking\ParseBundle\Tools\Console\Helper;
+namespace Redking\ParseBundle\Command\Helper;
 
 use Redking\ParseBundle\ObjectManager;
 use Symfony\Component\Console\Helper\Helper;
