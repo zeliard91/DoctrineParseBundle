@@ -1969,6 +1969,21 @@ class UnitOfWork implements PropertyChangedListener
         $originalData = $this->originalObjectData[$oid];
         $changeSet = $this->getChangesetFromParseObjects($class, $actualData, $originalData);
 
+        // Look for changes in associations of the entity
+        foreach ($class->associationMappings as $field => $assoc) {
+            if (($val = $class->reflFields[$field]->getValue($object)) !== null) {
+                $this->computeAssociationChanges($assoc, $val);
+                if (!isset($this->objectChangeSets[$oid]) &&
+                    $assoc['isOwningSide'] &&
+                    $assoc['type'] == ClassMetadata::MANY &&
+                    $val instanceof PersistentCollection &&
+                    $val->isDirty()) {
+                    $this->getCollectionPersister($assoc)->update($val);
+                    $this->scheduleExtraUpdate($object, [$assoc['name'] => [$originalData->get($assoc['name']), $actualData->get($assoc['name'])]]);
+                }
+            }
+        }
+
         if ($changeSet) {
             if (isset($this->objectChangeSets[$oid]) && $fromPostUpdate === false) {
                 $this->objectChangeSets[$oid] = array_merge($this->objectChangeSets[$oid], $changeSet);
