@@ -126,4 +126,4 @@ services:
         arguments:
             - "@redking_parse.manager"
         tags:
-            - {name: kernel.cache_warmer}
+            - {name: kernel.cache_warmer, priority: 10}
