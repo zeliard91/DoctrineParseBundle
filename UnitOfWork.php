@@ -483,6 +483,7 @@ class UnitOfWork implements PropertyChangedListener
         $class = $this->om->getClassMetadata($className);
         $id = $data->getObjectId();
         $idHash = implode(' ', [$id]);
+        $hydrator = new ParseObjectHydrator($this->om, $class);
 
         if (isset($this->identityMap[$class->rootEntityName][$idHash])) {
             if (isset($hints['doctrine.do_not_manage'])) {
@@ -502,18 +503,19 @@ class UnitOfWork implements PropertyChangedListener
                 $this->clearObjectChangeSet($oid);
             }
 
-            $hydrator = new ParseObjectHydrator($this->om, $class);
             $hydrator->hydrate($object, $data, $hints);
         } else {
             if ($object == null) {
                 $object = $class->newInstance();
             }
+            $hydrator->hydrate($object, $data, $hints);
+            if (isset($hints['doctrine.do_not_manage'])) {
+                return $object;
+            }
             $this->registerManaged($object, $id, $data);
             $oid = spl_object_hash($object);
             $this->objectStates[$oid] = self::STATE_MANAGED;
             $this->identityMap[$class->rootEntityName][$idHash] = $object;
-            $hydrator = new ParseObjectHydrator($this->om, $class);
-            $hydrator->hydrate($object, $data, $hints);
             $this->originalObjectData[$oid] = $data;
         }
 
