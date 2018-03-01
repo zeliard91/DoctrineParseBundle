@@ -111,17 +111,20 @@ class ParseObjectHydrator
                         $pColl->takeSnapshot();
                     }
 
-                    // The query should have added the includeKey, the references ParseObjects must be loaded
-                    if (!$assoc['lazyLoad'] && is_array($data->get($assoc['name']))) {
-                        foreach ($data->get($assoc['name']) as $reference) {
-                            if ($reference->isDataAvailable()) {
-                                $pColl->add($this->om->getUnitOfWork()->getOrCreateObject($assoc['targetDocument'], $reference, $hints));
+                    // Try to hydrate loaded collection if available
+                    try {
+                        $references = $data->get($assoc['name']);
+                        if (is_array($references)) {
+                            foreach ($references as $reference) {
+                                if ($reference instanceof ParseObject && $reference->isDataAvailable()) {
+                                    $pColl->add($this->om->getUnitOfWork()->getOrCreateObject($assoc['targetDocument'], $reference, $hints));
+                                }
                             }
+                            $pColl->takeSnapshot();
                         }
-                        $pColl->takeSnapshot();
+                    } catch (\Exception $e) {
+                        // do nothing as the key has not been fetched
                     }
-
-                    // $this->om->getUnitOfWork()->originalObjectData[$oid][$field] = $pColl;
 
                     break;
             }
