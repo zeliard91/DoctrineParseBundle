@@ -508,15 +508,16 @@ class UnitOfWork implements PropertyChangedListener
             if ($object == null) {
                 $object = $class->newInstance();
             }
+
+            $this->registerManaged($object, $id, $data);
             $hydrator->hydrate($object, $data, $hints);
+
             if (isset($hints['doctrine.do_not_manage'])) {
+                $this->detach($object);
                 return $object;
             }
-            $this->registerManaged($object, $id, $data);
-            $oid = spl_object_hash($object);
-            $this->objectStates[$oid] = self::STATE_MANAGED;
+
             $this->identityMap[$class->rootEntityName][$idHash] = $object;
-            $this->originalObjectData[$oid] = $data;
         }
 
         return $object;
