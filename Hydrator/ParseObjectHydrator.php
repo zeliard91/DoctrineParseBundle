@@ -3,6 +3,7 @@
 namespace Redking\ParseBundle\Hydrator;
 
 use Parse\ParseACL;
+use Parse\ParseObject;
 use Redking\ParseBundle\Event\LifecycleEventArgs;
 use Redking\ParseBundle\Event\PreLoadEventArgs;
 use Redking\ParseBundle\Events;
