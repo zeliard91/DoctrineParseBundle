@@ -140,7 +140,7 @@ class PersistentCollection implements Collection
 
         // If _backRefFieldName is set and its a one-to-many association,
         // we need to set the back reference.
-        if ($this->backRefFieldName && $this->association['type'] === ClassMetadata::ONE_TO_MANY) {
+        if ($this->backRefFieldName && $this->association['type'] === ClassMetadata::MANY) {
             // Set back reference to owner
             $this->typeClass->reflFields[$this->backRefFieldName]->setValue(
                 $element, $this->owner
@@ -167,7 +167,7 @@ class PersistentCollection implements Collection
 
         // If _backRefFieldName is set, then the association is bidirectional
         // and we need to set the back reference.
-        if ($this->backRefFieldName && $this->association['type'] === ClassMetadata::ONE_TO_MANY) {
+        if ($this->backRefFieldName && $this->association['type'] === ClassMetadata::MANY) {
             // Set back reference to owner
             $this->typeClass->reflFields[$this->backRefFieldName]->setValue(
                 $element, $this->owner
@@ -478,7 +478,7 @@ class PersistentCollection implements Collection
     public function get($key)
     {
         if ( ! $this->initialized
-            && $this->association['type'] === ClassMetadata::ONE_TO_MANY
+            && $this->association['type'] === ClassMetadata::MANY
             && $this->association['fetch'] === ClassMetadata::FETCH_EXTRA_LAZY
             && isset($this->association['indexBy'])
         ) {
