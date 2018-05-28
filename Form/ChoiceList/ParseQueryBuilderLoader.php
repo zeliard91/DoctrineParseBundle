@@ -90,7 +90,7 @@ class ParseQueryBuilderLoader implements EntityLoaderInterface
     public function getEntitiesByIds($identifier, array $values)
     {
         if (empty($values) || (count($values) == 1 && $values[0] === '')) {
-            return $this->getEntities();
+            return [];
         }
 
         $qb = clone $this->queryBuilder;
