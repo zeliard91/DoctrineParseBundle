@@ -955,6 +955,9 @@ public function <methodName>()
             if (isset($fieldMapping['mappedBy'])) {
                 $typeOptions[] = 'mappedBy="'.$fieldMapping['mappedBy'].'"';
             }
+            if (isset($fieldMapping['orphanRemoval']) && $fieldMapping['orphanRemoval']) {
+                $typeOptions[] = 'orphanRemoval=true';
+            }
 
             $lines[] = $this->spaces.' * @ORM\\'.$type.'('.implode(', ', $typeOptions).')';
         }
