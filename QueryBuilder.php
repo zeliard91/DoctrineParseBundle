@@ -156,7 +156,10 @@ class QueryBuilder
         foreach ($criteria as $key => $value) {
             if (is_object($value) && $this->_om->getUnitOfWork()->isInIdentityMap($value)) {
                 $this->field($key)->references($value);
-            } else {
+            } elseif (null === $value) {
+                $this->field($key)->in([null]); // Temp fix as Parse PHP SDK convert equalTo null as exists=false
+            }
+            else {
                 $this->field($key)->equals($value);
             }
         }
