@@ -6,6 +6,8 @@ services:
 php:
   - 5.6
   - 7.0
+  - 7.1
+  - 7.2
 
 env: 
   - SYMFONY_VERSION=^2.8
@@ -22,7 +24,7 @@ before_install:
   - docker run -d -e APP_ID=${DOCTRINE_PARSE_APP_ID} -e MASTER_KEY=${DOCTRINE_PARSE_MASTER_KEY} -e ALLOW_CLIENT_CLASS_CREATION=1 --link mongo --name parse-server -p 1337:1337 yongjhih/parse-server
   - composer require --no-update symfony/symfony:${SYMFONY_VERSION}
 
-install: composer update --prefer-dist
+install: COMPOSER_MEMORY_LIMIT=-1 composer update --prefer-dist
 
 script: vendor/bin/phpunit --debug
 
