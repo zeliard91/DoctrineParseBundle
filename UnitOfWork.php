@@ -1221,7 +1221,7 @@ class UnitOfWork implements PropertyChangedListener
                 // Only MANAGED objects that are NOT SCHEDULED FOR INSERTION are processed here.
                 $oid = spl_object_hash($object);
 
-                if (!isset($this->objectInsertions[$oid]) && isset($this->objectStates[$oid])) {
+                if (!isset($this->objectInsertions[$oid]) && !isset($this->objectDeletions[$oid]) && isset($this->objectStates[$oid])) {
                     $this->computeChangeSet($class, $object);
                 }
             }
