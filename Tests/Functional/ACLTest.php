@@ -18,6 +18,7 @@ class AclTest extends \Redking\ParseBundle\Tests\TestCase
     public function testWithoutAcl()
     {
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('foo');
 
         $this->om->persist($user);
@@ -51,6 +52,7 @@ class AclTest extends \Redking\ParseBundle\Tests\TestCase
     {
         $user = new User();
         $user->setName('foo');
+        $user->setPassword('p4ss');
 
         $this->om->persist($user);
         $this->om->flush();
@@ -83,6 +85,7 @@ class AclTest extends \Redking\ParseBundle\Tests\TestCase
     {
         $user = new User();
         $user->setName('foo');
+        $user->setPassword('p4ss');
 
         $role = new Role();
         $role->setName('Foo');

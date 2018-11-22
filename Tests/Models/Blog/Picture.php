@@ -17,11 +17,6 @@ class Picture
     private $file;
 
     /**
-     * @ORM\ReferenceOne(targetDocument="Redking\ParseBundle\Tests\Models\Blog\User", inversedBy="posts")
-     */
-    private $user;
-
-    /**
      * @ORM\Field(type="geopoint")
      */
     private $location;

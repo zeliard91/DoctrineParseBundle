@@ -21,6 +21,7 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
     public function testSave()
     {
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Foo');
         $birthday = new \DateTime('1981-02-04T11:00:59.012000Z');
         $user->setBirthday($birthday);
@@ -46,10 +47,12 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
     public function testSingleFlush()
     {
         $user1 = new User();
+        $user1->setPassword('p4ss');
         $user1->setName('Foo');
         $this->om->persist($user1);
 
         $user2 = new User();
+        $user2->setPassword('p4ss');
         $user2->setName('Bar');
         $this->om->persist($user2);
 
@@ -83,6 +86,7 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
     public function testSaveWithNumericString()
     {
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName(31);
 
         $this->om->persist($user);
@@ -102,6 +106,7 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
     public function testSaveWithoutCascade()
     {
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Foo');
 
         $post = new Post();
@@ -132,6 +137,7 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
         $this->assertNotNull($avatar);
 
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Foo');
         $user->setAvatar($avatar);
         $avatar->setFile('dummy2.jpg');
@@ -149,6 +155,7 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
     public function testSaveWithCascade()
     {
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Foo');
 
         $picture = new Picture();
@@ -322,6 +329,7 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
         // Should be store in parse in UTC
 
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('foo');
         $user->setBirthday($birthday);
 

@@ -19,6 +19,7 @@ class CollectionTest extends \Redking\ParseBundle\Tests\TestCase
     {
         $user = new User();
         $user->setName('Foo');
+        $user->setPassword('p4ss');
 
         $this->om->persist($user);
         $this->om->flush();
@@ -46,6 +47,7 @@ class CollectionTest extends \Redking\ParseBundle\Tests\TestCase
     public function testClearCollection()
     {
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Foo');
 
         $this->om->persist($user);

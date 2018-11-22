@@ -18,6 +18,7 @@ class RemoveTest extends \Redking\ParseBundle\Tests\TestCase
     public function testRemove()
     {
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Foo');
 
         $this->om->persist($user);
@@ -42,6 +43,7 @@ class RemoveTest extends \Redking\ParseBundle\Tests\TestCase
     public function testRemoveWithoutCascade()
     {
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Foo');
 
         $picture = new Picture();
@@ -70,6 +72,7 @@ class RemoveTest extends \Redking\ParseBundle\Tests\TestCase
     public function testRemoveWithCascade()
     {
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Foo');
 
         $picture = new Picture();

@@ -28,9 +28,11 @@ class QueryTest extends \Redking\ParseBundle\Tests\TestCase
     public function testEquals()
     {
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Foo');
         $this->om->persist($user);
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Bar');
         $this->om->persist($user);
 
@@ -49,9 +51,11 @@ class QueryTest extends \Redking\ParseBundle\Tests\TestCase
     public function testNotEquals()
     {
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Foo');
         $this->om->persist($user);
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Bar');
         $this->om->persist($user);
 
@@ -70,9 +74,11 @@ class QueryTest extends \Redking\ParseBundle\Tests\TestCase
     public function testContains()
     {
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Foo');
         $this->om->persist($user);
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Bar');
         $this->om->persist($user);
 
@@ -98,9 +104,11 @@ class QueryTest extends \Redking\ParseBundle\Tests\TestCase
     public function testRegex()
     {
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('FOO');
         $this->om->persist($user);
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Bar');
         $this->om->persist($user);
 
@@ -151,10 +159,12 @@ class QueryTest extends \Redking\ParseBundle\Tests\TestCase
         $birthday2 = new \DateTime('2009-04-12T00:00:59.012000Z');
 
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Foo');
         $user->setBirthday($birthday1);
         $this->om->persist($user);
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Bar');
         $user->setBirthday($birthday2);
         $this->om->persist($user);
@@ -183,6 +193,7 @@ class QueryTest extends \Redking\ParseBundle\Tests\TestCase
         $avatarId = $avatar->getId();
 
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Foo');
         $user->setAvatar($avatar);
 
@@ -202,9 +213,11 @@ class QueryTest extends \Redking\ParseBundle\Tests\TestCase
     public function testSort()
     {
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Foo');
         $this->om->persist($user);
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Bar');
         $this->om->persist($user);
 

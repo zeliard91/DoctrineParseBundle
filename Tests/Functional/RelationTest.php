@@ -28,6 +28,7 @@ class RelationTest extends \Redking\ParseBundle\Tests\TestCase
         $this->om->flush();
 
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Foo');
         $user->addAddress($adress);
         $user->addAddress($adress2);
@@ -52,6 +53,7 @@ class RelationTest extends \Redking\ParseBundle\Tests\TestCase
         $adress3->setCity('London');
         
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Foo');
         $user->addAddress($adress);
         $user->addAddress($adress2);
@@ -76,6 +78,7 @@ class RelationTest extends \Redking\ParseBundle\Tests\TestCase
         $adress3->setCity('London');
         
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Foo');
         $user->addAddress($adress);
         $user->addAddress($adress2);
@@ -122,6 +125,7 @@ class RelationTest extends \Redking\ParseBundle\Tests\TestCase
         $adress3->setCity('London');
         
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Foo');
         $user->addAddress($adress);
         $user->addAddress($adress2);
@@ -129,6 +133,7 @@ class RelationTest extends \Redking\ParseBundle\Tests\TestCase
         $this->om->persist($user);
 
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Bar');
         $user->addAddress($adress);
         $this->om->persist($user);
@@ -154,6 +159,7 @@ class RelationTest extends \Redking\ParseBundle\Tests\TestCase
         $this->om->persist($adress3);
 
         $user = new User();
+        $user->setPassword('p4ss');
         $user->setName('Foo');
         $user->addAddress($adress);
         $user->addAddress($adress2);

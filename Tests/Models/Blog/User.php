@@ -19,7 +19,7 @@ class User
     /**
      * @ORM\Field(type="string")
      */
-    private $password = 'foo';
+    private $password;
 
     /**
      * @ORM\Field(type="date")
@@ -72,6 +72,13 @@ class User
     public function setName($name)
     {
         $this->name = $name;
+
+        return $this;
+    }
+
+    public function setPassword($password)
+    {
+        $this->password = $password;
 
         return $this;
     }
