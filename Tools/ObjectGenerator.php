@@ -68,6 +68,12 @@ class ObjectGenerator
     /** Attribute used in the __toString method */
     private $toStringField = null;
 
+    /** Whether or not to override parent class __construct */
+    private $overrideConstruct = false;
+
+    /** Whether or not to override parent class __toString */
+    private $overrideToString = false;
+
     protected $typeAlias = array(
         Type::DATE => '\DateTime',
         Type::GEOPOINT => '\Parse\ParseGeoPoint',
@@ -373,6 +379,22 @@ public function <methodName>()
     }
 
     /**
+     * @param bool $overrideConstruct
+     */
+    public function setOverrideConstruct(bool $overrideConstruct)
+    {
+        $this->overrideConstruct = $overrideConstruct;
+    }
+
+    /**
+     * @param bool $overrideToString
+     */
+    public function setOverrideToString(bool $overrideToString)
+    {
+        $this->overrideToString = $overrideToString;
+    }
+
+    /**
      * @param string $type
      *
      * @return string
@@ -454,11 +476,16 @@ public function <methodName>()
 
     private function generateObjectConstructor(ClassMetadata $metadata)
     {
+        $collections = array();
+
         if ($this->hasMethod('__construct', $metadata)) {
-            return '';
+            if (!$this->overrideConstruct) {
+                return '';
+            } else {
+                $collections[] = 'parent::__construct();';
+            }
         }
 
-        $collections = array();
         foreach ($metadata->fieldMappings as $mapping) {
             if ($mapping['type'] === ClassMetadata::MANY) {
                 $collections[] = '$this->'.$mapping['fieldName'].' = new \Doctrine\Common\Collections\ArrayCollection();';
@@ -862,7 +889,7 @@ public function <methodName>()
 
     private function generateToStringMethod(ClassMetadata $metadata)
     {
-        if ($this->hasMethod('__toString', $metadata)) {
+        if ($this->hasMethod('__toString', $metadata) && !$this->overrideToString) {
             return;
         }
 

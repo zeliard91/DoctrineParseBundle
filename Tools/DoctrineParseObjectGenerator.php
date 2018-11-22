@@ -113,6 +113,8 @@ class DoctrineParseObjectGenerator extends Generator
         $objectGenerator->setregenerateObjectIfExists(false);
         $objectGenerator->setupdateObjectIfExists(true);
         $objectGenerator->setNumSpaces(4);
+        $objectGenerator->setOverrideConstruct(true);
+        $objectGenerator->setOverrideToString(true);
         // $objectGenerator->setAnnotationPrefix('ORM\\');
 
         return $objectGenerator;
