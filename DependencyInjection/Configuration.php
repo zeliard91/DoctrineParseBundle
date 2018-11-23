@@ -27,7 +27,7 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode('rest_key')->isRequired()->end()
                 ->scalarNode('master_key')->isRequired()->end()
                 ->scalarNode('server_url')->isRequired()->end()
-                ->booleanNode('mount_path')->defaultValue('parse')->end()
+                ->scalarNode('mount_path')->defaultValue('parse')->end()
                 ->scalarNode('auto_mapping')->defaultFalse()->end()
                 ->booleanNode('logging')->defaultValue('%kernel.debug%')->end()
                 ->booleanNode('always_master')->defaultTrue()->end()
