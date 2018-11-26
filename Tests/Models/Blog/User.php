@@ -32,7 +32,7 @@ class User
     private $posts;
 
     /**
-     * @ORM\ReferenceMany(targetDocument="Redking\ParseBundle\Tests\Models\Blog\Picture", cascade="all")
+     * @ORM\ReferenceMany(targetDocument="Redking\ParseBundle\Tests\Models\Blog\Picture", cascade="all", orphanRemoval=true)
      */
     private $pictures;
 
@@ -50,6 +50,11 @@ class User
      * @ORM\ReferenceMany(targetDocument="Redking\ParseBundle\Tests\Models\Blog\Picture")
      */
     private $screenshots;
+
+    /**
+     * @ORM\ReferenceOne(targetDocument="Redking\ParseBundle\Tests\Models\Blog\Picture", orphanRemoval=true)
+     */
+    private $portrait;
 
     public function __construct()
     {
@@ -262,5 +267,27 @@ class User
     public function getScreenshots()
     {
         return $this->screenshots;
+    }
+
+    /**
+     * Set portrait
+     *
+     * @param Redking\ParseBundle\Tests\Models\Blog\Picture $portrait
+     */
+    public function setPortrait(\Redking\ParseBundle\Tests\Models\Blog\Picture $portrait = null)
+    {
+        $this->portrait = $portrait;
+
+        return $this;
+    }
+
+    /**
+     * Get portrait
+     *
+     * @return Redking\ParseBundle\Tests\Models\Blog\Picture $portrait
+     */
+    public function getPortrait()
+    {
+        return $this->portrait;
     }
 }

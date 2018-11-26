@@ -347,6 +347,28 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /**
+     * Returns the matching object from identityMap.
+     *
+     * @param  ParseObject $parseObject
+     * @return object|null
+     */
+    public function getManagedObjectFromParseObject(ParseObject $parseObject)
+    {
+        foreach ($this->identityMap as $className => $objects) {
+            if ($this->om->getClassMetadata($className)->getCollection() !== $parseObject->getClassName()) {
+                continue;
+            }
+            foreach ($objects as $id => $object) {
+                if ($id === $parseObject->getObjectId()) {
+                    return $object;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * INTERNAL:
      * Removes an object from the identity map. This effectively detaches the
      * object from the persistence management of Doctrine.
@@ -1633,6 +1655,13 @@ class UnitOfWork implements PropertyChangedListener
      */
     public function scheduleOrphanRemoval($object)
     {
+        // Search for doctrine managed object from Parse Object
+        if ($object instanceof ParseObject) {
+            $object = $this->getManagedObjectFromParseObject($object);
+            if (null === $object) {
+                throw RedkingParseException::objectNotManaged($object);
+            }
+        }
         $this->orphanRemovals[spl_object_hash($object)] = $object;
     }
 
@@ -2148,7 +2177,8 @@ class UnitOfWork implements PropertyChangedListener
                     $changeSet[$propName] = array($orgValue, $actualValue);
                 }
 
-                if ($orgValue !== null && $assoc['orphanRemoval']) {
+                if ($orgValue instanceof ParseObject && null === $actualValue && $assoc['orphanRemoval']) {
+                    $changeSet[$propName] = array($orgValue, null);
                     $this->scheduleOrphanRemoval($orgValue);
                 }
             }
