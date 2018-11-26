@@ -1464,6 +1464,11 @@ class UnitOfWork implements PropertyChangedListener
                 continue;
             }
 
+            // skip if the field's value is null and the object is new
+            if (null === $actualData->getObjectId() && null === $value) {
+                continue;
+            }
+
             // skip if the field is ParseUser password and value is null
             if (null === $value && $class->getNameOfField($name) === 'password' and $actualData instanceof ParseUser) {
                 continue;
