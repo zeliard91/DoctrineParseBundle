@@ -262,11 +262,14 @@ class ObjectPersister
 
         try {
             $object->destroy($this->om->isMasterRequest());
+            $this->logQuery(['type' => 'remove', 'id' => $object_id]);
         } catch (\Parse\ParseException $e) {
-            throw new WrappedParseException($e);
+            if ($e->getMessage() === 'Object not found.') {
+                $this->logQuery(['type' => 'remove', 'id' => $object_id, 'failed reason' => $e->getMessage()]);
+            } else {
+                throw new WrappedParseException($e);
+            }
         }
-
-        $this->logQuery(['type' => 'remove', 'id' => $object_id]);
     }
 
     /**
