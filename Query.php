@@ -300,7 +300,7 @@ class Query
             }
         }
 
-        if (isset($this->query['limit']) && null !== $this->query['limit']) {
+        if (isset($this->query['limit']) && null !== $this->query['limit'] && $this->query['limit'] > 0) {
             $this->_parseQuery->limit($this->query['limit']);
         } else {
             // Force a high limit : the API has "100" as default
