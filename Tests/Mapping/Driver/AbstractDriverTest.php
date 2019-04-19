@@ -2,6 +2,7 @@
 
 namespace Redking\ParseBundle\Tests\Mapping\Driver;
 
+use PHPUnit\Framework\TestCase as BaseTestCase;
 use Redking\ParseBundle\Mapping\ClassMetadata;
 
 // require_once 'fixtures/InvalidPartialFilterDocument.php';
@@ -10,7 +11,7 @@ require_once 'fixtures/User.php';
 // require_once 'fixtures/EmbeddedDocument.php';
 // require_once 'fixtures/QueryResultDocument.php';
 
-abstract class AbstractDriverTest extends \PHPUnit_Framework_TestCase
+abstract class AbstractDriverTest extends BaseTestCase
 {
     protected $driver;
 

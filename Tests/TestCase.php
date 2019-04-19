@@ -6,11 +6,12 @@ use Doctrine\Common\EventManager;
 use Parse\ParseObject;
 use Parse\ParseQuery;
 use Parse\ParseMemoryStorage;
+use PHPUnit\Framework\TestCase as BaseTestCase;
 use Redking\ParseBundle\Configuration;
 use Redking\ParseBundle\Mapping\Driver\AnnotationDriver;
 use Redking\ParseBundle\ObjectManager;
 
-abstract class TestCase extends \PHPUnit_Framework_TestCase
+abstract class TestCase extends BaseTestCase
 {
     /**
      * @var ObjectManager

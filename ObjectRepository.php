@@ -70,7 +70,7 @@ class ObjectRepository implements BaseObjectRepository, Selectable
             throw RedkingParseException::findByRequiresParameter($method.$by);
         }
 
-        $fieldName = lcfirst(\Doctrine\Common\Util\Inflector::classify($by));
+        $fieldName = lcfirst(\Doctrine\Common\Inflector\Inflector::classify($by));
 
         if ($this->_class->hasField($fieldName)) {
             return $this->$method(array($fieldName => $arguments[0]));
