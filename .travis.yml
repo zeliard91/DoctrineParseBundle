@@ -4,14 +4,12 @@ services:
   - docker
 
 php:
-  - 5.6
-  - 7.0
-  - 7.1
   - 7.2
+  - 7.3
 
 env: 
-  - SYMFONY_VERSION=^2.8
-  - SYMFONY_VERSION=^3.4
+  - SYMFONY_VERSION=^4.2
+  - SYMFONY_VERSION=^4.3
 
 cache:
     directories:
