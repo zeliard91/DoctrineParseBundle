@@ -9,7 +9,6 @@ php:
 
 env: 
   - SYMFONY_VERSION=^4.2
-  - SYMFONY_VERSION=^4.3
 
 cache:
     directories:
