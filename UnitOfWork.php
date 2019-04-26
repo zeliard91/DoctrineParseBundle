@@ -1515,6 +1515,9 @@ class UnitOfWork implements PropertyChangedListener
                 if (is_array($value)) {
                     $actualData->setAssociativeArray($class->getNameOfField($name), $value);
                 }
+                elseif (is_object($value)) {
+                    $actualData->set($class->getNameOfField($name), $value);
+                }
                 continue;
             }
 
@@ -2048,6 +2051,9 @@ class UnitOfWork implements PropertyChangedListener
                 if ($class->isFieldAnHash($class->getFieldNameOfName($key)) || $class->isFieldAnObject($class->getFieldNameOfName($key))) {
                     if (is_array($values[1])) {
                         $this->originalObjectData[$oid]->setAssociativeArray($key, $values[1]);
+                    }
+                    elseif (is_object($values[1])) {
+                        $this->originalObjectData[$oid]->set($key, $values[1]);
                     }
                     continue;
                 }
