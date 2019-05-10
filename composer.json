@@ -14,7 +14,12 @@
     "require": {
         "php": "^7.2",
         "parse/php-sdk": "^1.2",
-        "symfony/symfony": "^4.2",
+        "symfony/framework-bundle": "^4.2",
+        "symfony/config": "^4.2",
+        "symfony/console": "^4.2",
+        "symfony/dependency-injection": "^4.2",
+        "symfony/doctrine-bridge": "^4.2",
+        "symfony/yaml": "^4.2",
         "sensio/framework-extra-bundle": "^5.0",
         "doctrine/common": "^2.4",
         "doctrine/instantiator": "^1.2",
