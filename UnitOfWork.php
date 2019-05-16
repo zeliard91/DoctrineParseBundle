@@ -1114,7 +1114,6 @@ class UnitOfWork implements PropertyChangedListener
             if ($object instanceof Collection) {
                 $this->getCollectionPersister($object->getMapping())->updateAndSave($object);
             } else {
-                $this->objectUpdates[$oid] = $changeset;
                 $this->getObjectPersister(get_class($object))->update($this->originalObjectData[$oid], $changeset);
             }
         }
@@ -1132,7 +1131,7 @@ class UnitOfWork implements PropertyChangedListener
         $invoke = $this->listenersInvoker->getSubscribedSystems($class, Events::postRemove);
 
         foreach ($this->objectDeletions as $oid => $object) {
-            if ($this->om->getClassMetadata(get_class($object))->name !== $className) {
+            if ($this->om->getClassMetadata(get_class($object))->name !== $className || !isset($this->originalObjectData[$oid])) {
                 continue;
             }
 
