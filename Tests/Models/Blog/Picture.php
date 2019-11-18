@@ -26,6 +26,11 @@ class Picture
      */
     private $exif;
 
+    /**
+     * @ORM\Field(type="file")
+     */
+    private $media;
+
     public function getId()
     {
         return $this->id;
@@ -65,5 +70,17 @@ class Picture
     public function getExif()
     {
         return $this->exif;
+    }
+
+    public function setMedia($media)
+    {
+        $this->media = $media;
+
+        return $this;
+    }
+
+    public function getMedia()
+    {
+        return $this->media;
     }
 }
