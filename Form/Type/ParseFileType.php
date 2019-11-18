@@ -62,9 +62,19 @@ class ParseFileType extends FileType
                     $parseFile->_uploadedFile = $object;
                     $event->setData($parseFile);
 
+                    // Search for Object parent class
+                    $parent = $form->getParent();
+                    while (null === $parent->getConfig()->getDataClass() && null !== $parent->getParent()) {
+                        $parent = $parent->getParent();
+                    }
+
+                    if (null === $parent->getConfig()->getDataClass()) {
+                        throw new \Exception('Unable to find parent object class for this ParseFileType');
+                    }
+
                     // Dispatch preUpload Event on parent ParseObject
-                    $class = $this->om->getClassMetadata($form->getParent()->getConfig()->getDataClass());
-                    $parent = $form->getParent()->getData();
+                    $class = $this->om->getClassMetadata($parent->getConfig()->getDataClass());
+                    $parent = $parent->getData();
 
                     $listenersInvoker = $this->om->getUnitOfWork()->getListenersInvoker();
                     $invoke = $listenersInvoker->getSubscribedSystems($class, Events::preUpload);
