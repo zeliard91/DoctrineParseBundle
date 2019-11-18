@@ -25,6 +25,7 @@ use Parse\ParseGeoPoint;
 use Parse\ParseObject;
 use Parse\ParseRole;
 use Parse\ParseUser;
+use Symfony\Component\HttpFoundation\File\File;
 
 /**
  * The UnitOfWork is responsible for tracking changes to objects during an
@@ -1500,6 +1501,14 @@ class UnitOfWork implements PropertyChangedListener
                 && $actualData->get($class->getNameOfField($name)) instanceof ParseFile
                 && $value->getName() === $actualData->get($class->getNameOfField($name))->getName()
             ) {
+                continue;
+            }
+
+            // Transform a Symfony File into a ParseFile
+            if ($value instanceof File
+                && $class->isFieldAFile($name)) {
+                $actualData->set($class->getNameOfField($name), ParseFile::createFromFile($value->getRealPath(), $value->getBasename(), $value->getMimeType()));
+
                 continue;
             }
 

@@ -2,6 +2,7 @@
 
 namespace Redking\ParseBundle\Tests\Functional;
 
+use Parse\ParseFile;
 use Parse\ParseQuery;
 use Parse\ParseGeoPoint;
 use Redking\ParseBundle\Tests\Models\Blog\Address;
@@ -362,5 +363,35 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
         $this->om->getUnitOfWork()->recomputeSingleObjectChangeSet($this->om->getClassMetaData(User::class, $user), $user);
         $changes = $this->om->getUnitOfWork()->getObjectChangeSet($user);
         $this->assertTrue(isset($changes['birthday']));
+    }
+
+    public function testSaveFile()
+    {
+        $filePath = realpath(__DIR__.'/../../README.md');
+        $file = basename($filePath);
+        $media = new \Symfony\Component\HttpFoundation\File\File($filePath);
+
+        $picture = (new Picture())
+            ->setFile($file)
+            ->setMedia($media)
+        ;
+
+        $this->om->persist($picture);
+        $this->om->flush();
+        $this->om->clear();
+
+        $picture = $this->om->getRepository(Picture::class)->findOneByFile($file);
+        $this->assertNotNull($picture);
+        $this->assertInstanceOf(ParseFile::class, $picture->getMedia());
+        $this->assertEquals(file_get_contents($filePath), $picture->getMedia()->getData());
+
+        // Remove saved file
+        $picture->setMedia(null);
+        $this->om->flush();
+        $this->om->clear();
+
+        $picture = $this->om->getRepository(Picture::class)->findOneByFile($file);
+        $this->assertNotNull($picture);
+        $this->assertNull($picture->getMedia());
     }
 }
