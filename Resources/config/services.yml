@@ -30,6 +30,8 @@ parameters:
     doctrine.parse.cache.xcache.class: Doctrine\Common\Cache\XcacheCache
     doctrine.parse.cache.wincache.class: Doctrine\Common\Cache\WinCacheCache
     doctrine.parse.cache.zenddata.class: Doctrine\Common\Cache\ZendDataCache
+    doctrine.parse.schema_syncer_warmer.class: 'Redking\ParseBundle\CacheWarmer\SchemaSyncerWarmer'
+    doctrine.parse.schema_manipulator.class: 'Redking\ParseBundle\Tools\SchemaManipulator'
 
 services:
     # Registry
@@ -67,6 +69,22 @@ services:
             - "@redking_parse.manager"
         tags:
             - {name: kernel.cache_warmer}
+
+    # Sync Schema on cache warming
+    redking_parse.schema_syncer_warmer:
+        class: "%doctrine.parse.schema_syncer_warmer.class%"
+        public: false
+        arguments:
+            - "@redking_parse.schema_manipulator"
+        tags:
+            - {name: kernel.cache_warmer, priority: -500}
+
+    # Schema helper
+    redking_parse.schema_manipulator:
+        class: "%doctrine.parse.schema_manipulator.class%"
+        public: true
+        arguments:
+            - "@redking_parse.manager"
 
     # logger
     redking_parse.logger.aggregate:
