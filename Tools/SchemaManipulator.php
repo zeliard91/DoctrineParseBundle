@@ -94,9 +94,6 @@ class SchemaManipulator
         $params = [];
         foreach ($fields as $field) {
             $parseFieldName = $class->getNameOfField($field);
-            if ($class->isSingleValuedAssociation($field)) {
-                $parseFieldName = '_p_'.$parseFieldName;
-            }
             $idxName .= '_'.$parseFieldName;
             $params[$parseFieldName] = 1;
         }
