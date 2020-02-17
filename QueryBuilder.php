@@ -466,4 +466,12 @@ class QueryBuilder
         $this->expr->regex($value, $modifiers);
         return $this;
     }
+
+
+    public function aggregate(array $pipeline)
+    {
+        $this->query['type'] = Query::TYPE_AGGREGATE;
+        $this->expr->aggregate($pipeline);
+        return $this;
+    }
 }
