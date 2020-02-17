@@ -240,4 +240,11 @@ class Expr
         $this->query['$or'][] = $expression instanceof Expr ? $expression->getQuery() : $expression;
         return $this;
     }
+
+
+    public function aggregate(array $pipeline)
+    {
+        $this->query['$aggregate'] = $pipeline;
+        return $this;
+    }
 }

@@ -22,6 +22,7 @@ class Query
     const TYPE_DISTINCT = 9;
     const TYPE_GEO_NEAR = 10;
     const TYPE_COUNT = 11;
+    const TYPE_AGGREGATE = 12;
 
     /**
      * The ObjectManager used by this QueryBuilder.
@@ -91,10 +92,11 @@ class Query
             case self::TYPE_DISTINCT:
             case self::TYPE_GEO_NEAR:
             case self::TYPE_COUNT:
+            case self::TYPE_AGGREGATE:
                 break;
 
             default:
-                throw new InvalidArgumentException('Invalid query type: '.$query['type']);
+                throw new \InvalidArgumentException('Invalid query type: '.$query['type']);
         }
 
         $this->_om = $om;
@@ -184,6 +186,9 @@ class Query
                 }
             }
         }
+        if (isset($this->query['query']['$aggregate'])) {
+            $query['aggregate'] = $this->query['query']['$aggregate'];
+        }
 
         $loggable_query += $query;
 
@@ -220,9 +225,16 @@ class Query
                 break;
 
             case self::TYPE_COUNT:
-                $nb_results = $results = $this->_parseQuery->count($this->_om->isMasterRequest());
+                $nb_results = $this->_parseQuery->count($this->_om->isMasterRequest());
                 $this->logQuery();
                 return $nb_results;
+
+                break;
+
+            case self::TYPE_AGGREGATE:
+                $results = $this->_parseQuery->aggregate($this->query['query']['$aggregate']);
+                $this->logQuery();
+                return $results;
 
                 break;
             default:
@@ -268,7 +280,7 @@ class Query
                         }
                     }
                 }
-                elseif ($attribute === '$or') {
+                elseif (in_array($attribute, ['$or', '$aggregate'])) {
                     continue;
                 }
                 else {
