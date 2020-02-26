@@ -75,7 +75,7 @@ class ObjectType extends DoctrineType
      * @internal This method is public to be usable as callback. It should not
      *           be used in user code.
      */
-    public function getQueryBuilderPartsForCachingHash($queryBuilder)
+    public function getQueryBuilderPartsForCachingHash($queryBuilder): ?array
     {
         return array(
                 $queryBuilder->getQuery()->toArray(),
