@@ -17,11 +17,13 @@ namespace Redking\ParseBundle\Command;
 use Doctrine\Common\DataFixtures\Loader;
 use Redking\ParseBundle\Bridge\DataFixtures\Executor\ParseExecutor;
 use Redking\ParseBundle\Bridge\DataFixtures\Purger\ParsePurger;
+use Redking\ParseBundle\ObjectManager;
 use Symfony\Bridge\Doctrine\DataFixtures\ContainerAwareLoader;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 /**
  * Load data fixtures from bundles.
@@ -32,12 +34,31 @@ use Symfony\Component\Console\Question\ConfirmationQuestion;
 class LoadDataFixturesDoctrineParseCommand extends DoctrineParseCommand
 {
     /**
+     * @var \Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface
+     */
+    private $params;
+
+    /**
+     * @var \Symfony\Bridge\Doctrine\DataFixtures\ContainerAwareLoader
+     */
+    private $loader;
+
+    public function __construct(ObjectManager $om, ParameterBagInterface $params, ContainerAwareLoader $loader)
+    {
+        parent::__construct($om);
+
+        $this->params = $params;
+        $this->loader = $loader;
+    }
+
+    /**
      * @return boolean
      */
     public function isEnabled()
     {
         return parent::isEnabled() && class_exists(Loader::class);
     }
+
 
     protected function configure()
     {
@@ -47,7 +68,6 @@ class LoadDataFixturesDoctrineParseCommand extends DoctrineParseCommand
             ->addOption('fixtures', null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'The directory or file to load data fixtures from.')
             ->addOption('bundles', 'b', InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'The bundles to load data fixtures from.')
             ->addOption('append', null, InputOption::VALUE_NONE, 'Append the data fixtures instead of flushing the database first.')
-            ->addOption('om', null, InputOption::VALUE_REQUIRED, 'The object manager to use for this command.')
             ->setHelp(<<<EOT
 The <info>doctrine:parse:fixtures:load</info> command loads data fixtures from your bundles:
 
@@ -66,7 +86,8 @@ EOT
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $om = $this->getContainer()->get('doctrine_parse')->getManager($input->getOption('om'));
+        $om = $this->getDoctrineParseManager();
+        $kernel = $this->getApplication()->getKernel();
 
         $dirOrFile = $input->getOption('fixtures');
         $bundles = $input->getOption('bundles');
@@ -86,14 +107,13 @@ EOT
         if ($dirOrFile) {
             $paths = is_array($dirOrFile) ? $dirOrFile : [$dirOrFile];
         } elseif ($bundles) {
-            $kernel = $this->getContainer()->get('kernel');
+            
             $paths = [$kernel->getRootDir().'/DataFixtures/Parse'];
             foreach ($bundles as $bundle) {
                 $paths[] = $kernel->getBundle($bundle)->getPath();
             }
         } else {
-            $kernel = $this->getContainer()->get('kernel');
-            $paths = $this->getContainer()->getParameter('doctrine_parse.fixtures_dirs');
+            $paths = $this->params->get('doctrine_parse.fixtures_dirs');
             $paths = is_array($paths) ? $paths : [$paths];
             $paths[] = $kernel->getRootDir().'/DataFixtures/Parse';
             foreach ($kernel->getBundles() as $bundle) {
@@ -101,17 +121,15 @@ EOT
             }
         }
 
-        $loaderClass = $this->getContainer()->getParameter('doctrine_parse.fixture_loader');
-        $loader = new $loaderClass($this->getContainer());
         foreach ($paths as $path) {
             if (is_dir($path)) {
-                $loader->loadFromDirectory($path);
+                $this->loader->loadFromDirectory($path);
             } else if (is_file($path)) {
-                $loader->loadFromFile($path);
+                $this->loader->loadFromFile($path);
             }
         }
 
-        $fixtures = $loader->getFixtures();
+        $fixtures = $this->loader->getFixtures();
         if (!$fixtures) {
             throw new \InvalidArgumentException(
                 sprintf('Could not find any fixtures to load in: %s', "\n\n- ".implode("\n- ", $paths))

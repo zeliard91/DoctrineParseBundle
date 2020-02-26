@@ -97,7 +97,11 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         }
 
         // set the fixtures loader
-        $container->setParameter('doctrine_parse.fixture_loader', $config['fixture_loader']);
+        $definition = new Definition($config['fixture_loader'], [
+            new Reference('service_container')
+        ]);
+        $container->setDefinition('doctrine_parse.fixture_loader', $definition);
+        $container->setAlias($config['fixture_loader'], 'doctrine_parse.fixture_loader');
 
         // Load bridge configurations
         $bundles = $container->getParameter('kernel.bundles');

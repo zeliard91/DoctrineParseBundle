@@ -32,6 +32,18 @@ parameters:
     doctrine.parse.cache.zenddata.class: Doctrine\Common\Cache\ZendDataCache
 
 services:
+    # Autowiring
+    Redking\ParseBundle\Command\:
+        resource: '../../Command'
+        autowire: true
+        exclude: '../../Command/Helper/ObjectManagerHelper.php'
+        tags:
+            - { name: console.command}
+
+    # Aliases
+    Redking\ParseBundle\Registry: '@doctrine_parse'
+    Redking\ParseBundle\ObjectManager: '@redking_parse.manager'
+
     # Registry
     doctrine_parse:
         class: Redking\ParseBundle\Registry

@@ -14,11 +14,12 @@
 
 namespace Redking\ParseBundle\Command;
 
+use Redking\ParseBundle\Command\Helper\ObjectManagerHelper;
+use Redking\ParseBundle\ObjectManager;
 use Redking\ParseBundle\Tools\DisconnectedClassMetadataFactory;
 use Redking\ParseBundle\Tools\ObjectGenerator;
-use Redking\ParseBundle\Command\Helper\ObjectManagerHelper;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
-use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Application;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
 /**
@@ -26,13 +27,21 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
  *
  * @author Justin Hileman <justin@justinhileman.info>
  */
-abstract class DoctrineParseCommand extends ContainerAwareCommand
+abstract class DoctrineParseCommand extends Command
 {
+    protected $om;
+
+    public function __construct(ObjectManager $om)
+    {
+        parent::__construct();
+
+        $this->om = $om;
+    }
+
     public static function setApplicationObjectManager(Application $application)
     {
-        $om = $application->getKernel()->getContainer()->get('redking_parse.manager');
         $helperSet = $application->getHelperSet();
-        $helperSet->set(new ObjectManagerHelper($om), 'om');
+        $helperSet->set(new ObjectManagerHelper($this->om), 'om');
     }
 
     protected function getObjectGenerator()
@@ -49,7 +58,7 @@ abstract class DoctrineParseCommand extends ContainerAwareCommand
 
     protected function getDoctrineParseManager()
     {
-        return $this->getContainer()->get('redking_parse.manager');
+        return $this->om;
     }
 
     protected function getBundleMetadatas(Bundle $bundle)
