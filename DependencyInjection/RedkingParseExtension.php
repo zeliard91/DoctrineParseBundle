@@ -78,7 +78,7 @@ class RedkingParseExtension extends AbstractDoctrineExtension
             $methods['setProfilerCallable'] = array(new Reference($dataCollectorId), 'startQuery');
             $container
                 ->getDefinition($dataCollectorId)
-                ->addTag('data_collector', array('id' => 'parse', 'template' => 'RedkingParseBundle:Collector:parse'))
+                ->addTag('data_collector', array('id' => 'parse', 'template' => '@RedkingParse/Collector/parse'))
             ;
         }
 
@@ -205,5 +205,13 @@ class RedkingParseExtension extends AbstractDoctrineExtension
             }
             $def->addTag('doctrine_parse.event_subscriber');
         }
+    }
+
+    /**
+     * The class name used by the various mapping drivers.
+     */
+    protected function getMetadataDriverClass(string $driverType): string
+    {
+        return '%'.$this->getObjectManagerElementName('metadata.'.$driverType.'.class%');
     }
 }

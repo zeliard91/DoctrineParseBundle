@@ -18,8 +18,12 @@ class Configuration implements ConfigurationInterface
      */
     public function getConfigTreeBuilder()
     {
-        $treeBuilder = new TreeBuilder();
-        $rootNode = $treeBuilder->root('redking_parse');
+        $treeBuilder = new TreeBuilder('redking_parse');
+        if (!method_exists($treeBuilder, 'getRootNode')) {
+            $rootNode = $treeBuilder->root('redking_parse');
+        } else {
+            $rootNode = $treeBuilder->getRootNode();
+        }
 
         $rootNode
             ->children()
@@ -105,8 +109,12 @@ class Configuration implements ConfigurationInterface
      */
     private function getTargetObjectsResolverNode()
     {
-        $treeBuilder = new TreeBuilder();
-        $node = $treeBuilder->root('resolve_target_objects');
+        $treeBuilder = new TreeBuilder('resolve_target_objects');
+        if (!method_exists($treeBuilder, 'getRootNode')) {
+            $node = $treeBuilder->root('resolve_target_objects');
+        } else {
+            $node = $treeBuilder->getRootNode();
+        }
 
         $node
             ->useAttributeAsKey('interface')
