@@ -19,6 +19,8 @@
         "symfony/console": "^4.2",
         "symfony/dependency-injection": "^4.2",
         "symfony/doctrine-bridge": "^4.2",
+        "symfony/string": "^5.1",
+        "symfony/translation-contracts": "^1.1|^2",
         "symfony/yaml": "^4.2",
         "sensio/framework-extra-bundle": "^5.0",
         "doctrine/common": "^2.4",

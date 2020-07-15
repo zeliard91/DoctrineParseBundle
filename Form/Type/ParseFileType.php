@@ -15,6 +15,7 @@ use Symfony\Component\Form\FormEvents;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\String\Slugger\AsciiSlugger;
 
 class ParseFileType extends FileType
 {
@@ -48,6 +49,8 @@ class ParseFileType extends FileType
                 if ($object instanceof UploadedFile) {
                     if ($options['force_name'] !== false && $options['force_name'] !== '') {
                         $fileName = $options['force_name'];
+                    } elseif (true === $options['autocorrect_name']) {
+                        $fileName = (new AsciiSlugger())->slug(pathinfo($object->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $object->getClientOriginalExtension();
                     } else {
                         $fileName = $object->getClientOriginalName();
                         $fileName = str_replace(' ', '-', $fileName);
@@ -100,6 +103,7 @@ class ParseFileType extends FileType
         $resolver->setDefaults(array(
             'data_class' => ParseFile::class,
             'force_name' => false,
+            'autocorrect_name' => true,
         ));
     }
 
