@@ -50,7 +50,7 @@ class ParseFileType extends FileType
                     if ($options['force_name'] !== false && $options['force_name'] !== '') {
                         $fileName = $options['force_name'];
                     } elseif (true === $options['autocorrect_name']) {
-                        $fileName = (new AsciiSlugger())->slug($object->getClientOriginalName());
+                        $fileName = (new AsciiSlugger())->slug(pathinfo($object->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $object->getClientOriginalExtension();
                     } else {
                         $fileName = $object->getClientOriginalName();
                         $fileName = str_replace(' ', '-', $fileName);
