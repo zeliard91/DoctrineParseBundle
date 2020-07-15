@@ -19,7 +19,8 @@
         "doctrine/common": "^2.4",
         "doctrine/instantiator": "~1.0.1",
         "myclabs/deep-copy": "^1.7",
-        "symfony/string": "^5.1"
+        "symfony/string": "^5.1",
+        "symfony/translation-contracts": "^1.1|^2"
     },
     "require-dev": {
         "sensio/generator-bundle": "^3.0",
