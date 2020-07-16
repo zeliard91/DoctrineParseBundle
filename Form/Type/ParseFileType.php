@@ -7,6 +7,7 @@ use Redking\ParseBundle\Event\ListenersInvoker;
 use Redking\ParseBundle\Event\PreUploadEventArgs;
 use Redking\ParseBundle\Exception\WrappedParseException;
 use Redking\ParseBundle\Events;
+use Redking\ParseBundle\Form\DataTransformer\ParseFileTransformer;
 use Redking\ParseBundle\ObjectManager;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -39,32 +40,25 @@ class ParseFileType extends FileType
     {
         parent::buildForm($builder, $options);
 
+        $builder->addModelTransformer(new ParseFileTransformer($options));
+        $builder->addEventListener(FormEvents::PRE_SUBMIT, function(FormEvent $event){
+            $object = $event->getData();
+            $form = $event->getForm();
+            $parseFile = $form->getData();
+
+            // reset model data if there is no upload
+            if (null === $object && $parseFile instanceof ParseFile) {
+                $event->setData($parseFile);
+            }
+        });
         $builder->addEventListener(
-            FormEvents::PRE_SUBMIT,
+            FormEvents::POST_SUBMIT,
             function (FormEvent $event) use ($options) {
                 $object = $event->getData();
                 $form = $event->getForm();
+                $parseFile = $form->getData();
 
-                // Transform UploadedFile into ParseFile
-                if ($object instanceof UploadedFile) {
-                    if ($options['force_name'] !== false && $options['force_name'] !== '') {
-                        $fileName = $options['force_name'];
-                    } elseif (true === $options['autocorrect_name']) {
-                        $fileName = (new AsciiSlugger())->slug(pathinfo($object->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $object->getClientOriginalExtension();
-                    } else {
-                        $fileName = $object->getClientOriginalName();
-                        $fileName = str_replace(' ', '-', $fileName);
-                        if (preg_match("/^[_a-zA-Z0-9][a-zA-Z0-9@\.\ ~_-]*$/", $fileName) !== 1) {
-                            $form->addError(new FormError('Filename contains invalid characters.'));
-                            return;
-                        }
-                    }
-
-                    $parseFile = ParseFile::createFromFile($object->getPathname(), $fileName);
-                    // Attach UploadedFile to the created ParseFile so it can be used by validators
-                    $parseFile->_uploadedFile = $object;
-                    $event->setData($parseFile);
-
+                if ($object instanceof UploadedFile && $parseFile instanceof ParseFile) {
                     // Search for Object parent class
                     $parent = $form->getParent();
                     while (null === $parent->getConfig()->getDataClass() && null !== $parent->getParent()) {
@@ -85,9 +79,6 @@ class ParseFileType extends FileType
                     if ($invoke !== ListenersInvoker::INVOKE_NONE) {
                         $listenersInvoker->invoke($class, Events::preUpload, $parent, new PreUploadEventArgs($parent, $this->om, $object, $form->getConfig()->getName(), $parseFile), $invoke);
                     }
-                } // reset ParseFile if widget has not been filled
-                elseif (null === $object && $form->getData() instanceof ParseFile) {
-                    $event->setData($form->getData());
                 }
             }
         );
