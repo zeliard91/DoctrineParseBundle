@@ -6,9 +6,10 @@ services:
 php:
   - 7.2
   - 7.3
+  - 7.4
 
 env: 
-  - SYMFONY_VERSION=^4.2
+  - SYMFONY_VERSION=^4.4
 
 cache:
     directories:
@@ -18,7 +19,7 @@ before_install:
   - composer self-update
   - phpenv config-rm xdebug.ini || true
   - docker run -d -p 27017:27017 --name mongo mongo
-  - docker run -d -e APP_ID=${DOCTRINE_PARSE_APP_ID} -e MASTER_KEY=${DOCTRINE_PARSE_MASTER_KEY} -e ALLOW_CLIENT_CLASS_CREATION=1 --link mongo --name parse-server -p 1337:1337 yongjhih/parse-server
+  - docker run -d -e APP_ID=${DOCTRINE_PARSE_APP_ID} -e MASTER_KEY=${DOCTRINE_PARSE_MASTER_KEY} -e ALLOW_CLIENT_CLASS_CREATION=1 --link mongo --name parse-server -p 1337:1337 zeliard91/docker-parse-server:2.8.x
   # - composer require --no-update symfony/symfony:${SYMFONY_VERSION}
 
 install: COMPOSER_MEMORY_LIMIT=-1 composer update --prefer-dist

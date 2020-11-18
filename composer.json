@@ -29,6 +29,7 @@
     },
     "require-dev": {
         "symfony/maker-bundle": "^1.11",
+        "symfony/mime": "^4.2",
         "symfony/phpunit-bridge": "^4.2",
         "phpunit/phpunit": "^6.5"
     },
