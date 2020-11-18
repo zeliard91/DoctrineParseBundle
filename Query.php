@@ -275,8 +275,18 @@ class Query
                     $targetClass = $this->_class->getAssociationTargetClass($matches[1]);
                     $targetCollection = $this->_om->getClassMetadata($targetClass)->getCollection();
                     foreach ($operations as $operator => &$queryArg) {
-                        if (is_scalar($queryArg->getValue())) {
+                        if (is_string($queryArg->getValue()) && !empty($queryArg->getValue())) {
                             $queryArg->setValue((object)['__type' => 'Pointer', 'className' => $targetCollection, 'objectId' => $queryArg->getValue()]);
+                        } elseif (is_iterable($queryArg->getValue())) {
+                            $queryArgValues = [];
+                            foreach ($queryArg->getValue() as $queryArgValue) {
+                                if (is_string($queryArgValue) && !empty($queryArgValue)) {
+                                    $queryArgValues[] = (object)['__type' => 'Pointer', 'className' => $targetCollection, 'objectId' => $queryArgValue];
+                                }
+                            }
+                            if (count($queryArgValues) > 0) {
+                                $queryArg->setValue($queryArgValues);
+                            }
                         }
                     }
                 }
@@ -335,6 +345,7 @@ class Query
                 $this->_parseQuery->relatedTo($key, $value);
             }
         }
+
     }
 
     /**

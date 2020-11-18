@@ -187,21 +187,42 @@ class QueryTest extends \Redking\ParseBundle\Tests\TestCase
     {
         $avatar = new Picture();
         $avatar->setFile('test.jpg');
+        $picture1 = new Picture();
+        $picture1->setFile('picture1.jpg');
+        $picture2 = new Picture();
+        $picture2->setFile('picture2.jpg');
         $this->om->persist($avatar);
+        $this->om->persist($picture1);
+        $this->om->persist($picture2);
         $this->om->flush();
 
         $avatarId = $avatar->getId();
+        $picture1Id = $picture1->getId();
+        $picture2Id = $picture2->getId();
 
         $user = new User();
         $user->setPassword('p4ss');
         $user->setName('Foo');
         $user->setAvatar($avatar);
+        $user->addPicture($picture1);
+        $user->addPicture($picture2);
 
         $this->om->persist($user);
         $this->om->flush();
 
         $results = $this->getUserQB()
             ->field('avatar.id')->equals($avatarId)
+            ->getQuery()
+            ->execute()
+        ;
+
+        $this->assertCount(1, $results);
+        $this->assertEquals('Foo', $results[0]->getName());
+
+        $this->om->clear();
+
+        $results = $this->getUserQB()
+            ->field('pictures.id')->in([$picture2Id])
             ->getQuery()
             ->execute()
         ;
