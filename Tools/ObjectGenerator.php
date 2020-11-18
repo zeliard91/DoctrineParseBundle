@@ -2,7 +2,8 @@
 
 namespace Redking\ParseBundle\Tools;
 
-use Doctrine\Common\Inflector\Inflector;
+use Doctrine\Inflector\Inflector;
+use Doctrine\Inflector\InflectorFactory;
 use Redking\ParseBundle\Mapping\ClassMetadata;
 use Redking\ParseBundle\Types\Type;
 
@@ -161,6 +162,16 @@ public function <methodName>()
 <spaces>return <toStringCall>."";
 }
 ';
+
+    /**
+     * @var \Doctrine\Inflector\Inflector
+     */
+    protected $inflector;
+
+    public function __construct()
+    {
+        $this->inflector = InflectorFactory::create()->build();
+    }
 
     /**
      * Generate and write document classes for the given array of ClassMetadata instances.
@@ -847,11 +858,11 @@ public function <methodName>()
     {
         // Add/remove methods should use the singular form of the field name
         $formattedFieldName = in_array($type, array('add', 'remove'))
-            ? Inflector::singularize($fieldName)
+            ? $this->inflector->singularize($fieldName)
             : $fieldName;
 
-        $methodName = $type.Inflector::classify($formattedFieldName);
-        $variableName = Inflector::camelize($formattedFieldName);
+        $methodName = $type . $this->inflector->classify($formattedFieldName);
+        $variableName = $this->inflector->camelize($formattedFieldName);
 
         if ($this->hasMethod($methodName, $metadata)) {
             return;

@@ -5,6 +5,8 @@ namespace Redking\ParseBundle;
 use Doctrine\Common\Persistence\ObjectRepository as BaseObjectRepository;
 use Doctrine\Common\Collections\Selectable;
 use Doctrine\Common\Collections\Criteria;
+use Doctrine\Inflector\Inflector;
+use Doctrine\Inflector\InflectorFactory;
 use Redking\ParseBundle\Exception\RedkingParseException;
 
 class ObjectRepository implements BaseObjectRepository, Selectable
@@ -23,6 +25,11 @@ class ObjectRepository implements BaseObjectRepository, Selectable
      * @var \Redking\ParseBundle\Mapping\ClassMetadata
      */
     protected $_class;
+
+    /**
+     * @var \Doctrine\Inflector\Inflector
+     */
+    private static $inflector;
 
     /**
      * Initializes a new <tt>ObjectRepository</tt>.
@@ -70,7 +77,7 @@ class ObjectRepository implements BaseObjectRepository, Selectable
             throw RedkingParseException::findByRequiresParameter($method.$by);
         }
 
-        $fieldName = lcfirst(\Doctrine\Common\Inflector\Inflector::classify($by));
+        $fieldName = lcfirst($this->classify($by));
 
         if ($this->_class->hasField($fieldName)) {
             return $this->$method(array($fieldName => $arguments[0]));
@@ -225,5 +232,15 @@ class ObjectRepository implements BaseObjectRepository, Selectable
     public function createQueryBuilder()
     {
         return $this->_om->createQueryBuilder($this->_objectName);
+    }
+
+    private function classify($word)
+    {
+        if (null === self::$inflector)
+        {
+            self::$inflector = InflectorFactory::create()->build();
+        }
+
+        return self::$inflector->classify($word);
     }
 }
