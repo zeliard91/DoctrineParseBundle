@@ -2,7 +2,9 @@
 
 namespace Redking\ParseBundle\Mapping;
 
-use Doctrine\Common\Persistence\Mapping\ClassMetadata as BaseClassMetadata;
+use Doctrine\Persistence\Mapping\ClassMetadata as BaseClassMetadata;
+use Doctrine\Persistence\Mapping\ReflectionService;
+use Doctrine\Persistence\Mapping\RuntimeReflectionService;
 use Doctrine\Instantiator\Instantiator;
 use Redking\ParseBundle\Types\Type;
 
@@ -97,6 +99,15 @@ class ClassMetadata implements BaseClassMetadata
      * @var string
      */
     public $name;
+
+    /**
+     * READ-ONLY: The name of the entity class that is at the root of the mapped entity inheritance
+     * hierarchy. If the entity is not part of a mapped inheritance hierarchy this is the same
+     * as {@link $name}.
+     *
+     * @var string
+     */
+    public $rootEntityName;
 
     /**
      * READ-ONLY: The field name of the document identifier.
@@ -292,6 +303,11 @@ class ClassMetadata implements BaseClassMetadata
      * @var array
      */
     public $subClasses = array();
+
+    /**
+     * @var ReflectionService
+     */
+    private $reflectionService;
 
     /**
      * Initializes a new ClassMetadata instance that will hold the object-relational mapping
@@ -1285,5 +1301,85 @@ class ClassMetadata implements BaseClassMetadata
         }
 
         return $keys;
+    }
+
+    /**
+     * Determines which fields get serialized.
+     *
+     * It is only serialized what is necessary for best unserialization performance.
+     * That means any metadata properties that are not set or empty or simply have
+     * their default value are NOT serialized.
+     *
+     * Parts that are also NOT serialized because they can not be properly unserialized:
+     *      - reflClass (ReflectionClass)
+     *      - reflFields (ReflectionProperty array)
+     *
+     * @return array The names of all the fields that should be serialized.
+     */
+    public function __sleep()
+    {
+        // This metadata is always serialized/cached.
+        $serialized = [
+            'fieldMappings',
+            'associationMappings',
+            'identifier',
+            'name',
+            'collection',
+            'rootEntityName',
+        ];
+
+        // The rest of the metadata is only serialized if necessary.
+        if ($this->changeTrackingPolicy !== self::CHANGETRACKING_DEFERRED_IMPLICIT) {
+            $serialized[] = 'changeTrackingPolicy';
+        }
+
+        if ($this->customRepositoryClassName) {
+            $serialized[] = 'customRepositoryClassName';
+        }
+
+        if ($this->inheritanceType !== self::INHERITANCE_TYPE_NONE || $this->discriminatorField !== null) {
+            $serialized[] = 'inheritanceType';
+            $serialized[] = 'discriminatorField';
+            $serialized[] = 'discriminatorValue';
+            $serialized[] = 'discriminatorMap';
+            $serialized[] = 'defaultDiscriminatorValue';
+            $serialized[] = 'parentClasses';
+            $serialized[] = 'subClasses';
+        }
+
+        if ($this->isMappedSuperclass) {
+            $serialized[] = 'isMappedSuperclass';
+        }
+
+        if ($this->isEmbeddedDocument) {
+            $serialized[] = 'isEmbeddedDocument';
+        }
+
+        if ($this->lifecycleCallbacks) {
+            $serialized[] = 'lifecycleCallbacks';
+        }
+
+        if ($this->isReadOnly) {
+            $serialized[] = 'isReadOnly';
+        }
+
+        return $serialized;
+    }
+
+    /**
+     * Restores some state that can not be serialized/unserialized.
+     */
+    public function __wakeup()
+    {
+        // Restore ReflectionClass and properties
+        $this->reflectionService = new RuntimeReflectionService();
+        $this->reflClass = new \ReflectionClass($this->name);
+        $this->instantiator = new Instantiator();
+
+        foreach ($this->fieldMappings as $field => $mapping) {
+            $prop = $this->reflectionService->getAccessibleProperty($mapping['declared'] ?? $this->name, $field);
+            assert($prop instanceof \ReflectionProperty);
+            $this->reflFields[$field] = $prop;
+        }
     }
 }
