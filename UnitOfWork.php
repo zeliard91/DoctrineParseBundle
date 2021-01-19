@@ -1902,6 +1902,56 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /**
+     * Unschedules a collection from being updated when this UnitOfWork commits.
+     *
+     * @internal
+     */
+    public function unscheduleCollectionUpdate(PersistentCollection $coll): void
+    {
+        if ($coll->getOwner() === null) {
+            return;
+        }
+
+        $oid = spl_object_hash($coll);
+
+        if (isset($this->collectionUpdates[$oid])) {
+            unset($this->collectionUpdates[$oid]);
+        }
+
+        if (isset($this->extraUpdates[$oid])) {
+            unset($this->extraUpdates[$oid]);
+        }
+    }
+
+    /**
+     * Gets the currently scheduled collection inserts, updates and deletes.
+     *
+     * @internal
+     */
+    public function getScheduledCollectionUpdates(): array
+    {
+        return $this->collectionUpdates;
+    }
+
+    /**
+     * Remove from scheduled updates.
+     *
+     * @param mixed $object
+     * 
+     * @return void
+     */
+    public function unscheduleForUpdate($object)
+    {
+        $oid = spl_object_hash($object);
+        if (isset($this->collectionChangeSets[$oid])) {
+            unset($this->collectionChangeSets[$oid]);
+        }
+        if (isset($this->extraUpdates[$oid])) {
+            unset($this->extraUpdates[$oid]);
+        }
+    }
+
+    /**
      * Checks whether an object is scheduled for insertion.
      *
      * @param object $object
