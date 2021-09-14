@@ -11,14 +11,7 @@ class Registry extends ManagerRegistry
 {
     public function __construct(ContainerInterface $container, $manager_name)
     {
-        $parentTraits = class_uses(parent::class);
-        if (isset($parentTraits[ContainerAwareTrait::class])) {
-            // this case should be removed when Symfony 3.4 becomes the lowest supported version
-            // and then also, the constructor should type-hint Psr\Container\ContainerInterface
-            $this->setContainer($container);
-        } else {
-            $this->container = $container;
-        }
+        $this->container = $container;
 
         parent::__construct('Parse', [], ['default' => $manager_name], null, 'default', 'Redking\ParseBundle\Proxy\Proxy');
     }
@@ -36,9 +29,14 @@ class Registry extends ManagerRegistry
     public function getAliasNamespace($alias)
     {
         foreach (array_keys($this->getManagers()) as $name) {
+            $objectManager = $this->getManager($name);
+            if (! $objectManager instanceof ObjectManager) {
+                continue;
+            }
             try {
-                return $this->getManager($name)->getConfiguration()->getEntityNamespace($alias);
-            } catch (ORMException $e) {
+                /** @var ObjectManager $objectManager */
+                return $objectManager->getConfiguration()->getEntityNamespace($alias);
+            } catch (RedkingParseException $e) {
             }
         }
 

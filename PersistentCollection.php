@@ -4,6 +4,7 @@ namespace Redking\ParseBundle;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\Criteria;
 use Redking\ParseBundle\Mapping\ClassMetadata;
 
 class PersistentCollection implements Collection
@@ -146,7 +147,7 @@ class PersistentCollection implements Collection
                 $element, $this->owner
             );
 
-            $this->om->getUnitOfWork()->setOriginalEntityProperty(
+            $this->om->getUnitOfWork()->setOriginalObjectProperty(
                 spl_object_hash($element), $this->backRefFieldName, $this->owner
             );
         }
@@ -810,7 +811,7 @@ class PersistentCollection implements Collection
      *
      * @param \Doctrine\Common\Collections\Criteria $criteria
      *
-     * @return Collection
+     * @return ArrayCollection
      *
      * @throws \RuntimeException
      */
@@ -831,7 +832,7 @@ class PersistentCollection implements Collection
 
         $criteria->where($expression);
 
-        $persister = $this->om->getUnitOfWork()->getEntityPersister($this->association['targetEntity']);
+        $persister = $this->om->getUnitOfWork()->getObjectPersister($this->association['targetEntity']);
 
         return new ArrayCollection($persister->loadCriteria($criteria));
     }

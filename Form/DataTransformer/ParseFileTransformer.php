@@ -32,7 +32,7 @@ class ParseFileTransformer implements DataTransformerInterface
      * Transforms a string (number) to an object (parseFile).
      *
      * @param  string $parseFileNumber
-     * @return Issue|null
+     * @return UploadedFile|ParseFile
      * @throws TransformationFailedException if object (parseFile) is not found.
      */
     public function reverseTransform($uploadedFile)

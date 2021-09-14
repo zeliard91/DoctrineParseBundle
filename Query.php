@@ -34,7 +34,7 @@ class Query
     /**
      * The ClassMetadata instance.
      *
-     * @var \Doctrine\ODM\MongoDB\Mapping\ClassMetadata
+     * @var \Redking\ParseBundle\Mapping\ClassMetadata
      */
     private $_class;
 
@@ -196,9 +196,9 @@ class Query
     }
 
     /**
-     * [execute description].
+     * Execute query
      *
-     * @return [type] [description]
+     * @return ArrayCollection|array|int
      */
     public function execute()
     {
@@ -246,7 +246,7 @@ class Query
     /**
      * Translate query to ParseQuery.
      *
-     * @return [type] [description]
+     * @return void
      */
     protected function applyQuery()
     {

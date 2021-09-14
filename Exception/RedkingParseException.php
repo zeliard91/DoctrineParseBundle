@@ -109,7 +109,7 @@ class RedkingParseException extends \Exception
 
     /**
      * @param string $className
-     * @param string $unindexedFields
+     * @param array $unindexedFields
      *
      * @return RedkingParseException
      */
@@ -177,7 +177,7 @@ class RedkingParseException extends \Exception
      *
      * @return string
      */
-    private static function objToStr($obj)
+    public static function objToStr($obj)
     {
         return method_exists($obj, '__toString') ? (string)$obj : get_class($obj).'@'.spl_object_hash($obj);
     }

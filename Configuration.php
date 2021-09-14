@@ -3,8 +3,9 @@
 namespace Redking\ParseBundle;
 
 use Doctrine\Common\Cache\Cache;
-use Doctrine\Common\Persistence\Mapping\Driver\MappingDriver;
+use Doctrine\Persistence\Mapping\Driver\MappingDriver;
 use Doctrine\Common\Proxy\AbstractProxyFactory;
+use Redking\ParseBundle\Exception\RedkingParseException;
 use Redking\ParseBundle\Mapping\DefaultNamingStrategy;
 use Redking\ParseBundle\Mapping\DefaultObjectListenerResolver;
 
@@ -52,7 +53,7 @@ class Configuration
     public function getEntityNamespace($entityNamespaceAlias)
     {
         if (!isset($this->_attributes['entityNamespaces'][$entityNamespaceAlias])) {
-            throw new \Exception("Unknown Entity namespace alias '$entityNamespaceAlias'.");
+            throw new RedkingParseException("Unknown Entity namespace alias '$entityNamespaceAlias'.");
         }
 
         return trim($this->_attributes['entityNamespaces'][$entityNamespaceAlias], '\\');
@@ -110,9 +111,9 @@ class Configuration
      *
      * @since 2.3
      *
-     * @param NamingStrategy $namingStrategy
+     * @param DefaultNamingStrategy $namingStrategy
      */
-    public function setNamingStrategy(NamingStrategy $namingStrategy)
+    public function setNamingStrategy(DefaultNamingStrategy $namingStrategy)
     {
         $this->_attributes['namingStrategy'] = $namingStrategy;
     }
@@ -244,9 +245,9 @@ class Configuration
      *
      * @since 2.4
      *
-     * @param \Doctrine\ORM\Mapping\ObjectListenerResolver $resolver
+     * @param DefaultObjectListenerResolver $resolver
      */
-    public function setObjectListenerResolver(ObjectListenerResolver $resolver)
+    public function setObjectListenerResolver(DefaultObjectListenerResolver $resolver)
     {
         $this->_attributes['ObjectListenerResolver'] = $resolver;
     }
@@ -256,7 +257,7 @@ class Configuration
      *
      * @since 2.4
      *
-     * @return \Doctrine\ORM\Mapping\ObjectListenerResolver
+     * @return DefaultObjectListenerResolver
      */
     public function getObjectListenerResolver()
     {

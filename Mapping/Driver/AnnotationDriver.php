@@ -5,18 +5,17 @@ namespace Redking\ParseBundle\Mapping\Driver;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
 use Doctrine\Common\Annotations\Reader;
-use Doctrine\Common\Persistence\Mapping\ClassMetadata;
-use Doctrine\Common\Persistence\Mapping\Driver\AnnotationDriver as AbstractAnnotationDriver;
+use Doctrine\Persistence\Mapping\ClassMetadata;
+use Doctrine\Persistence\Mapping\Driver\AnnotationDriver as AbstractAnnotationDriver;
+use Doctrine\Persistence\Mapping\Driver\MappingDriver;
 use Redking\ParseBundle\Mapping\Annotations as ORM;
-use Redking\ParseBundle\Mapping\Builder\ObjectListenerBuilder;
-use Redking\ParseBundle\Mapping\ClassMetadata as ParseClassMetadata;
 use Redking\ParseBundle\Mapping\MappingException;
 
 
 /**
  * The AnnotationDriver reads the mapping metadata from docblock annotations.
  */
-class AnnotationDriver extends AbstractAnnotationDriver
+class AnnotationDriver extends AbstractAnnotationDriver implements MappingDriver
 {
     protected $entityAnnotationClasses = array(
         'Redking\\ParseBundle\\Mapping\\Annotations\\ParseObject' => 1,

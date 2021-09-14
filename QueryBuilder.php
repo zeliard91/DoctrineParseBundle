@@ -17,7 +17,7 @@ class QueryBuilder
     /**
      * The ClassMetadata instance.
      *
-     * @var \Doctrine\ODM\MongoDB\Mapping\ClassMetadata
+     * @var \Redking\ParseBundle\Mapping\ClassMetadata
      */
     private $_class;
 
@@ -133,6 +133,31 @@ class QueryBuilder
         if ($objectName !== null) {
             $this->_class = $this->_om->getClassMetadata($objectName);
         }
+    }
+
+    /**
+     * Get Discriminator Values
+     *
+     * @param string[] $classNames
+     *
+     * @throws InvalidArgumentException If the number of found collections > 1.
+     */
+    private function getDiscriminatorValues($classNames): array
+    {
+        $discriminatorValues = [];
+        $collections         = [];
+        foreach ($classNames as $className) {
+            $class = $this->_om->getClassMetadata($className);
+            $discriminatorValues[] = $class->discriminatorValue;
+            $key = $class->getCollection();
+            $collections[$key] = $key;
+        }
+
+        if (count($collections) > 1) {
+            throw new \InvalidArgumentException('Objects involved are not all mapped to the same database collection.');
+        }
+
+        return $discriminatorValues;
     }
 
     /**

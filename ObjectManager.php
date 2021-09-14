@@ -7,6 +7,7 @@ use Doctrine\Common\EventManager;
 use Parse\ParseClient;
 use Parse\ParseUser;
 use Parse\ParseStorageInterface;
+use Redking\ParseBundle\Mapping\ClassMetadata;
 use Redking\ParseBundle\Mapping\ClassMetadataFactory;
 use Redking\ParseBundle\Proxy\ProxyFactory;
 
@@ -206,7 +207,9 @@ class ObjectManager implements BaseObjectManager
     }
 
     /**
-     * {@inheritdoc}
+     * @param string $className
+     * 
+     * @return ObjectRepository
      */
     public function getRepository($className)
     {
@@ -214,7 +217,7 @@ class ObjectManager implements BaseObjectManager
     }
 
     /**
-     * {@inheritdoc}
+     * @return ClassMetadata
      */
     public function getClassMetadata($className)
     {

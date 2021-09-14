@@ -25,6 +25,7 @@ use Parse\ParseGeoPoint;
 use Parse\ParseObject;
 use Parse\ParseRole;
 use Parse\ParseUser;
+use Redking\ParseBundle\Event\PreFlushEventArgs;
 use Symfony\Component\HttpFoundation\File\File;
 
 /**
@@ -433,7 +434,7 @@ class UnitOfWork implements PropertyChangedListener
      * 
      * @param array $association
      * 
-     * @return \Redking\ParseBundle\Persisters\AbstractCollectionPersister
+     * @return CollectionArrayPersister|CollectionRelationPersister
      */
     public function getCollectionPersister(array $association)
     {
@@ -667,7 +668,7 @@ class UnitOfWork implements PropertyChangedListener
      *
      * @param object $object
      *
-     * @return array
+     * @return ParseObject|null
      */
     public function getOriginalObjectData($object)
     {
@@ -749,7 +750,7 @@ class UnitOfWork implements PropertyChangedListener
                 break;
 
             default:
-                throw MongoDBException::invalidDocumentState($documentState);
+                throw RedkingParseException::invalidDocumentState($documentState);
         }
 
         $this->cascadePersist($object, $visited);
@@ -1751,7 +1752,7 @@ class UnitOfWork implements PropertyChangedListener
             case self::STATE_DETACHED:
                 throw RedkingParseException::detachedObjectCannot($object, 'removed');
             default:
-                throw new UnexpectedValueException("Unexpected object state: $objectState.".self::objToStr($object));
+                throw new UnexpectedValueException("Unexpected object state: $objectState.".RedkingParseException::objToStr($object));
         }
     }
 
@@ -2573,5 +2574,21 @@ class UnitOfWork implements PropertyChangedListener
     public function clearObjectChangeSet($oid)
     {
         unset($this->objectChangeSets[$oid]);
+    }
+
+    /**
+     * @todo
+     */
+    public function merge($object)
+    {
+
+    }
+
+    /**
+     * @todo
+     */
+    public function scheduleForDirtyCheck($object)
+    {
+
     }
 }

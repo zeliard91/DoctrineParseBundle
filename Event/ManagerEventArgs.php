@@ -19,7 +19,7 @@
 
 namespace Redking\ParseBundle\Event;
 
-use Doctrine\Common\Persistence\Event\ManagerEventArgs as BaseManagerEventArgs;
+use Doctrine\Persistence\Event\ManagerEventArgs as BaseManagerEventArgs;
 
 /**
  * Lifecycle Events are triggered by the UnitOfWork during lifecycle transitions
