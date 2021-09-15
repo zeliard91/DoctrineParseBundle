@@ -33,7 +33,17 @@ class ObjectPersister
      *
      * @var array
      */
-    protected $queuedInserts = array();
+    protected $queuedInserts = [];
+
+    /**
+     * @var array
+     */
+    protected $queuedUpdates = [];
+
+    /**
+     * @var array
+     */
+    protected $queuedDelete = [];
 
     public function __construct(ObjectManager $om, ClassMetadata $class)
     {
@@ -196,6 +206,55 @@ class ObjectPersister
     }
 
     /**
+     * @param string $oid
+     * @param array $changeSet
+     *
+     * @return void
+     */
+    public function addUpdate(string $oid, array $changeSet): void
+    {
+        $this->queuedUpdates[$oid] = $changeSet;
+    }
+
+    /**
+     * Execute all queued object updates.
+     *
+     * @return void
+     */
+    public function executeUpdates(): void
+    {
+        if (!$this->queuedUpdates) {
+            return;
+        }
+
+        $parseObjects = [];
+        $fields = [];
+
+        foreach ($this->queuedUpdates as $oid => $changeSet) {
+            $parseObject = $this->uow->getOriginalObjectDataByOid($oid);
+            if (null !== $parseObject) {
+                $parseObjects[] = $parseObject;
+                $fields[] = ['id' => $parseObject->getObjectId(), 'changeSets' => $changeSet];
+            }
+        }
+
+        if (empty($parseObjects)) {
+            return;
+        }
+
+        $this->profileQuery();
+        try {
+            ParseObject::saveAll($parseObjects, $this->om->isMasterRequest());
+        } catch (\Parse\ParseException $e) {
+            $this->queuedUpdates = [];
+            throw new WrappedParseException($e);
+        }
+        $this->logQuery(['type' => 'update', 'fields' => $fields]);
+
+        $this->queuedUpdates = [];
+    }
+
+    /**
      * Adds an object to the queued insertions.
      * The object remains queued until {@link executeInserts} is invoked.
      *
@@ -215,13 +274,14 @@ class ObjectPersister
      * @return array An array of any generated post-insert IDs. This will be an empty array
      *               if the object class does not use the IDobject generation strategy.
      */
-    public function executeInserts()
+    public function executeInserts(): array
     {
         if (!$this->queuedInserts) {
-            return array();
+            return [];
         }
 
-        $inserts = array();
+        $inserts = [];
+        $parseObjects = [];
 
         foreach ($this->queuedInserts as $oid => $object) {
             $this->uow->applyAcl($object);
@@ -229,22 +289,28 @@ class ObjectPersister
             if ($parseObject === null) {
                 throw new \Exception('Unable to get original data for insert');
             }
-
-            $this->profileQuery();
-            $fields = json_decode($parseObject->_encode());
-
-            try {
-                $parseObject->save($this->om->isMasterRequest());
-            } catch (\Parse\ParseException $e) {
-                throw new WrappedParseException($e);
-            }
-
-            $this->logQuery(['type' => 'insert', 'fields' => $fields]);
-
-            $inserts[$parseObject->getObjectId()] = ['object' => $object, 'parseObject' => $parseObject];
+            $parseObjects[$oid] = $parseObject;
         }
 
-        $this->queuedInserts = array();
+        $this->profileQuery();
+        $fields = json_decode('[' . implode(',', array_map(function($object): string {
+            return $object->_encode();
+        }, array_values($parseObjects))) . ']');
+
+        try {
+            ParseObject::saveAll($parseObjects, $this->om->isMasterRequest());
+        } catch (\Parse\ParseException $e) {
+            $this->queuedInserts = [];
+            throw new WrappedParseException($e);
+        }
+
+        $this->logQuery(['type' => 'insert', 'fields' => $fields]);
+
+        foreach ($parseObjects as $oid => $parseObject) {
+            $inserts[$parseObject->getObjectId()] = ['object' => $this->queuedInserts[$oid], 'parseObject' => $parseObject];
+        }
+
+        $this->queuedInserts = [];
 
         return $inserts;
     }
@@ -270,6 +336,55 @@ class ObjectPersister
                 throw new WrappedParseException($e);
             }
         }
+    }
+
+    /**
+     * Object object id to queue to be deleted.
+     *
+     * @param string $oid
+     *
+     * @return void
+     */
+    public function addDelete(string $oid): void
+    {
+        $this->queuedDelete[] = $oid;
+    }
+
+    /**
+     * Execute batch deletion.
+     *
+     * @return void
+     */
+    public function executeDeletions(): void
+    {
+        if (!$this->queuedDelete) {
+            return;
+        }
+
+        $parseObjects = [];
+        $objectIds = [];
+        foreach ($this->queuedDelete as $oid) {
+            $parseObject = $this->uow->getOriginalObjectDataByOid($oid);
+            if (null !== $parseObject) {
+                $parseObjects[] = $parseObject;
+                $objectIds[] = $parseObject->getObjectId();
+            }
+        }
+
+        if (empty($parseObjects)) {
+            return;
+        }
+
+        $this->profileQuery();
+        try {
+            ParseObject::destroyAll($parseObjects, $this->om->isMasterRequest());
+            $this->logQuery(['type' => 'remove', 'ids' => $objectIds]);
+        } catch (\Parse\ParseException $e) {
+            $this->queuedDelete = [];
+            throw new WrappedParseException($e);
+        }
+
+        $this->queuedDelete = [];
     }
 
     /**

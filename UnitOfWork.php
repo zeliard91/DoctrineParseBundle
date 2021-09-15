@@ -667,18 +667,33 @@ class UnitOfWork implements PropertyChangedListener
      * Gets the ParseObject of an object.
      *
      * @param object $object
+     * @param string|null $oid
      *
      * @return ParseObject|null
      */
-    public function getOriginalObjectData($object)
+    public function getOriginalObjectData($object, string $oid = null): ?ParseObject
     {
-        $oid = spl_object_hash($object);
+        if (null === $oid) {
+            $oid = spl_object_hash($object);
+        }
 
         if (isset($this->originalObjectData[$oid])) {
             return $this->originalObjectData[$oid];
         }
 
         return null;
+    }
+
+    /**
+     * Gets the ParseObject of an object from his spl id.
+     *
+     * @param string $oid
+     *
+     * @return ParseObject|null
+     */
+    public function getOriginalObjectDataByOid(string $oid): ?ParseObject
+    {
+        return $this->originalObjectData[$oid] ?? null;
     }
 
     /**
@@ -1076,6 +1091,7 @@ class UnitOfWork implements PropertyChangedListener
         $preUpdateInvoke = $this->listenersInvoker->getSubscribedSystems($class, Events::preUpdate);
         $postUpdateInvoke = $this->listenersInvoker->getSubscribedSystems($class, Events::postUpdate);
 
+        $updatedOids = [];
         foreach ($objects as $oid => $object) {
             if ($this->om->getClassMetadata(get_class($object))->name !== $className) {
                 continue;
@@ -1091,9 +1107,14 @@ class UnitOfWork implements PropertyChangedListener
             }
 
             if (!empty($this->objectChangeSets[$oid]) || !empty($this->getCollectionChangeSet($oid))) {
-                $persister->update($this->originalObjectData[$oid], $this->objectChangeSets[$oid]+$this->getCollectionChangeSet($oid));
+                $updatedOids[] = $oid;
+                $persister->addUpdate($oid, $this->objectChangeSets[$oid]+$this->getCollectionChangeSet($oid));
             }
+        }
 
+        $persister->executeUpdates();
+
+        foreach ($objects as $oid => $object) {
             unset($this->objectUpdates[$oid]);
             if (isset($this->collectionChangeSets[$oid])) {
                 unset($this->collectionChangeSets[$oid]);
@@ -1131,14 +1152,23 @@ class UnitOfWork implements PropertyChangedListener
         $className = $class->name;
         $persister = $this->getObjectPersister($className);
         $invoke = $this->listenersInvoker->getSubscribedSystems($class, Events::postRemove);
+        $deletedOids = [];
 
         foreach ($this->objectDeletions as $oid => $object) {
             if ($this->om->getClassMetadata(get_class($object))->name !== $className || !isset($this->originalObjectData[$oid])) {
                 continue;
             }
 
-            $persister->delete($this->originalObjectData[$oid]);
+            $deletedOids[] = $oid;
+            $persister->addDelete($oid);
+        }
 
+        $persister->executeDeletions();
+
+        foreach ($this->objectDeletions as $oid => $object) {
+            if (!in_array($oid, $deletedOids)) {
+                continue;
+            }
             unset(
                 $this->objectDeletions[$oid],
                 $this->objectIdentifiers[$oid],
