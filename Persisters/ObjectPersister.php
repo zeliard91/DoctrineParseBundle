@@ -221,25 +221,26 @@ class ObjectPersister
      *
      * @return void
      */
-    public function executeUpdates(): void
+    public function executeUpdates(): array
     {
         if (!$this->queuedUpdates) {
-            return;
+            return [];
         }
 
+        $updates = [];
         $parseObjects = [];
         $fields = [];
 
         foreach ($this->queuedUpdates as $oid => $changeSet) {
             $parseObject = $this->uow->getOriginalObjectDataByOid($oid);
             if (null !== $parseObject) {
-                $parseObjects[] = $parseObject;
+                $parseObjects[$oid] = $parseObject;
                 $fields[] = ['id' => $parseObject->getObjectId(), 'changeSets' => $changeSet];
             }
         }
 
         if (empty($parseObjects)) {
-            return;
+            return [];
         }
 
         $this->profileQuery();
@@ -251,7 +252,13 @@ class ObjectPersister
         }
         $this->logQuery(['type' => 'update', 'fields' => $fields]);
 
+        foreach ($parseObjects as $oid => $parseObject) {
+            $updates[$oid] = $parseObject->getUpdatedAt();
+        }
+
         $this->queuedUpdates = [];
+
+        return $updates;
     }
 
     /**

@@ -30,6 +30,9 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
         $this->om->persist($user);
         $this->om->flush();
 
+        $this->assertNotEmpty($user->getId());
+        $this->assertInstanceOf(\DateTime::class, $user->getCreatedAt(), 'Check user creation date');
+        $this->assertInstanceOf(\DateTime::class, $user->getUpdatedAt(), 'Check user update date');
         $this->assertNotFalse($this->om->getUnitOfWork()->tryGetById($user->getId(), User::class));
 
         $collection = $this->om->getClassMetaData(User::class)->getCollection();
@@ -66,9 +69,13 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
 
         $user1->setName('Foo Edited');
         $user2->setName('Bar Edited');
+        $user1UpdatedAt = $user1->getUpdatedAt();
+        $user2UpdatedAt = $user2->getUpdatedAt();
 
         // Only save the changes on one object.
         $this->om->flush($user1);
+        $this->assertGreaterThan($user1UpdatedAt, $user1->getUpdatedAt());
+        $this->assertEquals($user2->getUpdatedAt(), $user2UpdatedAt);
 
         $collection = $this->om->getClassMetaData(User::class)->getCollection();
         $query = new ParseQuery($collection);

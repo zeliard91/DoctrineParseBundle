@@ -1062,6 +1062,8 @@ class UnitOfWork implements PropertyChangedListener
                 $idField = $class->identifier;
 
                 $class->reflFields[$idField]->setValue($results['object'], $id);
+                $class->reflFields['createdAt']->setValue($results['object'], $results['parseObject']->getCreatedAt());
+                $class->reflFields['updatedAt']->setValue($results['object'], $results['parseObject']->getUpdatedAt());
 
                 $this->objectIdentifiers[$oid] = $id;
                 $this->objectStates[$oid] = self::STATE_MANAGED;
@@ -1112,9 +1114,12 @@ class UnitOfWork implements PropertyChangedListener
             }
         }
 
-        $persister->executeUpdates();
+        $updatedAts = $persister->executeUpdates();
 
         foreach ($objects as $oid => $object) {
+            if (isset($updatedAts[$oid])) {
+                $object->setUpdatedAt($updatedAts[$oid]);
+            }
             unset($this->objectUpdates[$oid]);
             if (isset($this->collectionChangeSets[$oid])) {
                 unset($this->collectionChangeSets[$oid]);
