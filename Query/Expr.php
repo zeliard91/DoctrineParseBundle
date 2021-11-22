@@ -3,9 +3,15 @@
 namespace Redking\ParseBundle\Query;
 
 use Redking\ParseBundle\Query;
+use Redking\ParseBundle\UnitOfWork;
 
 class Expr
 {
+    /**
+     * @var UnitOfWork
+     */
+    private $uow;
+
     /**
      * The query criteria array.
      *
@@ -19,6 +25,14 @@ class Expr
      * @var string
      */
     protected $currentField;
+
+    /**
+     * @param UnitOfWork $uow
+     */
+    public function __construct(UnitOfWork $uow)
+    {
+        $this->uow = $uow;
+    }
 
     /**
      * Defines an operator and value on the expression.
@@ -239,6 +253,21 @@ class Expr
     {
         $this->query['$or'][] = $expression instanceof Expr ? $expression->getQuery() : $expression;
         return $this;
+    }
+
+    /**
+     * @param mixed $object
+     * 
+     * @return self
+     */
+    public function references($object): self
+    {
+        $originalObject = $this->uow->getOriginalObjectData($object);
+        if (!is_object($originalObject)) {
+            throw new \InvalidArgumentException('The object passed in reference is not from Parse DB');
+        }
+
+        return $this->equals($originalObject);
     }
 
 

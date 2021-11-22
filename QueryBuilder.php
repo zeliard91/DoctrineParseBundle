@@ -54,7 +54,7 @@ class QueryBuilder
         if ($objectName !== null) {
             $this->setObjectName($objectName);
         }
-        $this->expr = new Expr();
+        $this->expr = new Expr($this->_om->getUnitOfWork());
 
         foreach ($this->_class->getLazyLoadKeys() as $key) {
             $this->includeKey($key);
@@ -69,7 +69,7 @@ class QueryBuilder
      */
     public function expr()
     {
-        return new Expr();
+        return new Expr($this->_om->getUnitOfWork());
     }
 
     /**
@@ -389,16 +389,11 @@ class QueryBuilder
 
     /**
      * @param object $object
-     * @return Builder
+     * @return self
      */
     public function references($object)
     {
-        $originalObject = $this->_om->getUnitOfWork()->getOriginalObjectData($object);
-        if (!is_object($originalObject)) {
-            throw new \InvalidArgumentException('The object passed in reference is not from Parse DB');
-        }
-
-        $this->expr->equals($originalObject);
+        $this->expr->references($object);
 
         return $this;
     }
