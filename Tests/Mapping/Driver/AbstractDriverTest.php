@@ -169,7 +169,8 @@ abstract class AbstractDriverTest extends BaseTestCase
             'sort' => [],
             'criteria' => [],
             'fetch' => ClassMetadata::FETCH_LAZY,
-            'implementation' => ClassMetadata::ASSOCIATION_IMPL_ARRAY
+            'implementation' => ClassMetadata::ASSOCIATION_IMPL_ARRAY,
+            'includeKeys' => null
         ), $classMetadata->fieldMappings['phoneNumbers']);
     }
 }

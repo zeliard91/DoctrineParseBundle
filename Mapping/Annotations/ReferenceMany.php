@@ -25,4 +25,5 @@ final class ReferenceMany extends AbstractField
     public $limit;
     public $skip;
     public $implementation = ClassMetadata::ASSOCIATION_IMPL_ARRAY;
+    public $includeKeys;
 }

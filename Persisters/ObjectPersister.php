@@ -100,7 +100,7 @@ class ObjectPersister
      *
      * @return \Redking\ParseBundle\Query
      */
-    protected function getQuery($criteria, $assoc = null, $limit = null, $skip = null, array $orderBy = null)
+    protected function getQuery($criteria, $assoc = null, $limit = null, $skip = null, array $orderBy = null, array $includeKeys = null)
     {
         $qb = $this->om->createQueryBuilder($this->class->name)
             ->setCriteria($criteria);
@@ -113,6 +113,12 @@ class ObjectPersister
         }
         if (null !== $orderBy) {
             $qb->sort($orderBy);
+        }
+
+        if (null !== $includeKeys) {
+            foreach ($includeKeys as $includeKey) {
+                $qb->includeKey($includeKey);
+            }
         }
 
         return $qb->getQuery();
@@ -421,6 +427,7 @@ class ObjectPersister
         $sort = (isset($mapping['sort'])) ? $mapping['sort'] : null;
         $limit = (isset($mapping['limit'])) ? $mapping['limit'] : null;
         $skip = (isset($mapping['skip'])) ? $mapping['skip'] : null;
+        $includeKeys = (isset($mapping['includeKeys']) && !empty($mapping['includeKeys'])) ? $mapping['includeKeys'] : null;
 
         $owner = $collection->getOwner();
         $ownerClass = $this->om->getClassMetadata(get_class($owner));
@@ -430,7 +437,7 @@ class ObjectPersister
         $objectId = $ownerClass->getIdentifierValues($owner)[$ownerClass->getIdentifier()[0]];
         $criteria = [$mappedByMapping['fieldName'] => new \Parse\ParseObject($ownerClass->collection, $objectId)];
         
-        return $this->getQuery($criteria, null, $limit, $skip, $sort);
+        return $this->getQuery($criteria, null, $limit, $skip, $sort, $includeKeys);
     }
 
     /**
