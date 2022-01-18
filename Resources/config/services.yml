@@ -1,7 +1,7 @@
 parameters:
     doctrine.parse.metadata.annotation.class: 'Redking\ParseBundle\Mapping\Driver\AnnotationDriver'
     doctrine.parse.metadata.yml.class: 'Redking\ParseBundle\Mapping\Driver\YamlDriver'
-    doctrine.parse.metadata.driver_chain.class: 'Doctrine\Common\Persistence\Mapping\Driver\MappingDriverChain'
+    doctrine.parse.metadata.driver_chain.class: 'Doctrine\Persistence\Mapping\Driver\MappingDriverChain'
     doctrine.parse.proxy_cache_warmer.class: 'Redking\ParseBundle\CacheWarmer\ProxyCacheWarmer'
     doctrine.parse.data_collector.class: 'Redking\ParseBundle\DataCollector\SimpleDataCollector'
     doctrine.parse.logger.class: 'Redking\ParseBundle\Logger\Logger'

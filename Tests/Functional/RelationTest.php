@@ -111,8 +111,7 @@ class RelationTest extends \Redking\ParseBundle\Tests\TestCase
         foreach ($user->getAddresses() as $address) {
             $cities[] = $address->getCity();
         }
-
-        $this->assertEquals(['Tokyo', 'Berlin'], $cities, 'Test cities', 0.0, 10, true);
+        $this->assertEqualsCanonicalizing(['Tokyo', 'Berlin'], $cities, 'Test cities');
     }
 
     public function testInversedSide()
@@ -187,7 +186,7 @@ class RelationTest extends \Redking\ParseBundle\Tests\TestCase
         foreach ($user->getAddresses() as $address) {
             $cities[] = $address->getCity();
         }
-        $this->assertEquals(['Tokyo', 'London'], $cities, 'Test cities', 0.0, 10, true);
+        $this->assertEqualsCanonicalizing(['Tokyo', 'London'], $cities, 'Test cities');
 
         $this->om->persist($user);
         $this->om->flush();
@@ -201,6 +200,6 @@ class RelationTest extends \Redking\ParseBundle\Tests\TestCase
         foreach ($user->getAddresses() as $address) {
             $cities[] = $address->getCity();
         }
-        $this->assertEquals(['Tokyo', 'London'], $cities, 'Test cities', 0.0, 10, true);
+        $this->assertEqualsCanonicalizing(['Tokyo', 'London'], $cities, 'Test cities');
     }
 }

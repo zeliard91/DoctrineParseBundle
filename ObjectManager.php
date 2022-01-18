@@ -2,7 +2,7 @@
 
 namespace Redking\ParseBundle;
 
-use Doctrine\Common\Persistence\ObjectManager as BaseObjectManager;
+use Doctrine\Persistence\ObjectManager as BaseObjectManager;
 use Doctrine\Common\EventManager;
 use Parse\ParseClient;
 use Parse\ParseUser;

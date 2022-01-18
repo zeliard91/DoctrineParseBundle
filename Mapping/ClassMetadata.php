@@ -389,7 +389,7 @@ class ClassMetadata implements BaseClassMetadata
      * Initializes a new ClassMetadata instance that will hold the object-relational mapping
      * metadata of the class with the given name.
      *
-     * @param \Doctrine\Common\Persistence\Mapping\ReflectionService $reflService The reflection service.
+     * @param \Doctrine\Persistence\Mapping\ReflectionService $reflService The reflection service.
      */
     public function initializeReflection($reflService)
     {
@@ -1061,7 +1061,7 @@ class ClassMetadata implements BaseClassMetadata
     /**
      * Validates lifecycle callbacks.
      *
-     * @param \Doctrine\Common\Persistence\Mapping\ReflectionService $reflService
+     * @param \Doctrine\Persistence\Mapping\ReflectionService $reflService
      *
      * @return void
      *

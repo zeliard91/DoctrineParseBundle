@@ -31,7 +31,7 @@ final class RepositoryFactory
     /**
      * The list of EntityRepository instances.
      *
-     * @var \Doctrine\Common\Persistence\ObjectRepository[]
+     * @var \Doctrine\Persistence\ObjectRepository[]
      */
     private $repositoryList = array();
 
@@ -55,7 +55,7 @@ final class RepositoryFactory
      * @param \Redking\ParseBundle\ObjectManager $objectManager The EntityManager instance.
      * @param string                             $objectName    The name of the object.
      *
-     * @return \Doctrine\Common\Persistence\ObjectRepository
+     * @return \Doctrine\Persistence\ObjectRepository
      */
     private function createRepository(ObjectManager $objectManager, $objectName)
     {

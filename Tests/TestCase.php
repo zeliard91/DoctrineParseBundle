@@ -28,7 +28,7 @@ abstract class TestCase extends BaseTestCase
      */
     protected static $modelSets = [];
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->om = $this->createTestObjectManager();
         $this->uow = $this->om->getUnitOfWork();
@@ -46,6 +46,7 @@ abstract class TestCase extends BaseTestCase
             'master_key' => getenv('DOCTRINE_PARSE_MASTER_KEY'),
             'rest_key' => getenv('DOCTRINE_PARSE_REST_KEY'),
             'mount_path' => getenv('DOCTRINE_PARSE_MOUNT_PATH'),
+            'metadata_cache_driver' => ['type' => 'redis', 'host' => 'localhost'],
             ]);
         $config->setMetadataDriverImpl($this->createMetadataDriverImpl());
 
@@ -64,7 +65,7 @@ abstract class TestCase extends BaseTestCase
     /**
      * Emptyu collections after tests.
      */
-    public function tearDown()
+    public function tearDown(): void
     {
         foreach (static::$modelSets as $className) {
             $collection = $this->om->getClassMetadata($className)->getCollection();

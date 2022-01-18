@@ -12,7 +12,9 @@
 
 namespace Redking\ParseBundle\DependencyInjection\Compiler;
 
+use Doctrine\Persistence\Mapping\Driver\SymfonyFileLocator;
 use Redking\ParseBundle\Mapping\Driver\AnnotationDriver;
+use Redking\ParseBundle\Mapping\Driver\YamlDriver;
 use Symfony\Bridge\Doctrine\DependencyInjection\CompilerPass\RegisterMappingsPass;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
@@ -95,8 +97,8 @@ class DoctrineParseMappingsPass extends RegisterMappingsPass
     public static function createYamlMappingDriver(array $namespaces, array $managerParameters = array(), $enabledParameter = false, array $aliasMap = array())
     {
         $arguments = array($namespaces, '.parse.yml');
-        $locator = new Definition('Doctrine\Common\Persistence\Mapping\Driver\SymfonyFileLocator', $arguments);
-        $driver = new Definition('Redking\ParseBundle\Mapping\Driver\YamlDriver', array($locator));
+        $locator = new Definition(SymfonyFileLocator::class, $arguments);
+        $driver = new Definition(YamlDriver::class, array($locator));
 
         return new self($driver, $namespaces, $managerParameters, $enabledParameter, $aliasMap);
     }

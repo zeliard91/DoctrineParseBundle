@@ -22,7 +22,7 @@ namespace Redking\ParseBundle\Bridge\DataFixtures\Event\Listener;
 
 use Doctrine\Common\EventSubscriber;
 use Doctrine\Common\DataFixtures\ReferenceRepository;
-use Doctrine\Common\Persistence\Event\LifecycleEventArgs;
+use Doctrine\Persistence\Event\LifecycleEventArgs;
 
 /**
  * Reference Listener populates identities for

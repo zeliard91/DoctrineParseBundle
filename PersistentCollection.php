@@ -6,6 +6,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
 use Redking\ParseBundle\Mapping\ClassMetadata;
+use ReturnTypeWillChange;
+use Traversable;
 
 class PersistentCollection implements Collection
 {
@@ -35,7 +37,7 @@ class PersistentCollection implements Collection
     /**
      * The ObjectManager that manages the persistence of the collection.
      *
-     * @var \Redking\ParseBundle\ObjectManager
+     * @var ObjectManager
      */
     private $om;
 
@@ -79,11 +81,11 @@ class PersistentCollection implements Collection
     /**
      * Creates a new persistent collection.
      *
-     * @param ObjectManager $om    The ObjectManager the collection will be associated with.
-     * @param ClassMetadata $class The class descriptor of the object type of this collection.
-     * @param array         $coll  The collection elements.
+     * @param ObjectManager $om     The ObjectManager the collection will be associated with.
+     * @param ClassMetadata $class  The class descriptor of the object type of this collection.
+     * @param Collection $coll      The collection elements.
      */
-    public function __construct(ObjectManager $om, $class, $coll)
+    public function __construct(ObjectManager $om, ClassMetadata $class, Collection $coll)
     {
         $this->coll      = $coll;
         $this->om        = $om;
@@ -518,7 +520,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function count()
+    public function count(): int
     {
         if ( ! $this->initialized && $this->association['fetch'] === Mapping\ClassMetadata::FETCH_EXTRA_LAZY) {
             $persister = $this->om->getUnitOfWork()->getCollectionPersister($this->association);
@@ -568,7 +570,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function getIterator()
+    public function getIterator(): Traversable
     {
         $this->initialize();
 
@@ -680,14 +682,20 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function offsetExists($offset)
+    #[ReturnTypeWillChange]
+    public function offsetExists($offset): bool
     {
+        $this->initialize();
+
         return $this->containsKey($offset);
     }
 
     /**
-     * {@inheritdoc}
+     * @param mixed $offset
+     *
+     * @return mixed
      */
+    #[ReturnTypeWillChange]
     public function offsetGet($offset)
     {
         return $this->get($offset);
@@ -696,6 +704,13 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
+    /**
+     * @param mixed $offset
+     * @param mixed $value
+     * 
+     * @return void
+     */
+    #[ReturnTypeWillChange]
     public function offsetSet($offset, $value)
     {
         if ( ! isset($offset)) {
@@ -706,8 +721,11 @@ class PersistentCollection implements Collection
     }
 
     /**
-     * {@inheritdoc}
+     * @param mixed $offset
+     * 
+     * @return void
      */
+    #[ReturnTypeWillChange]
     public function offsetUnset($offset)
     {
         return $this->remove($offset);
@@ -819,10 +837,6 @@ class PersistentCollection implements Collection
     {
         if ($this->isDirty) {
             $this->initialize();
-        }
-
-        if ($this->initialized) {
-            return $this->coll->matching($criteria);
         }
 
         $builder         = Criteria::expr();

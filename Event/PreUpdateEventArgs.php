@@ -19,7 +19,7 @@
 
 namespace Redking\ParseBundle\Event;
 
-use Doctrine\Common\Persistence\ObjectManager;
+use Doctrine\Persistence\ObjectManager;
 
 /**
  * Class that holds event arguments for a preUpdate event.

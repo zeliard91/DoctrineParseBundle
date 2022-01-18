@@ -2,9 +2,9 @@
 
 namespace Redking\ParseBundle\Mapping;
 
-use Doctrine\Common\Persistence\Mapping\AbstractClassMetadataFactory;
-use Doctrine\Common\Persistence\Mapping\ClassMetadata as ClassMetadataInterface;
-use Doctrine\Common\Persistence\Mapping\ReflectionService;
+use Doctrine\Persistence\Mapping\AbstractClassMetadataFactory;
+use Doctrine\Persistence\Mapping\ClassMetadata as ClassMetadataInterface;
+use Doctrine\Persistence\Mapping\ReflectionService;
 use Redking\ParseBundle\ObjectManager;
 use Redking\ParseBundle\Event\LoadClassMetadataEventArgs;
 use Redking\ParseBundle\Events;
@@ -88,7 +88,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
     {
         /* @var $class ClassMetadata */
         /** @var $parent ClassMetadata */
-        if ($parent) {
+        if ($parent && $parent instanceof ClassMetadata) {
             $class->setInheritanceType($parent->inheritanceType);
             $class->setDiscriminatorField($parent->discriminatorField);
             $class->setDiscriminatorMap($parent->discriminatorMap);

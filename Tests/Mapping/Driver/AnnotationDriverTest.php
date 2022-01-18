@@ -7,7 +7,7 @@ use Redking\ParseBundle\Mapping\Driver\AnnotationDriver;
 
 class AnnotationDriverTest extends AbstractDriverTest
 {
-    public function setUp()
+    public function setUp(): void
     {
         AnnotationDriver::registerAnnotationClasses();
 

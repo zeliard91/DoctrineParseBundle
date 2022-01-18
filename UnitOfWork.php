@@ -7,7 +7,7 @@ use UnexpectedValueException;
 use DeepCopy\DeepCopy;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\Common\PropertyChangedListener;
+use Doctrine\Persistence\PropertyChangedListener;
 use Redking\ParseBundle\Event\PreUpdateEventArgs;
 use Redking\ParseBundle\Event\LifecycleEventArgs;
 use Redking\ParseBundle\Event\ListenersInvoker;

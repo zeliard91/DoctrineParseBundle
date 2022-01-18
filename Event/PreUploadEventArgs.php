@@ -2,7 +2,7 @@
 
 namespace Redking\ParseBundle\Event;
 
-use Doctrine\Common\Persistence\ObjectManager;
+use Doctrine\Persistence\ObjectManager;
 use Parse\ParseFile;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 

@@ -19,7 +19,7 @@
 
 namespace Redking\ParseBundle\Mapping;
 
-use Doctrine\Common\Persistence\Mapping\MappingException as BaseMappingException;
+use Doctrine\Persistence\Mapping\MappingException as BaseMappingException;
 
 /**
  * Class for all exceptions related to the Doctrine MongoDB ODM.

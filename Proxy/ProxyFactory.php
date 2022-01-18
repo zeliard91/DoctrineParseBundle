@@ -19,7 +19,7 @@
 
 namespace Redking\ParseBundle\Proxy;
 
-use Doctrine\Common\Persistence\Mapping\ClassMetadata;
+use Doctrine\Persistence\Mapping\ClassMetadata;
 use Doctrine\Common\Proxy\AbstractProxyFactory;
 use Doctrine\Common\Proxy\ProxyDefinition;
 use Doctrine\Common\Util\ClassUtils;
@@ -107,7 +107,7 @@ class ProxyFactory extends AbstractProxyFactory
     /**
      * Creates a closure capable of initializing a proxy.
      *
-     * @param \Doctrine\Common\Persistence\Mapping\ClassMetadata $classMetadata
+     * @param \Doctrine\Persistence\Mapping\ClassMetadata $classMetadata
      * @param \Redking\ParseBundle\Persisters\ObjectPersister    $objectPersister
      *
      * @return \Closure
@@ -183,7 +183,7 @@ class ProxyFactory extends AbstractProxyFactory
     /**
      * Creates a closure capable of finalizing state a cloned proxy.
      *
-     * @param \Doctrine\Common\Persistence\Mapping\ClassMetadata $classMetadata
+     * @param \Doctrine\Persistence\Mapping\ClassMetadata $classMetadata
      * @param \Redking\ParseBundle\Persisters\ObjectPersister    $objectPersister
      *
      * @return \Closure

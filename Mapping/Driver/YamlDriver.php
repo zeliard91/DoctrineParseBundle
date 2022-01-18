@@ -3,9 +3,9 @@
 namespace Redking\ParseBundle\Mapping\Driver;
 
 use Redking\ParseBundle\Mapping\ClassMetadata as ParseClassMetadata;
-use Doctrine\Common\Persistence\Mapping\ClassMetadata;
-use Doctrine\Common\Persistence\Mapping\Driver\FileDriver;
-use Doctrine\Common\Persistence\Mapping\Driver\SymfonyFileLocator;
+use Doctrine\Persistence\Mapping\ClassMetadata;
+use Doctrine\Persistence\Mapping\Driver\FileDriver;
+use Doctrine\Persistence\Mapping\Driver\SymfonyFileLocator;
 use Symfony\Component\Yaml\Yaml;
 use Redking\ParseBundle\Mapping\Builder\ObjectListenerBuilder;
 

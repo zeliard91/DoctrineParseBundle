@@ -14,7 +14,7 @@ namespace Redking\ParseBundle\Form\ChoiceList;
 use Symfony\Bridge\Doctrine\Form\ChoiceList\EntityLoaderInterface;
 use Symfony\Component\Form\Exception\UnexpectedTypeException;
 use Redking\ParseBundle\QueryBuilder;
-use Doctrine\Common\Persistence\ObjectManager;
+use Doctrine\Persistence\ObjectManager;
 
 /**
  * Loads entities using a {@link QueryBuilder} instance.

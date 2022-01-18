@@ -11,8 +11,8 @@
 
 namespace Redking\ParseBundle\Form;
 
-use Doctrine\Common\Persistence\ManagerRegistry;
-use Doctrine\Common\Persistence\Mapping\MappingException;
+use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\Persistence\Mapping\MappingException;
 use Doctrine\Common\Util\ClassUtils;
 use Redking\ParseBundle\Types\Type;
 use Redking\ParseBundle\Mapping\ClassMetadata;

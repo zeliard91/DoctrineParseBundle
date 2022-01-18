@@ -31,6 +31,7 @@ class ObjectManagerTest extends TestCase
      */
     public function testThrowsExceptionOnNonObjectValues($methodName)
     {
+        $this->expectException(\InvalidArgumentException::class);
         $this->om->$methodName(null);
     }
     public function dataAffectedByErrorIfClosedException()

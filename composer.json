@@ -12,26 +12,29 @@
         }
     ],
     "require": {
-        "php": "^7.2",
+        "php": ">=7.2",
         "parse/php-sdk": "^1.2",
-        "symfony/framework-bundle": "^4.2",
-        "symfony/config": "^4.2",
-        "symfony/console": "^4.2",
-        "symfony/dependency-injection": "^4.2",
-        "symfony/doctrine-bridge": "^4.2",
+        "symfony/framework-bundle": "^4.2 || ^5.4",
+        "symfony/config": "^4.2 || ^5.4",
+        "symfony/console": "^4.2 || ^5.4",
+        "symfony/dependency-injection": "^4.2 || ^5.4",
+        "symfony/doctrine-bridge": "^4.2 || ^5.4",
         "symfony/string": "^5.1",
-        "symfony/translation-contracts": "^1.1|^2",
-        "symfony/yaml": "^4.2",
+        "symfony/translation-contracts": "^1.1 || ^2",
+        "symfony/yaml": "^4.2 || ^5.4",
         "sensio/framework-extra-bundle": "^5.0",
-        "doctrine/common": "^2.4",
+        "doctrine/common": "^3.1",
+        "doctrine/collections": "^1.6",
         "doctrine/instantiator": "^1.2",
         "myclabs/deep-copy": "^1.7"
     },
     "require-dev": {
+        "doctrine/data-fixtures": "^1.2",
+        "symfony/form": "^4.2 || ^5.4",
         "symfony/maker-bundle": "^1.11",
-        "symfony/mime": "^4.2",
-        "symfony/phpunit-bridge": "^4.2",
-        "phpunit/phpunit": "^6.5"
+        "symfony/mime": "^4.2 || ^5.4",
+        "symfony/phpunit-bridge": "^4.2 || ^5.4",
+        "phpunit/phpunit": "^6.5 || ^9.5"
     },
     "autoload": {
         "psr-4": { "Redking\\ParseBundle\\": "" }
