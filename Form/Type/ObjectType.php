@@ -2,7 +2,7 @@
 
 namespace Redking\ParseBundle\Form\Type;
 
-use Doctrine\Common\Persistence\ObjectManager;
+use Doctrine\Persistence\ObjectManager;
 use Symfony\Bridge\Doctrine\Form\Type\DoctrineType;
 use Redking\ParseBundle\QueryBuilder;
 use Redking\ParseBundle\Form\ChoiceList\ParseQueryBuilderLoader;

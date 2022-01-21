@@ -2,6 +2,7 @@
 
 namespace Redking\ParseBundle;
 
+use Redking\ParseBundle\DependencyInjection\Compiler\CacheCompatibilityPass;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -15,7 +16,7 @@ class RedkingParseBundle extends Bundle
      */
     public function build(ContainerBuilder $container)
     {
-        parent::build($container);
+        $container->addCompilerPass(new CacheCompatibilityPass());
         $container->addCompilerPass(new RegisterEventListenersAndSubscribersPass('doctrine_parse.connections', 'redking_parse.event_manager', 'doctrine_parse'), PassConfig::TYPE_BEFORE_OPTIMIZATION);
 
         $container->addCompilerPass(new HWIOAuthPass());

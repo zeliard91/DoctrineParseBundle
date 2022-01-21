@@ -19,17 +19,7 @@ parameters:
     doctrine.parse.cache.memcache_host: localhost
     doctrine.parse.cache.memcache_port: 11211
     doctrine.parse.cache.memcache_instance.class: Memcache
-    doctrine.parse.cache.memcached.class: Doctrine\Common\Cache\MemcachedCache
-    doctrine.parse.cache.memcached_host: localhost
-    doctrine.parse.cache.memcached_port: 11211
-    doctrine.parse.cache.memcached_instance.class: Memcached
-    doctrine.parse.cache.redis.class: Doctrine\Common\Cache\RedisCache
-    doctrine.parse.cache.redis_host: localhost
-    doctrine.parse.cache.redis_port: 6379
-    doctrine.parse.cache.redis_instance.class: Redis
     doctrine.parse.cache.xcache.class: Doctrine\Common\Cache\XcacheCache
-    doctrine.parse.cache.wincache.class: Doctrine\Common\Cache\WinCacheCache
-    doctrine.parse.cache.zenddata.class: Doctrine\Common\Cache\ZendDataCache
 
 services:
     # Autowiring

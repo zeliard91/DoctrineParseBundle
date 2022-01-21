@@ -75,7 +75,7 @@ class DoctrineParseMappingsPass extends RegisterMappingsPass
     /*public static function createXmlMappingDriver(array $namespaces, array $managerParameters = array(), $enabledParameter = false, array $aliasMap = array())
     {
         $arguments = array($namespaces, '.orm.xml');
-        $locator = new Definition('Doctrine\Common\Persistence\Mapping\Driver\SymfonyFileLocator', $arguments);
+        $locator = new Definition('Doctrine\Persistence\Mapping\Driver\SymfonyFileLocator', $arguments);
         $driver = new Definition('Doctrine\ORM\Mapping\Driver\XmlDriver', array($locator));
 
         return new DoctrineOrmMappingsPass($driver, $namespaces, $managerParameters, $enabledParameter, $aliasMap);
@@ -119,8 +119,8 @@ class DoctrineParseMappingsPass extends RegisterMappingsPass
     /*public static function createPhpMappingDriver(array $namespaces, array $managerParameters = array(), $enabledParameter = false, array $aliasMap = array())
     {
         $arguments = array($namespaces, '.php');
-        $locator = new Definition('Doctrine\Common\Persistence\Mapping\Driver\SymfonyFileLocator', $arguments);
-        $driver = new Definition('Doctrine\Common\Persistence\Mapping\Driver\PHPDriver', array($locator));
+        $locator = new Definition('Doctrine\Persistence\Mapping\Driver\SymfonyFileLocator', $arguments);
+        $driver = new Definition('Doctrine\Persistence\Mapping\Driver\PHPDriver', array($locator));
 
         return new DoctrineOrmMappingsPass($driver, $namespaces, $managerParameters, $enabledParameter, $aliasMap);
     }*/

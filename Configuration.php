@@ -3,8 +3,10 @@
 namespace Redking\ParseBundle;
 
 use Doctrine\Common\Cache\Cache;
+use Doctrine\Common\Cache\Psr6\DoctrineProvider;
 use Doctrine\Persistence\Mapping\Driver\MappingDriver;
 use Doctrine\Common\Proxy\AbstractProxyFactory;
+use Psr\Cache\CacheItemPoolInterface;
 use Redking\ParseBundle\Exception\RedkingParseException;
 use Redking\ParseBundle\Mapping\DefaultNamingStrategy;
 use Redking\ParseBundle\Mapping\DefaultObjectListenerResolver;
@@ -330,5 +332,16 @@ class Configuration
     public function setMetadataCacheImpl(Cache $cacheImpl)
     {
         $this->attributes['metadataCacheImpl'] = $cacheImpl;
+    }
+
+    public function getMetadataCache(): ?CacheItemPoolInterface
+    {
+        return $this->metadataCache;
+    }
+
+    public function setMetadataCache(CacheItemPoolInterface $cache): void
+    {
+        $this->metadataCache                   = $cache;
+        $this->attributes['metadataCacheImpl'] = DoctrineProvider::wrap($cache);
     }
 }

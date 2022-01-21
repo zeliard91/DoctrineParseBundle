@@ -2,6 +2,8 @@
 
 namespace Redking\ParseBundle\DependencyInjection;
 
+use Doctrine\Common\Cache\MemcacheCache;
+use Doctrine\Common\Cache\RedisCache;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader;
@@ -9,6 +11,11 @@ use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Bridge\Doctrine\DependencyInjection\AbstractDoctrineExtension;
+use Symfony\Component\Cache\Adapter\ApcuAdapter;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Symfony\Component\Cache\Adapter\MemcachedAdapter;
+use Symfony\Component\Cache\Adapter\RedisAdapter;
+use Symfony\Component\DependencyInjection\Alias;
 
 /**
  * This is the class that loads and manages your bundle configuration.
@@ -17,6 +24,9 @@ use Symfony\Bridge\Doctrine\DependencyInjection\AbstractDoctrineExtension;
  */
 class RedkingParseExtension extends AbstractDoctrineExtension
 {
+    /** @internal */
+    public const CONFIGURATION_TAG = 'doctrine.parse.configuration';
+
     /**
      * {@inheritdoc}
      */
@@ -42,6 +52,7 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         $loader->load('form.yml');
 
         $configDef = $container->getDefinition('redking_parse.configuration');
+        $configDef->addTag(self::CONFIGURATION_TAG);
 
         // cheat $config for parent requirements
         $config['name'] = 'default';
@@ -52,7 +63,7 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         $this->loadObjectManagerCacheDriver($config, $container, 'metadata_cache');
 
         $methods = array(
-            'setMetadataCacheImpl' => new Reference(sprintf('doctrine.parse.%s_metadata_cache', $config['name'])),
+            'setMetadataCache' => new Reference(sprintf('doctrine.parse.%s_metadata_cache', $config['name'])),
             // 'setQueryCacheImpl' => new Reference(sprintf('doctrine.parse.%s_query_cache', $config['name'])),
             // 'setResultCacheImpl' => new Reference(sprintf('doctrine.parse.%s_result_cache', $config['name'])),
             'setMetadataDriverImpl' => new Reference('doctrine.parse.'.$config['name'].'_metadata_driver'),
@@ -213,5 +224,88 @@ class RedkingParseExtension extends AbstractDoctrineExtension
     protected function getMetadataDriverClass(string $driverType): string
     {
         return '%'.$this->getObjectManagerElementName('metadata.'.$driverType.'.class%');
+    }
+
+    /**
+     * Loads a cache driver.
+     *
+     * @param string $cacheName         The cache driver name
+     * @param string $objectManagerName The object manager name
+     * @param array  $cacheDriver       The cache driver mapping
+     *
+     * @throws InvalidArgumentException
+     *
+     * @psalm-suppress UndefinedClass this won't be necessary when removing metadata cache configuration
+     */
+    protected function loadCacheDriver($cacheName, $objectManagerName, array $cacheDriver, ContainerBuilder $container): string
+    {
+        if (isset($cacheDriver['namespace'])) {
+            return parent::loadCacheDriver($cacheName, $objectManagerName, $cacheDriver, $container);
+        }
+
+        $cacheDriverServiceId = $this->getObjectManagerElementName($objectManagerName . '_' . $cacheName);
+
+        switch ($cacheDriver['type']) {
+            case 'service':
+                $container->setAlias($cacheDriverServiceId, new Alias($cacheDriver['id'], false));
+
+                return $cacheDriverServiceId;
+
+            case 'memcached':
+                if (! empty($cacheDriver['class']) && $cacheDriver['class'] !== MemcacheCache::class) {
+                    return parent::loadCacheDriver($cacheName, $objectManagerName, $cacheDriver, $container);
+                }
+
+                $memcachedInstanceClass = ! empty($cacheDriver['instance_class']) ? $cacheDriver['instance_class'] : '%' . $this->getObjectManagerElementName('cache.memcached_instance.class') . '%';
+                $memcachedHost          = ! empty($cacheDriver['host']) ? $cacheDriver['host'] : '%' . $this->getObjectManagerElementName('cache.memcached_host') . '%';
+                $memcachedPort          = ! empty($cacheDriver['port']) ? $cacheDriver['port'] : '%' . $this->getObjectManagerElementName('cache.memcached_port') . '%';
+                $memcachedInstance      = new Definition($memcachedInstanceClass);
+                $memcachedInstance->addMethodCall('addServer', [
+                    $memcachedHost,
+                    $memcachedPort,
+                ]);
+                $container->setDefinition($this->getObjectManagerElementName(sprintf('%s_memcached_instance', $objectManagerName)), $memcachedInstance);
+
+                $cacheDef = new Definition(MemcachedAdapter::class, [new Reference($this->getObjectManagerElementName(sprintf('%s_memcached_instance', $objectManagerName)))]);
+
+                break;
+
+            case 'redis':
+                if (! empty($cacheDriver['class']) && $cacheDriver['class'] !== RedisCache::class) {
+                    return parent::loadCacheDriver($cacheName, $objectManagerName, $cacheDriver, $container);
+                }
+
+                $redisInstanceClass = ! empty($cacheDriver['instance_class']) ? $cacheDriver['instance_class'] : '%' . $this->getObjectManagerElementName('cache.redis_instance.class') . '%';
+                $redisHost          = ! empty($cacheDriver['host']) ? $cacheDriver['host'] : '%' . $this->getObjectManagerElementName('cache.redis_host') . '%';
+                $redisPort          = ! empty($cacheDriver['port']) ? $cacheDriver['port'] : '%' . $this->getObjectManagerElementName('cache.redis_port') . '%';
+                $redisInstance      = new Definition($redisInstanceClass);
+                $redisInstance->addMethodCall('connect', [
+                    $redisHost,
+                    $redisPort,
+                ]);
+                $container->setDefinition($this->getObjectManagerElementName(sprintf('%s_redis_instance', $objectManagerName)), $redisInstance);
+
+                $cacheDef = new Definition(RedisAdapter::class, [new Reference($this->getObjectManagerElementName(sprintf('%s_redis_instance', $objectManagerName)))]);
+
+                break;
+
+            case 'apcu':
+                $cacheDef = new Definition(ApcuAdapter::class);
+
+                break;
+
+            case 'array':
+                $cacheDef = new Definition(ArrayAdapter::class);
+
+                break;
+
+            default:
+                return parent::loadCacheDriver($cacheName, $objectManagerName, $cacheDriver, $container);
+        }
+
+        $cacheDef->setPublic(false);
+        $container->setDefinition($cacheDriverServiceId, $cacheDef);
+
+        return $cacheDriverServiceId;
     }
 }

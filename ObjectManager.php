@@ -61,8 +61,8 @@ class ObjectManager implements BaseObjectManager
 
         $this->metadataFactory = new ClassMetadataFactory();
         $this->metadataFactory->setObjectManager($this);
-        if ($cacheDriver = $this->config->getMetadataCacheImpl()) {
-            $this->metadataFactory->setCacheDriver($cacheDriver);
+        if ($cacheDriver = $this->config->getMetadataCache()) {
+            $this->metadataFactory->setCache($cacheDriver);
         }
 
         $this->eventManager = $eventManager;
