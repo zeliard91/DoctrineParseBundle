@@ -273,7 +273,7 @@ class UnitOfWork implements PropertyChangedListener
         return $this->listenersInvoker;
     }
 
-    public function propertyChanged($object, $propertyName, $oldValue, $newValue)
+    public function propertyChanged($object, $propertyName, $oldValue, $newValue): void
     {
         $oid = spl_object_hash($object);
         $class = $this->om->getClassMetadata(get_class($object));

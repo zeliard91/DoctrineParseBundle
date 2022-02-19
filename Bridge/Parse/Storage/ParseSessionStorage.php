@@ -3,6 +3,9 @@
 namespace Redking\ParseBundle\Bridge\Parse\Storage;
 
 use Parse\ParseStorageInterface;
+use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 class ParseSessionStorage implements ParseStorageInterface
@@ -13,15 +16,55 @@ class ParseSessionStorage implements ParseStorageInterface
     private $session;
 
     /**
+     * @var RequestStack
+     */
+    private $requestStack;
+
+    /**
      * Parse will store its values in a specific key.
      *
      * @var string
      */
     private $storageKey = '_parse_data';
 
-    public function __construct(SessionInterface $session)
+    /**
+     * @param RequestStack $requestStack
+     */
+    public function __construct(RequestStack $requestStack)
+    {
+        $this->requestStack = $requestStack;
+    }
+
+    /**
+     * @param SessionInterface $session
+     * 
+     * @return void
+     */
+    public function setSession(SessionInterface $session): void
     {
         $this->session = $session;
+    }
+
+    /**
+     * @param RequestStack $requestStack
+     * 
+     * @return void
+     */
+    public function setRequestStack(RequestStack $requestStack): void
+    {
+        $this->requestStack = $requestStack;
+    }
+
+    /**
+     * @return SessionInterface
+     */
+    public function getSession(): SessionInterface
+    {
+        try {
+            return null !== $this->session ? $this->session : $this->requestStack->getSession();
+        } catch (SessionNotFoundException $e) {
+            return new Session();
+        }
     }
 
     /**
@@ -29,9 +72,9 @@ class ParseSessionStorage implements ParseStorageInterface
      */
     public function set($key, $value)
     {
-        $data = $this->session->get($this->storageKey);
+        $data = $this->getSession()->get($this->storageKey);
         $data[$key] = $value;
-        $this->session->set($this->storageKey, $data);
+        $this->getSession()->set($this->storageKey, $data);
     }
 
     /**
@@ -39,17 +82,17 @@ class ParseSessionStorage implements ParseStorageInterface
      */
     public function remove($key)
     {
-        $data = $this->session->get($this->storageKey);
+        $data = $this->getSession()->get($this->storageKey);
         unset($data[$key]);
-        $this->session->set($this->storageKey, $data);
+        $this->getSession()->set($this->storageKey, $data);
     }
 
     /**
-     * {@inheritdoc}
+     * @return mixed
      */
     public function get($key)
     {
-        $data = $this->session->get($this->storageKey);
+        $data = $this->getSession()->get($this->storageKey);
 
         return isset($data[$key]) ? $data[$key] : null;
     }
@@ -59,7 +102,7 @@ class ParseSessionStorage implements ParseStorageInterface
      */
     public function clear()
     {
-        $this->session->set($this->storageKey, []);
+        $this->getSession()->set($this->storageKey, []);
     }
 
     /**
@@ -71,18 +114,18 @@ class ParseSessionStorage implements ParseStorageInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @return array
      */
     public function getKeys()
     {
-        return array_keys($this->session->get($this->storageKey));
+        return array_keys($this->getSession()->get($this->storageKey));
     }
 
     /**
-     * {@inheritdoc}
+     * @return array
      */
     public function getAll()
     {
-        return $this->session->get($this->storageKey);
+        return $this->getSession()->get($this->storageKey);
     }
 }

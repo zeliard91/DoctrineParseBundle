@@ -129,12 +129,18 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         $container->setAlias('doctrine.parse.object_manager', 'redking_parse.manager');
     }
 
-    protected function getObjectManagerElementName($name)
+    /**
+     * {@inheritdoc}
+     */
+    protected function getObjectManagerElementName($name): string
     {
         return 'doctrine.parse.'.$name;
     }
 
-    protected function getMappingObjectDefaultName()
+    /**
+     * {@inheritdoc}
+     */
+    protected function getMappingObjectDefaultName(): string
     {
         return 'ParseObject';
     }
@@ -142,7 +148,7 @@ class RedkingParseExtension extends AbstractDoctrineExtension
     /**
      * {@inheritdoc}
      */
-    protected function getMappingResourceConfigDirectory()
+    protected function getMappingResourceConfigDirectory(string $bundleDir = null): string
     {
         return 'Resources/config/doctrine';
     }
@@ -150,7 +156,7 @@ class RedkingParseExtension extends AbstractDoctrineExtension
     /**
      * {@inheritdoc}
      */
-    protected function getMappingResourceExtension()
+    protected function getMappingResourceExtension(): string
     {
         return 'parse';
     }

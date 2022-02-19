@@ -2,6 +2,7 @@
 
 namespace Redking\ParseBundle\Command;
 
+use Redking\ParseBundle\Mapping\MappingException;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -24,7 +25,7 @@ class MappingInfoCommand extends DoctrineParseCommand
     /**
      * {@inheritDoc}
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $objectManager = $this->getDoctrineParseManager();
 

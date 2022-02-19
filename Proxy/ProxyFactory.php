@@ -81,7 +81,7 @@ class ProxyFactory extends AbstractProxyFactory
     /**
      * {@inheritdoc}
      */
-    protected function skipClass(ClassMetadata $metadata)
+    protected function skipClass(ClassMetadata $metadata): bool
     {
         /* @var $metadata \Doctrine\ORM\Mapping\ClassMetadataInfo */
         return $metadata->isMappedSuperclass || $metadata->getReflectionClass()->isAbstract();
@@ -90,7 +90,7 @@ class ProxyFactory extends AbstractProxyFactory
     /**
      * {@inheritdoc}
      */
-    protected function createProxyDefinition($className)
+    protected function createProxyDefinition($className): ProxyDefinition
     {
         $classMetadata = $this->om->getClassMetadata($className);
         $objectPersister = $this->uow->getObjectPersister($className);

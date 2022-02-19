@@ -57,7 +57,7 @@ EOT
             );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $bundleName = $input->getArgument('bundle');
         $filterObject = $input->getOption('object');
@@ -90,5 +90,7 @@ EOT
                 'Did you maybe forget to define a mapping configuration?'
             );
         }
+
+        return 0;
     }
 }

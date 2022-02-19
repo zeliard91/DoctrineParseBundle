@@ -7,6 +7,7 @@ use Doctrine\Persistence\Mapping\ReflectionService;
 use Doctrine\Persistence\Mapping\RuntimeReflectionService;
 use Doctrine\Instantiator\Instantiator;
 use Redking\ParseBundle\Types\Type;
+use ReflectionClass;
 
 /**
  * Contract for a Doctrine persistence layer ClassMetadata class to implement.
@@ -327,7 +328,7 @@ class ClassMetadata implements BaseClassMetadata
     /**
      * {@inheritdoc}
      */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
@@ -335,7 +336,7 @@ class ClassMetadata implements BaseClassMetadata
     /**
      * {@inheritdoc}
      */
-    public function getIdentifier()
+    public function getIdentifier(): array
     {
         return array($this->identifier);
     }
@@ -354,7 +355,7 @@ class ClassMetadata implements BaseClassMetadata
     /**
      * {@inheritdoc}
      */
-    public function getReflectionClass()
+    public function getReflectionClass(): ReflectionClass
     {
         if (!$this->reflClass) {
             $this->reflClass = new \ReflectionClass($this->name);
@@ -424,7 +425,7 @@ class ClassMetadata implements BaseClassMetadata
     /**
      * {@inheritdoc}
      */
-    public function isIdentifier($fieldName)
+    public function isIdentifier($fieldName): bool
     {
         return $this->identifier === $fieldName;
     }
@@ -801,7 +802,7 @@ class ClassMetadata implements BaseClassMetadata
     /**
      * {@inheritdoc}
      */
-    public function hasField($fieldName)
+    public function hasField($fieldName): bool
     {
         return isset($this->fieldMappings[$fieldName]);
     }
@@ -809,7 +810,7 @@ class ClassMetadata implements BaseClassMetadata
     /**
      * {@inheritdoc}
      */
-    public function hasAssociation($fieldName)
+    public function hasAssociation($fieldName): bool
     {
         return isset($this->associationMappings[$fieldName]);
     }
@@ -817,7 +818,7 @@ class ClassMetadata implements BaseClassMetadata
     /**
      * {@inheritdoc}
      */
-    public function isSingleValuedAssociation($fieldName)
+    public function isSingleValuedAssociation($fieldName): bool
     {
         return isset($this->fieldMappings[$fieldName]['association']) &&
             $this->fieldMappings[$fieldName]['association'] === self::REFERENCE_ONE;
@@ -826,7 +827,7 @@ class ClassMetadata implements BaseClassMetadata
     /**
      * {@inheritdoc}
      */
-    public function isCollectionValuedAssociation($fieldName)
+    public function isCollectionValuedAssociation($fieldName): bool
     {
         return isset($this->fieldMappings[$fieldName]['association']) &&
             $this->fieldMappings[$fieldName]['association'] === self::REFERENCE_MANY;
@@ -835,7 +836,7 @@ class ClassMetadata implements BaseClassMetadata
     /**
      * {@inheritdoc}
      */
-    public function isOwningCollectionValuedAssociation($fieldName)
+    public function isOwningCollectionValuedAssociation($fieldName): bool
     {
         return isset($this->fieldMappings[$fieldName]['association']) &&
             $this->fieldMappings[$fieldName]['association'] === self::REFERENCE_MANY && 
@@ -845,7 +846,7 @@ class ClassMetadata implements BaseClassMetadata
     /**
      * {@inheritdoc}
      */
-    public function getFieldNames()
+    public function getFieldNames(): array
     {
         return array_keys($this->fieldMappings);
     }
@@ -888,7 +889,7 @@ class ClassMetadata implements BaseClassMetadata
     /**
      * {@inheritdoc}
      */
-    public function getIdentifierFieldNames()
+    public function getIdentifierFieldNames(): array
     {
         return [$this->identifier];
     }
@@ -896,7 +897,7 @@ class ClassMetadata implements BaseClassMetadata
     /**
      * {@inheritdoc}
      */
-    public function getAssociationNames()
+    public function getAssociationNames(): array
     {
         return array_keys($this->associationMappings);
     }
@@ -924,7 +925,7 @@ class ClassMetadata implements BaseClassMetadata
     /**
      * {@inheritdoc}
      */
-    public function getTypeOfField($fieldName)
+    public function getTypeOfField($fieldName): ?string
     {
         return isset($this->fieldMappings[$fieldName]) ?
                 $this->fieldMappings[$fieldName]['type'] : null;
@@ -957,7 +958,7 @@ class ClassMetadata implements BaseClassMetadata
     /**
      * {@inheritdoc}
      */
-    public function getAssociationTargetClass($assocName)
+    public function getAssociationTargetClass($assocName): ?string
     {
         if (!isset($this->associationMappings[$assocName])) {
             throw new \InvalidArgumentException("Association name expected, '".$assocName."' is not an association.");
@@ -969,7 +970,7 @@ class ClassMetadata implements BaseClassMetadata
     /**
      * {@inheritdoc}
      */
-    public function isAssociationInverseSide($assocName)
+    public function isAssociationInverseSide($assocName): bool
     {
         throw new \Exception(__METHOD__);
     }
@@ -977,7 +978,7 @@ class ClassMetadata implements BaseClassMetadata
     /**
      * {@inheritdoc}
      */
-    public function getAssociationMappedByTargetField($assocName)
+    public function getAssociationMappedByTargetField($assocName): string
     {
         throw new \Exception(__METHOD__);
     }
@@ -985,7 +986,7 @@ class ClassMetadata implements BaseClassMetadata
     /**
      * {@inheritdoc}
      */
-    public function getIdentifierValues($object)
+    public function getIdentifierValues($object): array
     {
         return [$this->identifier => $this->reflFields[$this->identifier]->getValue($object)];
     }

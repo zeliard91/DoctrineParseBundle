@@ -4,6 +4,7 @@ namespace Redking\ParseBundle\Mapping;
 
 use Doctrine\Persistence\Mapping\AbstractClassMetadataFactory;
 use Doctrine\Persistence\Mapping\ClassMetadata as ClassMetadataInterface;
+use Doctrine\Persistence\Mapping\Driver\MappingDriver;
 use Doctrine\Persistence\Mapping\ReflectionService;
 use Redking\ParseBundle\ObjectManager;
 use Redking\ParseBundle\Event\LoadClassMetadataEventArgs;
@@ -32,7 +33,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
     /**
      * {@inheritdoc}
      */
-    protected function initialize()
+    protected function initialize(): void
     {
         $this->driver = $this->om->getConfiguration()->getMetadataDriverImpl();
         $this->evm = $this->om->getEventManager();
@@ -42,7 +43,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
     /**
      * {@inheritdoc}
      */
-    protected function getFqcnFromAlias($namespaceAlias, $simpleClassName)
+    protected function getFqcnFromAlias($namespaceAlias, $simpleClassName): string
     {
         return $this->om->getConfiguration()->getEntityNamespace($namespaceAlias).'\\'.$simpleClassName;
     }
@@ -50,7 +51,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
     /**
      * {@inheritdoc}
      */
-    protected function getDriver()
+    protected function getDriver(): MappingDriver
     {
         return $this->driver;
     }
@@ -58,7 +59,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
     /**
      * {@inheritdoc}
      */
-    protected function wakeupReflection(ClassMetadataInterface $class, ReflectionService $reflService)
+    protected function wakeupReflection(ClassMetadataInterface $class, ReflectionService $reflService): void
     {
         /* @var $class ClassMetadata */
         $class->wakeupReflection($reflService);
@@ -67,7 +68,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
     /**
      * {@inheritdoc}
      */
-    protected function initializeReflection(ClassMetadataInterface $class, ReflectionService $reflService)
+    protected function initializeReflection(ClassMetadataInterface $class, ReflectionService $reflService): void
     {
         /* @var $class ClassMetadata */
         $class->initializeReflection($reflService);
@@ -76,7 +77,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
     /**
      * {@inheritdoc}
      */
-    protected function isEntity(ClassMetadataInterface $class)
+    protected function isEntity(ClassMetadataInterface $class): bool
     {
         return isset($class->isMappedSuperclass) && $class->isMappedSuperclass === false;
     }
@@ -84,7 +85,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
     /**
      * {@inheritdoc}
      */
-    protected function doLoadMetadata($class, $parent, $rootEntityFound, array $nonSuperclassParents)
+    protected function doLoadMetadata($class, $parent, $rootEntityFound, array $nonSuperclassParents): void
     {
         /* @var $class ClassMetadata */
         /** @var $parent ClassMetadata */
@@ -144,7 +145,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
     /**
      * {@inheritdoc}
      */
-    protected function newClassMetadataInstance($className)
+    protected function newClassMetadataInstance($className): ClassMetadata
     {
         return new ClassMetadata($className, $this->om->getConfiguration()->getNamingStrategy());
     }

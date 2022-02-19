@@ -84,7 +84,7 @@ EOT
         );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $om = $this->getDoctrineParseManager();
         $kernel = $this->getApplication()->getKernel();
@@ -142,5 +142,7 @@ EOT
             $output->writeln(sprintf('  <comment>></comment> <info>%s</info>', $message));
         });
         $executor->execute($fixtures, $input->getOption('append'));
+
+        return 0;
     }
 }
