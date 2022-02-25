@@ -87,7 +87,8 @@ EOT
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $om = $this->getDoctrineParseManager();
-        $kernel = $this->getApplication()->getKernel();
+        $bundlesMetadata = $this->params->get('kernel.bundles_metadata');
+        $projectDir = $this->params->get('kernel.project_dir');
 
         $dirOrFile = $input->getOption('fixtures');
         $bundles = $input->getOption('bundles');
@@ -108,16 +109,17 @@ EOT
             $paths = is_array($dirOrFile) ? $dirOrFile : [$dirOrFile];
         } elseif ($bundles) {
             
-            $paths = [$kernel->getRootDir().'/DataFixtures/Parse'];
+            $paths = [$projectDir.'/DataFixtures/Parse'];
             foreach ($bundles as $bundle) {
-                $paths[] = $kernel->getBundle($bundle)->getPath();
+                if (isset($bundlesMetadata[$bundle]['path']))
+                $paths[] = $bundlesMetadata[$bundle]['path'] . '/DataFixtures/Parse';
             }
         } else {
             $paths = $this->params->get('doctrine_parse.fixtures_dirs');
             $paths = is_array($paths) ? $paths : [$paths];
-            $paths[] = $kernel->getRootDir().'/DataFixtures/Parse';
-            foreach ($kernel->getBundles() as $bundle) {
-                $paths[] = $bundle->getPath().'/DataFixtures/Parse';
+            $paths[] = $projectDir.'/DataFixtures/Parse';
+            foreach ($bundlesMetadata as $bundleMetadata) {
+                $paths[] = $bundleMetadata['path'] . '/DataFixtures/Parse';
             }
         }
 
