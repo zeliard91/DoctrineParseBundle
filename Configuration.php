@@ -32,6 +32,9 @@ class Configuration
      */
     protected $_attributes = array();
 
+    /** @var CacheItemPoolInterface|null */
+    private $metadataCache;
+
     /**
      * Adds a namespace under a certain alias.
      *
