@@ -335,8 +335,23 @@ class Query
 
         if (isset($this->query['includes']) && is_array($this->query['includes'])) {
             foreach ($this->query['includes'] as $attribute) {
-                $field = $this->_class->getNameOfField($attribute);
-                $this->_parseQuery->includeKey($field);
+                if (strpos($attribute, '.') !== false) {
+                    $parts = explode('.', $attribute);
+                    $_class = $this->_class;
+                    $fields = [];
+                    foreach ($parts as $fieldPart) {
+                        $fields[] = $_class->getNameOfField($fieldPart);
+                        if ($_class->hasAssociation($fieldPart)) {
+                            $_class = $this->_om->getClassMetadata($_class->getAssociationTargetClass($fieldPart));
+                        }
+                    }
+                    if (count($fields) > 0) {
+                        $this->_parseQuery->includeKey(implode('.', $fields));
+                    }
+                } else {
+                    $field = $this->_class->getNameOfField($attribute);
+                    $this->_parseQuery->includeKey($field);
+                }
             }
         }
 
