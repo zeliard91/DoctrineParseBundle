@@ -158,7 +158,7 @@ class ObjectRepository implements BaseObjectRepository, Selectable
     /**
      * Finds all objects in the repository.
      *
-     * @return array
+     * @return Collection
      */
     public function findAll()
     {
@@ -173,7 +173,7 @@ class ObjectRepository implements BaseObjectRepository, Selectable
      * @param int|null $limit    Limit for Cursor::limit()
      * @param int|null $skip     Skip for Cursor::skip()
      *
-     * @return array
+     * @return Collection
      */
     public function findBy(array $criteria, array $sort = null, $limit = null, $skip = null)
     {
