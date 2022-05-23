@@ -1572,6 +1572,11 @@ class UnitOfWork implements PropertyChangedListener
                 continue;
             }
 
+            if ($value instanceof \BackedEnum) {
+                $actualData->set($class->getNameOfField($name), $value->value);
+                continue;
+            }
+
             if (!$class->isIdentifier($name) && $name !== 'createdAt') {
                 // Force string if needed
                 if ($class->getTypeOfField($name) === Type::STRING && null !== $value) {

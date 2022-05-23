@@ -24,6 +24,17 @@ class QueryArg
             $date = clone $value;
             $date->setTimeZone(new \DateTimeZone('UTC'));
             $this->value = $date;
+        } elseif ($value instanceof \BackedEnum) {
+            $this->value = $value->value;
+        } elseif (is_iterable($value)) {
+            $this->value = [];
+            foreach ($value as $_value) {
+                if ($_value instanceof \BackedEnum) {
+                    $this->value[] = $_value->value;
+                } else {
+                    $this->value[] = $_value;
+                }
+            }
         } else {
             $this->value = $value;
         }
