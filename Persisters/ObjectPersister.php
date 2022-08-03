@@ -307,7 +307,7 @@ class ObjectPersister
 
         $this->profileQuery();
         $fields = json_decode('[' . implode(',', array_map(function($object): string {
-            return $object->_encode();
+            return $object->encode();
         }, array_values($parseObjects))) . ']');
 
         try {
