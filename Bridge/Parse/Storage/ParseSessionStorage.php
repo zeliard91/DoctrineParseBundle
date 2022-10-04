@@ -6,7 +6,9 @@ use Parse\ParseStorageInterface;
 use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\SessionFactoryInterface;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\HttpFoundation\Session\Storage\MockFileSessionStorage;
 
 class ParseSessionStorage implements ParseStorageInterface
 {
@@ -21,6 +23,11 @@ class ParseSessionStorage implements ParseStorageInterface
     private $requestStack;
 
     /**
+     * @var SessionFactoryInterface
+     */
+    private $sessionStorageFactory;
+
+    /**
      * Parse will store its values in a specific key.
      *
      * @var string
@@ -29,10 +36,12 @@ class ParseSessionStorage implements ParseStorageInterface
 
     /**
      * @param RequestStack $requestStack
+     * @param SessionFactoryInterface $sessionStorageFactory
      */
-    public function __construct(RequestStack $requestStack)
+    public function __construct(RequestStack $requestStack, SessionFactoryInterface $sessionStorageFactory)
     {
         $this->requestStack = $requestStack;
+        $this->sessionStorageFactory = $sessionStorageFactory;
     }
 
     /**
@@ -63,7 +72,9 @@ class ParseSessionStorage implements ParseStorageInterface
         try {
             return null !== $this->session ? $this->session : $this->requestStack->getSession();
         } catch (SessionNotFoundException $e) {
-            return new Session();
+            $this->session = $this->sessionStorageFactory->createSession();
+
+            return $this->session;
         }
     }
 

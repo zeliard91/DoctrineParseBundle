@@ -121,6 +121,7 @@ services:
         class: "%doctrine_parse.session_storage.class%"
         arguments:
             - "@request_stack"
+            - "@session.factory"
 
     # Doctrine Cache Warmer
     redking_parse.doctrine_cache_warmer:
