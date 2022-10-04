@@ -6,20 +6,37 @@ use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
 use Doctrine\Common\Annotations\Reader;
 use Doctrine\Persistence\Mapping\ClassMetadata;
-use Doctrine\Persistence\Mapping\Driver\AnnotationDriver as AbstractAnnotationDriver;
 use Doctrine\Persistence\Mapping\Driver\MappingDriver;
 use Redking\ParseBundle\Mapping\Annotations as ORM;
 use Redking\ParseBundle\Mapping\MappingException;
-
+use Doctrine\Persistence\Mapping\Driver\ColocatedMappingDriver;
+use ReflectionClass;
 
 /**
  * The AnnotationDriver reads the mapping metadata from docblock annotations.
  */
-class AnnotationDriver extends AbstractAnnotationDriver implements MappingDriver
+class AnnotationDriver implements MappingDriver
 {
+    use ColocatedMappingDriver;
+
     protected $entityAnnotationClasses = array(
         'Redking\\ParseBundle\\Mapping\\Annotations\\ParseObject' => 1,
     );
+
+    /**
+     * Initializes a new AnnotationDriver that uses the given AnnotationReader for reading
+     * docblock annotations.
+     *
+     * @param Reader               $reader The AnnotationReader to use, duck-typed.
+     * @param string|string[]|null $paths  One or multiple paths where mapping classes can be found.
+     */
+    public function __construct($reader, $paths = null)
+    {
+        $this->reader = $reader;
+
+        $this->addPaths((array) $paths);
+    }
+
     /**
      * Registers annotation classes to the common registry.
      *
@@ -33,7 +50,7 @@ class AnnotationDriver extends AbstractAnnotationDriver implements MappingDriver
     /**
      * {@inheritdoc}
      */
-    public function loadMetadataForClass($className, ClassMetadata $class)
+    public function loadMetadataForClass($className, ClassMetadata $class): void
     {
         /** @var $class ClassMetadataInfo */
         $reflClass = $class->getReflectionClass();
@@ -178,5 +195,18 @@ class AnnotationDriver extends AbstractAnnotationDriver implements MappingDriver
         self::registerAnnotationClasses();
 
         return new self($reader, $paths);
+    }
+
+    public function isTransient($className): bool
+    {
+        $classAnnotations = $this->reader->getClassAnnotations(new ReflectionClass($className));
+
+        foreach ($classAnnotations as $annot) {
+            if (isset($this->entityAnnotationClasses[get_class($annot)])) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

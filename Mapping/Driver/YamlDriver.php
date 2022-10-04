@@ -33,7 +33,7 @@ class YamlDriver extends FileDriver
     /**
      * {@inheritdoc}
      */
-    public function loadMetadataForClass($className, ClassMetadata $class)
+    public function loadMetadataForClass($className, ClassMetadata $class): void
     {
         /* @var $class ClassMetadata */
         $element = $this->getElement($className);
@@ -328,7 +328,7 @@ class YamlDriver extends FileDriver
     /**
      * {@inheritdoc}
      */
-    protected function loadMappingFile($file)
+    protected function loadMappingFile($file): array
     {
         return Yaml::parse(file_get_contents($file));
     }

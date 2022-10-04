@@ -44,7 +44,7 @@ class ResolveTargetObjectListener implements EventSubscriber
     /**
      * {@inheritDoc}
      */
-    public function getSubscribedEvents()
+    public function getSubscribedEvents(): array
     {
         return array(
             Events::loadClassMetadata,

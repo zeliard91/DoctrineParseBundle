@@ -49,7 +49,7 @@ class DoctrineCacheWarmer implements CacheWarmerInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @return string[]
      */
     public function warmUp($cacheDir)
     {

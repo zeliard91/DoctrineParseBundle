@@ -562,7 +562,7 @@ class UnitOfWork implements PropertyChangedListener
      * @param array  $id     The identifier values.
      * @param array  $data   The original object data.
      */
-    public function registerManaged($object, $id, ParseObject $data)
+    public function registerManaged($object, $id, ParseObject $data = null)
     {
         $oid = spl_object_hash($object);
         $class = $this->om->getClassMetadata(get_class($object));
@@ -2502,6 +2502,14 @@ class UnitOfWork implements PropertyChangedListener
     {
         return isset($this->objectIdentifiers[spl_object_hash($object)]) ?
             $this->objectIdentifiers[spl_object_hash($object)] : null;
+    }
+
+    /**
+     * Used for Doctrine fixtures
+     */
+    public function getEntityIdentifier(object $object): mixed
+    {
+        return $this->getObjectIdentifier($object);
     }
 
     /**

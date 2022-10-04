@@ -59,7 +59,7 @@ class ObjectType extends DoctrineType
     /**
      * {@inheritdoc}
      */
-    public function getBlockPrefix()
+    public function getBlockPrefix(): string
     {
         return 'object';
     }
@@ -72,8 +72,6 @@ class ObjectType extends DoctrineType
      *
      * @return array
      *
-     * @internal This method is public to be usable as callback. It should not
-     *           be used in user code.
      */
     public function getQueryBuilderPartsForCachingHash($queryBuilder): ?array
     {

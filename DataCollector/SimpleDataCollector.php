@@ -81,7 +81,7 @@ class SimpleDataCollector extends DataCollector
         return $this->data['query_times'];
     }
 
-    public function getName()
+    public function getName(): string
     {
         return 'parse';
     }

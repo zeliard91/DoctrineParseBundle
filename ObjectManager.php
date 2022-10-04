@@ -5,6 +5,7 @@ namespace Redking\ParseBundle;
 use Doctrine\Persistence\ObjectManager as BaseObjectManager;
 use Doctrine\Common\EventManager;
 use Parse\ParseClient;
+use Parse\ParseObject;
 use Parse\ParseUser;
 use Parse\ParseStorageInterface;
 use Redking\ParseBundle\Mapping\ClassMetadata;
@@ -134,7 +135,7 @@ class ObjectManager implements BaseObjectManager
     /**
      * {@inheritdoc}
      */
-    public function find($className, $id)
+    public function find($className, $id): ?object
     {
         return $this->getRepository($className)->find($id);
     }
@@ -142,7 +143,7 @@ class ObjectManager implements BaseObjectManager
     /**
      * {@inheritdoc}
      */
-    public function persist($object)
+    public function persist($object): void
     {
         if (!is_object($object)) {
             throw new \InvalidArgumentException(gettype($object));
@@ -153,7 +154,7 @@ class ObjectManager implements BaseObjectManager
     /**
      * {@inheritdoc}
      */
-    public function remove($object)
+    public function remove($object): void
     {
         if (!is_object($object)) {
             throw new \InvalidArgumentException(gettype($object));
@@ -164,18 +165,21 @@ class ObjectManager implements BaseObjectManager
     /**
      * {@inheritdoc}
      */
-    public function merge($object)
+    public function merge($object): object
     {
         if (!is_object($object)) {
             throw new \InvalidArgumentException(gettype($object));
         }
+
         $this->unitOfWork->merge($object);
+
+        return $object;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function clear($objectName = null)
+    public function clear($objectName = null): void
     {
         $this->unitOfWork->clear($objectName);
     }
@@ -183,7 +187,7 @@ class ObjectManager implements BaseObjectManager
     /**
      * {@inheritdoc}
      */
-    public function detach($object)
+    public function detach($object): void
     {
         if (!is_object($object)) {
             throw new \InvalidArgumentException(gettype($object));
@@ -194,7 +198,7 @@ class ObjectManager implements BaseObjectManager
     /**
      * {@inheritdoc}
      */
-    public function refresh($object)
+    public function refresh($object): void
     {
         if (!is_object($object)) {
             throw new \InvalidArgumentException(gettype($object));
@@ -205,7 +209,7 @@ class ObjectManager implements BaseObjectManager
     /**
      * {@inheritdoc}
      */
-    public function flush($object = null)
+    public function flush($object = null): void
     {
         if (null !== $object && !is_object($object) && !is_array($object)) {
             throw new \InvalidArgumentException(gettype($object));
@@ -232,7 +236,7 @@ class ObjectManager implements BaseObjectManager
     }
 
     /**
-     * {@inheritdoc}
+     * @return ClassMetadataFactory
      */
     public function getMetadataFactory()
     {
@@ -242,14 +246,14 @@ class ObjectManager implements BaseObjectManager
     /**
      * {@inheritdoc}
      */
-    public function initializeObject($obj)
+    public function initializeObject($obj): void
     {
     }
 
     /**
      * {@inheritdoc}
      */
-    public function contains($object)
+    public function contains($object): bool
     {
         return $this->unitOfWork->isScheduledForInsert($object)
             || $this->unitOfWork->isInIdentityMap($object)
@@ -264,7 +268,7 @@ class ObjectManager implements BaseObjectManager
      *
      * @return object
      */
-    public function getReference($objectName, $id, \Parse\ParseObject $data)
+    public function getReference(string $objectName, $id, ParseObject $data = null)
     {
         $class = $this->metadataFactory->getMetadataFor(ltrim($objectName, '\\'));
 
@@ -279,7 +283,7 @@ class ObjectManager implements BaseObjectManager
 
         $object = $this->proxyFactory->getProxy($class->name, [$class->identifier => $id]);
 
-        $this->unitOfWork->registerManaged($object, $data->getObjectId(), $data);
+        $this->unitOfWork->registerManaged($object, $id, $data);
 
         return $object;
     }

@@ -345,7 +345,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function first()
+    public function first(): mixed
     {
         $this->initialize();
 
@@ -355,7 +355,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function last()
+    public function last(): mixed
     {
         $this->initialize();
 
@@ -365,7 +365,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function remove($key)
+    public function remove($key): mixed
     {
         // TODO: If the keys are persistent as well (not yet implemented)
         //       and the collection is not initialized and orphanRemoval is
@@ -393,7 +393,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function removeElement($element)
+    public function removeElement($element): bool
     {
         if ( ! $this->initialized && $this->association['fetch'] === ClassMetadata::FETCH_EXTRA_LAZY) {
             if ($this->coll->contains($element)) {
@@ -432,7 +432,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function containsKey($key)
+    public function containsKey($key): bool
     {
         $this->initialize();
 
@@ -442,7 +442,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function contains($element)
+    public function contains($element): bool
     {
         if ( ! $this->initialized && $this->association['fetch'] === ClassMetadata::FETCH_EXTRA_LAZY) {
             $persister = $this->om->getUnitOfWork()->getCollectionPersister($this->association);
@@ -458,7 +458,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function exists(\Closure $p)
+    public function exists(\Closure $p): bool
     {
         $this->initialize();
 
@@ -467,6 +467,7 @@ class PersistentCollection implements Collection
 
     /**
      * {@inheritdoc}
+     * @return int|string|bool
      */
     public function indexOf($element)
     {
@@ -478,7 +479,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function get($key)
+    public function get($key): mixed
     {
         if ( ! $this->initialized
             && $this->association['type'] === ClassMetadata::MANY
@@ -500,7 +501,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function getKeys()
+    public function getKeys(): array
     {
         $this->initialize();
 
@@ -510,7 +511,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function getValues()
+    public function getValues(): array
     {
         $this->initialize();
 
@@ -536,7 +537,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function set($key, $value)
+    public function set($key, $value): void
     {
         $this->initialize();
 
@@ -548,7 +549,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function add($value)
+    public function add($value): bool
     {
         $this->coll->add($value);
 
@@ -560,7 +561,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function isEmpty()
+    public function isEmpty(): bool
     {
         $this->initialize();
 
@@ -580,7 +581,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function map(\Closure $func)
+    public function map(\Closure $func): Collection
     {
         $this->initialize();
 
@@ -590,7 +591,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function filter(\Closure $p)
+    public function filter(\Closure $p): Collection
     {
         $this->initialize();
 
@@ -600,7 +601,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function forAll(\Closure $p)
+    public function forAll(\Closure $p): bool
     {
         $this->initialize();
 
@@ -610,7 +611,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function partition(\Closure $p)
+    public function partition(\Closure $p): Collection
     {
         $this->initialize();
 
@@ -620,7 +621,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function toArray()
+    public function toArray(): array
     {
         $this->initialize();
 
@@ -630,7 +631,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function clear()
+    public function clear(): void
     {
         if ($this->initialized && $this->isEmpty()) {
             return;
@@ -733,6 +734,7 @@ class PersistentCollection implements Collection
 
     /**
      * {@inheritdoc}
+     * @return int|string|null
      */
     public function key()
     {
@@ -744,7 +746,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function current()
+    public function current(): mixed
     {
         $this->initialize();
 
@@ -754,7 +756,7 @@ class PersistentCollection implements Collection
     /**
      * {@inheritdoc}
      */
-    public function next()
+    public function next(): mixed
     {
         $this->initialize();
         
