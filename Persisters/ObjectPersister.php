@@ -2,6 +2,7 @@
 
 namespace Redking\ParseBundle\Persisters;
 
+use Exception;
 use Redking\ParseBundle\ObjectManager;
 use Redking\ParseBundle\Mapping\ClassMetadata;
 use Parse\ParseQuery;
@@ -307,7 +308,11 @@ class ObjectPersister
 
         $this->profileQuery();
         $fields = json_decode('[' . implode(',', array_map(function($object): string {
-            return $object->encode();
+            try {
+                return $object->encode();
+            } catch (Exception $e) {
+                return json_encode(['className' => $object->getClassName()]);
+            }
         }, array_values($parseObjects))) . ']');
 
         try {
