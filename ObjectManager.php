@@ -49,6 +49,11 @@ class ObjectManager implements BaseObjectManager
     private $unitOfWork;
 
     /**
+     * @var SchemaManager
+     */
+    private $schemaManager;
+
+    /**
      * Repository Factory.
      *
      * @var \Redking\ParseBundle\RepositoryFactory
@@ -76,6 +81,8 @@ class ObjectManager implements BaseObjectManager
             $config->getProxyNamespace(),
             $config->getAutoGenerateProxyClasses()
         );
+
+        $this->schemaManager = new SchemaManager($this, $this->metadataFactory);
 
         $this->initParseConnection($parseStorage);
     }
@@ -297,5 +304,10 @@ class ObjectManager implements BaseObjectManager
     public function isMasterRequest()
     {
         return $this->config->getAlwaysMaster() || is_null(ParseUser::getCurrentUser());
+    }
+
+    public function getSchemaManager(): SchemaManager
+    {
+        return $this->schemaManager;
     }
 }

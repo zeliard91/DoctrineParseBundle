@@ -46,14 +46,8 @@ class ParsePurger implements PurgerInterface
         return $this->om;
     }
 
-    /** @inheritDoc */
-    public function purge()
+    public function purge(): void
     {
-        $metadatas = $this->om->getMetadataFactory()->getAllMetadata();
-        foreach ($metadatas as $metadata) {
-            if ( ! $metadata->isMappedSuperclass) {
-                // @todo : implement drop table
-            }
-        }
+        $this->om->getSchemaManager()->dropCollections();
     }
 }
