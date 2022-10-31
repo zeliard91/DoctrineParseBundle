@@ -7,7 +7,7 @@ use Redking\ParseBundle\Tests\Models\Blog\User;
 use Redking\ParseBundle\Tests\Models\Blog\Picture;
 use Redking\ParseBundle\Tests\Models\Blog\Role;
 
-class AclTest extends \Redking\ParseBundle\Tests\TestCase
+class ACLTest extends \Redking\ParseBundle\Tests\TestCase
 {
     protected static $modelSets = [
         'Redking\ParseBundle\Tests\Models\Blog\User',
