@@ -13,9 +13,9 @@ It has to be used for associations :
 ```php
 <?php
 
-namespace Acme\FooBundle\Form\Type;
+namespace App\Form\Type;
 
-use Acme\FooBundle\ParseObject\User;
+use App\ParseObject\User;
 use Redking\ParseBundle\Form\Type\ObjectType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -70,7 +70,7 @@ Ex:
 
 ```php
 
-namespace AppBundle\ParseObject;
+namespace App\ParseObject;
 
 use Redking\ParseBundle\Mapping\Annotations as ORM;
 use Redking\ParseBundle\Validator\Constraints as ParseAssert;

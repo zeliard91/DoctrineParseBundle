@@ -10,10 +10,10 @@ You can directly use Parse objects in controllers with the built in parameter co
 ```php
 <?php
 
-namespace Acme\FooBundle\Controller;
+namespace App\Controller;
 
 
-use Acme\FooBundle\ParseObject\Post;
+use App\ParseObject\Post;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Request;

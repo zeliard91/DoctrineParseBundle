@@ -31,7 +31,7 @@ So you can for exemple define an event subscriber like this :
 services:
     # Doctrine event subscriber
     app.parse.event_subscriber:
-        class: Acme\FooBundle\EventListener\ParseObjectEventSubscriber
+        class: App\EventListener\ParseObjectEventSubscriber
         tags:
             - { name: doctrine_parse.event_subscriber }
 ```
@@ -41,9 +41,9 @@ and then :
 ```php
 <?php
 
-namespace Acme\FooBundle\EventListener;
+namespace App\EventListener;
 
-use Acme\FooBundle\ParseObject\Post;
+use App\ParseObject\Post;
 use Doctrine\Common\EventSubscriber;
 use Redking\ParseBundle\Event\LifecycleEventArgs;
 use Redking\ParseBundle\Events;

@@ -28,6 +28,17 @@ redking_parse:
     mount_path: '%env(PARSE_MOUNT_PHP)%'
     auto_mapping: true
 
+    # Specify the location of your models
+    mappings:
+        App:
+            is_bundle: false
+            dir: '%kernel.project_dir%/src/ParseObject'
+            prefix: 'App\ParseObject'
+            alias: App
+
+            # if you want to use Yaml mapping
+            # type: yml
+            # dir: "%kernel.project_dir%/config/doctrine"
 ```
 
 You can see all the different configuration options with : 

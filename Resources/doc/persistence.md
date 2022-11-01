@@ -7,7 +7,7 @@ The life-cycle of the persisted objects is handled the same way as in Doctrine O
 
 
 ``` php
-use Acme\FooBundle\ParseObject\Post;
+use App\ParseObject\Post;
 
 $om = $this->get('doctrine_parse')->getManager();
 

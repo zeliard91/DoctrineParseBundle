@@ -13,7 +13,7 @@ If the model does not have mapped usernameCanonical and emailCanonical, you have
 ```php
 <?php
 
-namespace AcmeFooBundle\ParseObject;
+namespace App\ParseObject;
 
 use FOS\UserBundle\Model\User as BaseUser;
 
@@ -67,7 +67,7 @@ The find methods using canonical fields are also override.
 fos_user:
     db_driver: custom
     firewall_name: main
-    user_class: AcmeFooBundle\ParseObject\User
+    user_class: App\ParseObject\User
     service:
         user_manager: redking_parse.fos_user.manager
 

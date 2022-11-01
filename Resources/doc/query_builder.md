@@ -3,7 +3,7 @@
 We can use a QueryBuilder to query the models stored in Parse.
 
 ``` php
-use Acme\FooBundle\ParseObject\Post;
+use App\ParseObject\Post;
 
 $om = $this->get('doctrine_parse')->getManager();
 

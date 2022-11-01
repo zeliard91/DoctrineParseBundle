@@ -1,7 +1,7 @@
 # Mapping
 
 You need to define the mapping for the models stored in Parse.
-The files need to be stored in the `ParseObject` directory of your bundle(s).
+The files need to be stored in the `ParseObject` directory of your app.
 
 The mapping can be defined with annotations or in yaml.
 
@@ -10,10 +10,11 @@ The mapping can be defined with annotations or in yaml.
 
 ```php
 <?php
+// src/ParseObject/Post.pĥp
 
-namespace Acme\FooBundle\ParseObject;
+namespace App\ParseObject;
 
-use Acme\FooBundle\ParseObject\User;
+use App\ParseObject\User;
 use Redking\ParseBundle\Mapping\Annotations as ORM;
 use Redking\ParseBundle\ObjectTrait;
 
@@ -32,8 +33,8 @@ class Post
     protected $title;
 
     /**
-     * @var Acme\FooBundle\ParseObject\User
-     * @ORM\ReferenceOne(targetDocument="Acme\FooBundle\ParseObject\User")
+     * @var App\ParseObject\User
+     * @ORM\ReferenceOne(targetDocument="App\ParseObject\User")
      */
     protected $author;
 
@@ -71,8 +72,8 @@ class Post
 or in YAML format : 
 
 ```yaml
-# Acme/FooBundle/Resources/config/doctrine/Post.parse.yml
-Acme\FooBundle\ParseObject\Post:
+# /config/doctrine/Post.parse.yml
+App\ParseObject\Post:
     # name of the collection in Parse store
     collection: Post
     fields:
@@ -88,7 +89,7 @@ Acme\FooBundle\ParseObject\Post:
 
 You can use a specific command to generate getters and setters when the mapping is defined : 
 
-`php app/console doctrine:parse:generate:objects AcmeFooBundle`
+`php bin/console doctrine:parse:generate:objects AcmeFooBundle`
 
 
 ## Repository
@@ -100,7 +101,7 @@ For that, you have to specify it in the mapping:
 ```php
 <?php
 /**
- * @ORM\ParseObject(collection="Post", repositoryClass="Acme\FooBundle\ParseObject\Repository\PostRepository")
+ * @ORM\ParseObject(collection="Post", repositoryClass="App\Repository\PostRepository")
  */
 class Post
 {
@@ -111,10 +112,10 @@ class Post
 or in YAML : 
 
 ```yaml
-# Acme/FooBundle/Resources/config/doctrine/Post.parse.yml
-Acme\FooBundle\ParseObject\Post:
+# /config/doctrine/Post.parse.yml
+App\ParseObject\Post:
     collection: Post
-    repositoryClass: Acme\FooBundle\ParseObject\Repository\PostRepository
+    repositoryClass: App\Repository\PostRepository
 ```
 
 Then, you define the repository class : 
@@ -122,7 +123,7 @@ Then, you define the repository class :
 ```php
 <?php
 
-namespace Acme\FooBundle\ParseObject\Repository;
+namespace App\Repository;
 
 use Redking\ParseBundle\ObjectRepository;
 
