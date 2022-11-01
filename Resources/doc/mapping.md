@@ -13,7 +13,9 @@ The mapping can be defined with annotations or in yaml.
 
 namespace Acme\FooBundle\ParseObject;
 
+use Acme\FooBundle\ParseObject\User;
 use Redking\ParseBundle\Mapping\Annotations as ORM;
+use Redking\ParseBundle\ObjectTrait;
 
 /**
  * @ORM\ParseObject(collection="Post")
@@ -21,7 +23,7 @@ use Redking\ParseBundle\Mapping\Annotations as ORM;
 class Post
 {
     // Define $id, $createdAt and $updatedAt
-    use \Redking\ParseBundle\ObjectTrait;
+    use ObjectTrait;
 
     /**
      * @var string
@@ -35,44 +37,31 @@ class Post
      */
     protected $author;
 
-    /**
-     * @return string
-     */
-    public function getId()
+    public function getId(): string
     {
         return $this->id;
     }
 
-    /**
-     * @param $title string
-     */
-    public function setTitle($title)
+    public function setTitle(string $title): self
     {
         $this->title = $title;
+
         return $this;
     }
 
-    /**
-     * @return string
-     */
-    public function getTitle()
+    public function getTitle(): ?string
     {
         return $this->title;
     }
 
-    /**
-     * @param $author \Acme\FooBundle\ParseObject\User
-     */
-    public function setAuthor(\Acme\FooBundle\ParseObject\User $author)
+    public function setAuthor(User $author): self
     {
         $this->author = $author;
+
         return $this;
     }
 
-    /**
-     * @return \Acme\FooBundle\ParseObject\User
-     */
-    public function getAuthor()
+    public function getAuthor(): ?User
     {
         return $this->author;
     }

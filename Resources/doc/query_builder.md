@@ -3,10 +3,11 @@
 We can use a QueryBuilder to query the models stored in Parse.
 
 ``` php
+use Acme\FooBundle\ParseObject\Post;
 
 $om = $this->get('doctrine_parse')->getManager();
 
-$post =  $om->getRepository('AcmeFooBundle:Post')
+$post =  $om->getRepository(Post::class)
     ->createQueryBuilder()
     ->field('title')->equals('Hello')
     ->getQuery()
@@ -36,7 +37,7 @@ You can use the method `references` to query associations
 
 ``` php
 
-$posts =  $om->getRepository('AcmeFooBundle:Post')
+$posts =  $om->getRepository(Post::class)
     ->createQueryBuilder()
     ->field('author')->references($user)
     ->getQuery()
@@ -52,7 +53,7 @@ The method `sort` takes an array as argument :
 
 ``` php
 
-$posts =  $om->getRepository('AcmeFooBundle:Post')
+$posts =  $om->getRepository(Post::class)
     ->createQueryBuilder()
     ->limit(10)
     ->skip(20)
@@ -71,7 +72,7 @@ It is however possible to force the fetching of a relation with the `includeKey`
 
 ``` php
 
-$posts_and_users =  $om->getRepository('AcmeFooBundle:Post')
+$posts_and_users =  $om->getRepository(Post::class)
     ->createQueryBuilder()
     ->includeKey('author')
     ->getQuery()
@@ -86,12 +87,12 @@ You can use a subquery against a field like this :
 
 ``` php
 
-$disabledUserQuery = $om->getRepository('AcmeFooBundle:User')
+$disabledUserQuery = $om->getRepository(Post::class)
     ->field('enabled')->equals(false)
     ->getQuery()
 ;
 
-$posts =  $om->getRepository('AcmeFooBundle:Post')
+$posts =  $om->getRepository(Post::class)
     ->createQueryBuilder()
     ->field('author')->matchQuery($disabledUserQuery)
     ->getQuery()
@@ -105,7 +106,7 @@ $posts =  $om->getRepository('AcmeFooBundle:Post')
 You can use `OR` conditions :
 
 ```php
-$qb = $om->getRepository('AcmeFooBundle:User')->createQueryBuilder();
+$qb = $om->getRepository(Post::class)->createQueryBuilder();
 $qb->addOr($qb->expr()->field('firstname')->equals('Foo'));
 $qb->addOr($qb->expr()->field('enabled')->equals(true));
 ```

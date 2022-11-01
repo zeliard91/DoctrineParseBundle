@@ -13,6 +13,7 @@
     ],
     "require": {
         "php": ">=7.2",
+        "doctrine/data-fixtures": "^1.5.3",
         "doctrine/persistence": "^2.5.0",
         "parse/php-sdk": "^1.2",
         "symfony/framework-bundle": "^4.2 || ^5.4",

@@ -15,6 +15,7 @@ It has to be used for associations :
 
 namespace Acme\FooBundle\Form\Type;
 
+use Acme\FooBundle\ParseObject\User;
 use Redking\ParseBundle\Form\Type\ObjectType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -30,7 +31,7 @@ class PostType extends AbstractType
             ->add('title')
             ->add('author', ObjectType::class, [
                 'required' => true,
-                'class' => 'AcmeFooBundle:User' // optionnal
+                'class' => User::class // optionnal
                 ])
         ;
     }

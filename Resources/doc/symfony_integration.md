@@ -4,7 +4,7 @@ Here are some helpers for your symfony application.
 
 ## ParamConverter
 
-You can use a Doctrine ParamConverter in your controllers for your Parse models with the right converter : 
+You can directly use Parse objects in controllers with the built in parameter converter
 
 
 ```php
@@ -14,22 +14,27 @@ namespace Acme\FooBundle\Controller;
 
 
 use Acme\FooBundle\ParseObject\Post;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\Request;
 
-class PostController extends Controller 
+class PostController extends AbstractController
 {
     /**
      * Edit a Post.
      *
-     * @ParamConverter("post", class="AcmeFooBundle:Post", converter="doctrine.parse")
-     * @param  \Acme\FooBundle\ParseObject\Post $post
+     * @Route(path="/post/{post}/edit", name="app_post_edit")
      */
-    public function editAction(Post $post)
+    public function edit(Post $post, Request $request)
     {
-        // 
+        // build and handle form with $post
     }
 }
 
+```
+
+Can be called in twig templates
+
+```twig
+<a href="{{ path('app_post_edit', {'post': post.id}) }}">Edit</a>
 ```

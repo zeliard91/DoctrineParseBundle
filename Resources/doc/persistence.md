@@ -23,9 +23,9 @@ $om->flush();
 ## Read
 
 ``` php
-$post = $om->getRepository('AcmeFooBundle:Post')->find('UgdfttF');
+$post = $om->getRepository(Post::class)->find('UgdfttF');
 
-$posts = $om->getRepository('AcmeFooBundle:Post')->findAll();
+$posts = $om->getRepository(Post::class)->findAll();
 
 ```
 
