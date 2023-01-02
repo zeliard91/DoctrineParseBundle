@@ -957,7 +957,9 @@ class UnitOfWork implements PropertyChangedListener
         }
         // Collection updates (deleteRows, updateRows, insertRows)
         foreach ($this->collectionUpdates as $collectionToUpdate) {
-            $this->getCollectionPersister($collectionToUpdate->getMapping())->update($collectionToUpdate);
+            if (!$this->isScheduledForDelete($collectionToUpdate->getOwner())) {
+                $this->getCollectionPersister($collectionToUpdate->getMapping())->update($collectionToUpdate);
+            }
         }
 
         foreach ($this->getClassesForCommitAction($this->objectInsertions) as $classAndObjects) {
