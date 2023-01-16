@@ -64,6 +64,13 @@ class ParseObjectHydrator
                     $this->class->reflFields[$key]->setValue($object, $data->get($mapping['name']));
                 }
             }
+            // reset value if doctrine refresh
+            elseif (isset($hints['doctrine.refresh']) 
+                && !in_array($key, ['id', 'createdAt', 'updatedAt'])
+                && !isset($mapping['reference'])
+                && null !== $this->class->reflFields[$key]->getValue($object)) {
+                $this->class->reflFields[$key]->setValue($object, null);
+            }
         }
 
         // load associations

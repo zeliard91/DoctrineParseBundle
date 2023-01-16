@@ -597,7 +597,7 @@ class ObjectPersister
      */
     public function refresh($id, $object)
     {
-        $this->load(['id' => $id], $object, null, ['doctrine.refresh']);
+        $this->load(['id' => $id], $object, null, ['doctrine.refresh' => true]);
     }
 
 }
