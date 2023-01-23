@@ -2,6 +2,7 @@
 
 namespace Redking\ParseBundle\DependencyInjection;
 
+use Redking\ParseBundle\Configuration as ParseBundleConfiguration;
 use Symfony\Bridge\Doctrine\DataFixtures\ContainerAwareLoader;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
@@ -46,10 +47,40 @@ class Configuration implements ConfigurationInterface
                 ->end()
                 ->scalarNode('proxy_namespace')->defaultValue('ParseProxies')->end()
                 ->scalarNode('proxy_dir')->defaultValue('%kernel.cache_dir%/doctrine/parse/Proxies')->end()
-                ->scalarNode('auto_generate_proxy_classes')->defaultValue(false)->end()
+                ->scalarNode('auto_generate_proxy_classes')
+                    ->defaultValue(ParseBundleConfiguration::AUTOGENERATE_EVAL)
+                    ->beforeNormalization()
+                    ->always(static function ($v) {
+                        if ($v === false) {
+                            return ParseBundleConfiguration::AUTOGENERATE_EVAL;
+                        }
+
+                        if ($v === true) {
+                            return ParseBundleConfiguration::AUTOGENERATE_FILE_NOT_EXISTS;
+                        }
+
+                        return $v;
+                    })
+                    ->end()
+                ->end()
                 ->scalarNode('hydrator_namespace')->defaultValue('Hydrators')->end()
                 ->scalarNode('hydrator_dir')->defaultValue('%kernel.cache_dir%/doctrine/parse/Hydrators')->end()
-                ->scalarNode('auto_generate_hydrator_classes')->defaultValue(false)->end()
+                ->scalarNode('auto_generate_hydrator_classes')
+                    ->defaultValue(ParseBundleConfiguration::AUTOGENERATE_NEVER)
+                    ->beforeNormalization()
+                    ->always(static function ($v) {
+                        if ($v === false) {
+                            return ParseBundleConfiguration::AUTOGENERATE_NEVER;
+                        }
+
+                        if ($v === true) {
+                            return ParseBundleConfiguration::AUTOGENERATE_ALWAYS;
+                        }
+
+                        return $v;
+                    })
+                    ->end()
+                ->end()
                 ->scalarNode('fixture_loader')
                     ->defaultValue(ContainerAwareLoader::class)
                     ->beforeNormalization()

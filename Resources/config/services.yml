@@ -46,18 +46,18 @@ services:
     # Manager
     redking_parse.manager:
         class: Redking\ParseBundle\ObjectManager
-        public: true
-        arguments:
-            - "@redking_parse.configuration"
-            - "@redking_parse.event_manager"
-            - "@doctrine_parse.session_storage"
+        public: false
+        # arguments:
+        #     - "@redking_parse.configuration"
+        #     - "@redking_parse.event_manager"
+        #     - "@doctrine_parse.session_storage"
 
     redking_parse.event_manager:
         class: Doctrine\Common\EventManager
 
-    redking_parse.configuration:
-        class: Redking\ParseBundle\Configuration
-        public: false
+    # redking_parse.configuration:
+    #     class: Redking\ParseBundle\Configuration
+    #     public: false
 
     doctrine.parse.metadata.annotation_reader:
         alias: annotation_reader
@@ -67,9 +67,18 @@ services:
         class: "%doctrine.parse.proxy_cache_warmer.class%"
         public: false
         arguments:
-            - "@redking_parse.manager"
+            - "@service_container"
         tags:
             - {name: kernel.cache_warmer}
+
+    # Doctrine Cache Warmer
+    redking_parse.doctrine_cache_warmer:
+        class: "%doctrine.parse.doctrine_cache_warmer.class%"
+        public: false
+        arguments:
+            - "@service_container"
+        tags:
+            - {name: kernel.cache_warmer, priority: 10}
 
     # logger
     redking_parse.logger.aggregate:
@@ -123,11 +132,3 @@ services:
             - "@request_stack"
             - "@session.factory"
 
-    # Doctrine Cache Warmer
-    redking_parse.doctrine_cache_warmer:
-        class: "%doctrine.parse.doctrine_cache_warmer.class%"
-        public: false
-        arguments:
-            - "@redking_parse.manager"
-        tags:
-            - {name: kernel.cache_warmer, priority: 10}

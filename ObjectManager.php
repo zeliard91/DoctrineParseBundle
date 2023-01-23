@@ -61,17 +61,17 @@ class ObjectManager implements BaseObjectManager
      */
     private $repositoryFactory;
 
-    public function __construct(Configuration $config, EventManager $eventManager, ParseStorageInterface $parseStorage)
+    public function __construct(Configuration $config = null, EventManager $eventManager = null, ParseStorageInterface $parseStorage = null)
     {
-        $this->config = $config;
-
+        $this->config = $config ?: new Configuration();
         $this->metadataFactory = new ClassMetadataFactory();
+
         $this->metadataFactory->setObjectManager($this);
         if ($cacheDriver = $this->config->getMetadataCache()) {
             $this->metadataFactory->setCache($cacheDriver);
         }
 
-        $this->eventManager = $eventManager;
+        $this->eventManager = $eventManager ?: new EventManager();
 
         $this->unitOfWork = new UnitOfWork($this);
         $this->repositoryFactory = new RepositoryFactory();
@@ -89,18 +89,29 @@ class ObjectManager implements BaseObjectManager
     }
 
     /**
+     * Creates a new Document that operates on the given Mongo connection
+     * and uses the given Configuration.
+     */
+    public static function create(Configuration $config = null, EventManager $eventManager = null, ParseStorageInterface $parseStorage = null): self
+    {
+        return new static($config, $eventManager, $parseStorage);
+    }
+
+    /**
      * Initialize Parse Connection.
      *
      * @param  \Parse\ParseStorageInterface $parseStorage
      * @return void
      */
-    protected function initParseConnection(ParseStorageInterface $parseStorage)
+    protected function initParseConnection(ParseStorageInterface $parseStorage = null)
     {
-        $params = $this->config->getConnectionParameters();
+        if (null !== $parseStorage) {
+            ParseClient::setStorage($parseStorage);
+        }
 
+        $params = $this->config->getConnectionParameters();
         ParseClient::initialize($params['app_id'], $params['rest_key'], $params['master_key']);
         ParseClient::setServerURL($params['server_url'], $params['mount_path']);
-        ParseClient::setStorage($parseStorage);
     }
 
     public function getConfiguration()

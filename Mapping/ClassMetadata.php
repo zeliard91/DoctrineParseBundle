@@ -6,6 +6,7 @@ use Doctrine\Persistence\Mapping\ClassMetadata as BaseClassMetadata;
 use Doctrine\Persistence\Mapping\ReflectionService;
 use Doctrine\Persistence\Mapping\RuntimeReflectionService;
 use Doctrine\Instantiator\Instantiator;
+use InvalidArgumentException;
 use Redking\ParseBundle\Types\Type;
 use ReflectionClass;
 
@@ -871,6 +872,21 @@ class ClassMetadata implements BaseClassMetadata
     }
 
     /**
+     * Gets mappings of fields holding embedded document(s).
+     *
+     * @psalm-return array<string, FieldMapping>
+     */
+    public function getEmbeddedFieldsMappings(): array
+    {
+        return array_filter(
+            $this->associationMappings,
+            static function ($assoc) {
+                return ! empty($assoc['embedded']);
+            }
+        );
+    }
+
+    /**
      * Check if the field is not null.
      *
      * @param string $fieldName  The field name
@@ -984,6 +1000,28 @@ class ClassMetadata implements BaseClassMetadata
     }
 
     /**
+     * Sets the object identifier of a object.
+     *
+     * The value will be converted to a PHP type before being set.
+     *
+     * @param mixed $id
+     */
+    public function setIdentifierValue(object $object, $id): void
+    {
+        $this->reflFields[$this->identifier]->setValue($object, $id);
+    }
+
+    /**
+     * Gets the object identifier as a PHP type.
+     *
+     * @return mixed $id
+     */
+    public function getIdentifierValue(object $object)
+    {
+        return $this->reflFields[$this->identifier]->getValue($object);
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function getIdentifierValues($object): array
@@ -1075,6 +1113,35 @@ class ClassMetadata implements BaseClassMetadata
                 if ( ! $reflService->hasPublicMethod($this->name, $callbackFuncName)) {
                     throw MappingException::lifecycleCallbackMethodNotFound($this->name, $callbackFuncName);
                 }
+            }
+        }
+    }
+    
+    /**
+     * Dispatches the lifecycle event of the given document by invoking all
+     * registered callbacks.
+     *
+     * @param mixed[]|null $arguments
+     *
+     * @throws InvalidArgumentException If object class is not this class or
+     *                                   a Proxy of this class.
+     */
+    public function invokeLifecycleCallbacks(string $event, object $object, ?array $arguments = null): void
+    {
+
+        if (! $object instanceof $this->name) {
+            throw new InvalidArgumentException(sprintf('Expected object class "%s"; found: "%s"', $this->name, get_class($object)));
+        }
+
+        if (empty($this->lifecycleCallbacks[$event])) {
+            return;
+        }
+
+        foreach ($this->lifecycleCallbacks[$event] as $callback) {
+            if ($arguments !== null) {
+                $object->$callback(...$arguments);
+            } else {
+                $object->$callback();
             }
         }
     }

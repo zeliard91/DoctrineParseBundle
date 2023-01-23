@@ -9,7 +9,6 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
-use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Bridge\Doctrine\DependencyInjection\AbstractDoctrineExtension;
 use Symfony\Component\Cache\Adapter\ApcuAdapter;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
@@ -46,20 +45,27 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         ];
         $container->setParameter('doctrine_parse.connections', $connections);
 
-
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yml');
         $loader->load('form.yml');
 
-        $configDef = $container->getDefinition('redking_parse.configuration');
+        // set some options as parameters and unset them
+        $config = $this->overrideParameters($config, $container);
+
+        $configurationId = sprintf('doctrine_parse.%s_configuration', 'default');
+        $configDef = new Definition('Redking\ParseBundle\Configuration');
         $configDef->addTag(self::CONFIGURATION_TAG);
+        $configDef->setPublic(true);
+        $container->setDefinition(
+            $configurationId,
+            $configDef
+        );
 
         // cheat $config for parent requirements
         $config['name'] = 'default';
         $this->loadEntityManagerMappingInformation($config, $configDef, $container);
         $this->resolveDocuments($config, $container);
 
-        $container->setParameter('doctrine.parse.auto_generate_proxy_classes', $config['auto_generate_proxy_classes']);
         $this->loadObjectManagerCacheDriver($config, $container, 'metadata_cache');
 
         $methods = array(
@@ -67,9 +73,9 @@ class RedkingParseExtension extends AbstractDoctrineExtension
             // 'setQueryCacheImpl' => new Reference(sprintf('doctrine.parse.%s_query_cache', $config['name'])),
             // 'setResultCacheImpl' => new Reference(sprintf('doctrine.parse.%s_result_cache', $config['name'])),
             'setMetadataDriverImpl' => new Reference('doctrine.parse.'.$config['name'].'_metadata_driver'),
-            'setProxyDir' => $config['proxy_dir'],
-            'setProxyNamespace' => $config['proxy_namespace'],
-            'setAutoGenerateProxyClasses' => $config['auto_generate_proxy_classes'],
+            'setProxyDir' => '%doctrine_parse.proxy_dir%',
+            'setProxyNamespace' => '%doctrine_parse.proxy_namespace%',
+            'setAutoGenerateProxyClasses' => '%doctrine_parse.auto_generate_proxy_classes%',
             // 'setClassMetadataFactoryName' => $entityManager['class_metadata_factory_name'],
             // 'setDefaultRepositoryClassName' => $entityManager['default_repository_class'],
             'setConnectionParameters' => $connections[0],
@@ -104,6 +110,10 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         }
 
         foreach ($methods as $method => $arg) {
+            if ($configDef->hasMethodCall($method)) {
+                $configDef->removeMethodCall($method);
+            }
+
             $configDef->addMethodCall($method, array($arg));
         }
 
@@ -126,7 +136,56 @@ class RedkingParseExtension extends AbstractDoctrineExtension
             }
         }
 
+        $omArgs = [
+            new Reference($configurationId),
+            new Reference('redking_parse.event_manager'),
+            new Reference('doctrine_parse.session_storage'),
+        ];
+        $omDef = new Definition('Redking\ParseBundle\ObjectManager', $omArgs);
+        $omDef->setFactory(['Redking\ParseBundle\ObjectManager', 'create']);
+        $omDef->addTag('doctrine_parse.object_manager');
+        $omDef->setPublic(true);
+        $container->setDefinition('redking_parse.manager', $omDef);
+
         $container->setAlias('doctrine.parse.object_manager', 'redking_parse.manager');
+        $container->getAlias('doctrine.parse.object_manager')->setPublic(true);
+    }
+
+    /**
+     * Uses some of the extension options to override DI extension parameters.
+     *
+     * @param array            $options   The available configuration options
+     * @param ContainerBuilder $container A ContainerBuilder instance
+     *
+     * @return array<string, mixed>
+     */
+    protected function overrideParameters($options, ContainerBuilder $container)
+    {
+        $overrides = [
+            'proxy_namespace',
+            'proxy_dir',
+            'auto_generate_proxy_classes',
+            'hydrator_namespace',
+            'hydrator_dir',
+            'auto_generate_hydrator_classes',
+            'default_commit_options',
+            'persistent_collection_dir',
+            'persistent_collection_namespace',
+            'auto_generate_persistent_collection_classes',
+        ];
+
+        foreach ($overrides as $key) {
+            if (! isset($options[$key])) {
+                continue;
+            }
+
+            $container->setParameter('doctrine_parse.' . $key, $options[$key]);
+
+            // the option should not be used, the parameter should be referenced
+            unset($options[$key]);
+        }
+
+        return $options;
     }
 
     /**

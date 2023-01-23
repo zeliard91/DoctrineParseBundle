@@ -15,7 +15,7 @@
 namespace Redking\ParseBundle\Command;
 
 use Redking\ParseBundle\Command\Helper\ObjectManagerHelper;
-use Redking\ParseBundle\ObjectManager;
+use Redking\ParseBundle\Registry;
 use Redking\ParseBundle\Tools\DisconnectedClassMetadataFactory;
 use Redking\ParseBundle\Tools\ObjectGenerator;
 use Symfony\Component\Console\Command\Command;
@@ -29,19 +29,21 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
  */
 abstract class DoctrineParseCommand extends Command
 {
-    protected $om;
+    /** @var Registry|null */
+    private $registry;
 
-    public function __construct(ObjectManager $om)
+    public function __construct(?Registry $registry = null)
     {
         parent::__construct();
 
-        $this->om = $om;
+        $this->registry = $registry;
     }
 
     public static function setApplicationObjectManager(Application $application)
     {
+        $om        = $application->getKernel()->getContainer()->get('doctrine_parse')->getManager('default');
         $helperSet = $application->getHelperSet();
-        $helperSet->set(new ObjectManagerHelper($this->om), 'om');
+        $helperSet->set(new ObjectManagerHelper($om), 'om');
     }
 
     protected function getObjectGenerator()
@@ -58,7 +60,9 @@ abstract class DoctrineParseCommand extends Command
 
     protected function getDoctrineParseManager()
     {
-        return $this->om;
+        assert($this->registry instanceof Registry);
+
+        return $this->registry->getManager('default');
     }
 
     protected function getBundleMetadatas(Bundle $bundle)

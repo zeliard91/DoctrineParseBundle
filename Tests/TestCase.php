@@ -37,7 +37,7 @@ abstract class TestCase extends BaseTestCase
     public function createTestObjectManager()
     {
         $config = new Configuration();
-        $config->setAutoGenerateProxyClasses(true);
+        $config->setAutoGenerateProxyClasses(Configuration::AUTOGENERATE_EVAL);
         $config->setProxyDir(\sys_get_temp_dir().'/Proxies');
         $config->setProxyNamespace('ParseProxies');
         $config->setConnectionParameters([

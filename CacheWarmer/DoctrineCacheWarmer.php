@@ -11,9 +11,9 @@
 
 namespace Redking\ParseBundle\CacheWarmer;
 
-use Doctrine\Common\Cache\ApcCache;
-use Doctrine\Common\Cache\XcacheCache;
 use Redking\ParseBundle\ObjectManager;
+use Redking\ParseBundle\Registry;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
 
 /**
@@ -23,19 +23,12 @@ use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
  */
 class DoctrineCacheWarmer implements CacheWarmerInterface
 {
-    /**
-     * @var \Redking\ParseBundle\ObjectManager
-     */
-    private $om;
+    /** @var ContainerInterface */
+    private $container;
 
-    /**
-     * Constructor.
-     *
-     * @param ObjectManager $om A ObjectManager instance
-     */
-    public function __construct(ObjectManager $om)
+    public function __construct(ContainerInterface $container)
     {
-        $this->om = $om;
+        $this->container = $container;
     }
 
     /**
@@ -54,10 +47,16 @@ class DoctrineCacheWarmer implements CacheWarmerInterface
     public function warmUp($cacheDir)
     {
         // Clear metadata cache
-        $cacheDriver = $this->om->getConfiguration()->getMetadataCacheImpl();
+        $registry = $this->container->get('doctrine_parse');
+        assert($registry instanceof Registry);
 
-        if ($cacheDriver) {
-            $cacheDriver->flushAll();
+        foreach ($registry->getManagers() as $om) {
+            /** @var ObjectManager $om */
+            $cacheDriver = $om->getConfiguration()->getMetadataCache();
+
+            if ($cacheDriver) {
+                $result = $cacheDriver->clear();
+            }
         }
     }
 }
