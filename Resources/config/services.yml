@@ -52,8 +52,12 @@ services:
         #     - "@redking_parse.event_manager"
         #     - "@doctrine_parse.session_storage"
 
-    redking_parse.event_manager:
-        class: Doctrine\Common\EventManager
+    doctrine.parse.connection.event_manager:
+        class: Symfony\Bridge\Doctrine\ContainerAwareEventManager
+        public: false
+        abstract: true
+        arguments:
+            - "@service_container"
 
     # redking_parse.configuration:
     #     class: Redking\ParseBundle\Configuration

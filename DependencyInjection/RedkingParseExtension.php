@@ -15,6 +15,7 @@ use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Cache\Adapter\MemcachedAdapter;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\DependencyInjection\Alias;
+use Symfony\Component\DependencyInjection\ChildDefinition;
 
 /**
  * This is the class that loads and manages your bundle configuration.
@@ -35,13 +36,17 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         $config = $this->processConfiguration($configuration, $configs);
 
         // Define dummy doctrine_parse.connections in order to be compatible with doctrine event listener compiler pass
-        $connections = [];
-        $connections[] = [
+        $connectionParameters = [
             'app_id' => $config['app_id'],
             'rest_key' => $config['rest_key'],
             'master_key' => $config['master_key'],
             'server_url' => $config['server_url'],
             'mount_path' => $config['mount_path'],
+        ];
+
+        $connections = [];
+        $connections['redking_parse.manager'] = [
+            'redking_parse.manager',
         ];
         $container->setParameter('doctrine_parse.connections', $connections);
 
@@ -78,7 +83,7 @@ class RedkingParseExtension extends AbstractDoctrineExtension
             'setAutoGenerateProxyClasses' => '%doctrine_parse.auto_generate_proxy_classes%',
             // 'setClassMetadataFactoryName' => $entityManager['class_metadata_factory_name'],
             // 'setDefaultRepositoryClassName' => $entityManager['default_repository_class'],
-            'setConnectionParameters' => $connections[0],
+            'setConnectionParameters' => $connectionParameters,
             'setAlwaysMaster' => $config['always_master'],
         );
 
@@ -135,6 +140,11 @@ class RedkingParseExtension extends AbstractDoctrineExtension
                 $loader->load('bridge/fosuser/managerV1.yml');
             }
         }
+
+        $container->setDefinition(
+            'redking_parse.event_manager',
+            new ChildDefinition('doctrine.parse.connection.event_manager')
+        );
 
         $omArgs = [
             new Reference($configurationId),

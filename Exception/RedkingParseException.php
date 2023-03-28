@@ -190,7 +190,7 @@ class RedkingParseException extends \Exception
      */
     static public function newObjectFoundThroughRelationship(array $assoc, $entry)
     {
-        return new self('A new document was found through a relationship that was not'
+        return new self('A new document was found through a relationship ( ' . $assoc['fieldName'] . ' :'. $assoc['targetDocument'] .') that was not'
                             . ' configured to cascade persist operations: ' . self::objToStr($entry) . '.'
                             . ' Explicitly persist the new document or configure cascading persist operations'
                             . ' on the relationship.');
