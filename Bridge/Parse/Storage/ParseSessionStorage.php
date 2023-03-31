@@ -86,6 +86,8 @@ class ParseSessionStorage implements ParseStorageInterface
         $data = $this->getSession()->get($this->storageKey);
         $data[$key] = $value;
         $this->getSession()->set($this->storageKey, $data);
+
+        return null;
     }
 
     /**
@@ -96,6 +98,8 @@ class ParseSessionStorage implements ParseStorageInterface
         $data = $this->getSession()->get($this->storageKey);
         unset($data[$key]);
         $this->getSession()->set($this->storageKey, $data);
+
+        return null;
     }
 
     /**
@@ -114,6 +118,8 @@ class ParseSessionStorage implements ParseStorageInterface
     public function clear()
     {
         $this->getSession()->set($this->storageKey, []);
+
+        return null;
     }
 
     /**
@@ -121,7 +127,7 @@ class ParseSessionStorage implements ParseStorageInterface
      */
     public function save()
     {
-        return;
+        return null;
     }
 
     /**

@@ -76,9 +76,11 @@ class ObjectGenerator
     private $overrideToString = false;
 
     protected $typeAlias = array(
+        Type::BOOLEAN => 'bool',
         Type::DATE => '\DateTime',
         Type::GEOPOINT => '\Parse\ParseGeoPoint',
-        Type::FILE => '\Symfony\Component\HttpFoundation\File\File',
+        Type::INTEGER => 'int',
+        Type::FILE => '\Parse\ParseFile',
         Type::TOBJECT => 'array',
         Type::HASH => 'array',
     );
@@ -96,50 +98,43 @@ class ObjectGenerator
 <documentBody>
 }';
 
-    private static $getMethodTemplate =
+    private static $getWithDocMethodTemplate =
     '/**
- * <description>
- *
- * @return <variableType>$<variableName>
+ * @return <variableType>
  */
-public function <methodName>()
+public function <methodName>(): <methodTypeHint>
+{
+<spaces>return $this-><fieldName>;
+}';
+
+    private static $getMethodTemplate =
+    'public function <methodName>(): ?<methodTypeHint>
 {
 <spaces>return $this-><fieldName>;
 }';
 
     private static $setMethodTemplate =
-    '/**
- * <description>
- *
- * @param <variableType>$<variableName>
- * @return self
- */
-public function <methodName>(<methodTypeHint>$<variableName><variableDefault>)
+    'public function <methodName>(<methodTypeHint>$<variableName><variableDefault>): self
 {
 <spaces>$this-><fieldName> = $<variableName>;
+
 <spaces>return $this;
 }';
 
     private static $addMethodTemplate =
-    '/**
- * <description>
- *
- * @param <variableType>$<variableName>
- */
-public function <methodName>(<methodTypeHint>$<variableName>)
+    'public function <methodName>(<methodTypeHint>$<variableName>): self
 {
 <spaces>$this-><fieldName>[] = $<variableName>;
+
+<spaces>return $this;
 }';
 
     private static $removeMethodTemplate =
-    '/**
- * <description>
- *
- * @param <variableType>$<variableName>
- */
-public function <methodName>(<methodTypeHint>$<variableName>)
+    'public function <methodName>(<methodTypeHint>$<variableName>): self
 {
 <spaces>$this-><fieldName>->removeElement($<variableName>);
+
+<spaces>return $this;
 }';
 
     private static $lifecycleCallbackMethodTemplate =
@@ -753,7 +748,11 @@ public function <methodName>()
                     $methods[] = $code;
                 }
             } elseif (!isset($fieldMapping['association'])) {
-                if ($code = $code = $this->generateObjectStubMethod($metadata, 'set', $fieldMapping['fieldName'], $fieldMapping['type'])) {
+                $type = $fieldMapping['type'];
+                if ('string' === $type) {
+                    $type .= '|\BackedEnum';
+                }
+                if ($code = $code = $this->generateObjectStubMethod($metadata, 'set', $fieldMapping['fieldName'], $type, 'null')) {
                     $methods[] = $code;
                 }
                 if ($code = $code = $this->generateObjectStubMethod($metadata, 'get', $fieldMapping['fieldName'], $fieldMapping['type'])) {
@@ -774,7 +773,7 @@ public function <methodName>()
                 if ($code = $this->generateObjectStubMethod($metadata, 'remove', $fieldMapping['fieldName'], isset($fieldMapping['targetDocument']) ? $fieldMapping['targetDocument'] : null)) {
                     $methods[] = $code;
                 }
-                if ($code = $this->generateObjectStubMethod($metadata, 'get', $fieldMapping['fieldName'], '\Doctrine\Common\Collections\Collection')) {
+                if ($code = $this->generateObjectStubMethod($metadata, 'getWithDoc', $fieldMapping['fieldName'], '\Doctrine\Common\Collections\Collection<int, \\' . $fieldMapping['targetDocument'] . '>')) {
                     $methods[] = $code;
                 }
             }
@@ -826,8 +825,7 @@ public function <methodName>()
             }
 
             $lines[] = $this->generateAssociationMappingPropertyDocBlock($fieldMapping, $metadata);
-            $lines[] = $this->spaces.'protected $'.$fieldMapping['fieldName']
-                .($fieldMapping['type'] === ClassMetadata::MANY ? ' = array()' : null).";\n";
+            $lines[] = $this->spaces.'protected $'.$fieldMapping['fieldName'].";\n";
         }
 
         return implode("\n", $lines);
@@ -861,7 +859,7 @@ public function <methodName>()
             ? $this->inflector->singularize($fieldName)
             : $fieldName;
 
-        $methodName = $type . $this->inflector->classify($formattedFieldName);
+        $methodName = ($type === 'getWithDoc' ? 'get' : $type) . $this->inflector->classify($formattedFieldName);
         $variableName = $this->inflector->camelize($formattedFieldName);
 
         if ($this->hasMethod($methodName, $metadata)) {
@@ -872,9 +870,15 @@ public function <methodName>()
         $types          = Type::getTypesMap();
         $variableType   = $typeHint ? $this->getType($typeHint) . ' ' : null;
 
-        if ($typeHint && ! isset($types[$typeHint])) {
+        if ($typeHint && !isset($types[$typeHint]) && strpos($typeHint, 'string') !== 0) {
             $variableType   =  '\\' . ltrim($variableType, '\\');
             $methodTypeHint =  '\\' . $typeHint . ' ';
+        } else {
+            $methodTypeHint = $variableType;
+        }
+
+        if ('getWithDoc' === $type) {
+            $methodTypeHint = '\\' .ltrim(preg_replace('/(.)\<(.+)\>/', '$1', $methodTypeHint), '\\');
         }
 
         $replacements = array(
@@ -941,7 +945,15 @@ public function <methodName>()
     {
         $lines = array();
         $lines[] = $this->spaces.'/**';
-        $lines[] = $this->spaces.' * @var '.(isset($fieldMapping['targetDocument']) ? $fieldMapping['targetDocument'] : 'object');
+        $typeDocType = 'object';
+        if (isset($fieldMapping['targetDocument'])) {
+            if ($fieldMapping['type'] === ClassMetadata::ONE) {
+                $typeDocType = '\\' . $fieldMapping['targetDocument'];
+            } elseif ($fieldMapping['type'] === ClassMetadata::MANY) {
+                $typeDocType = '\\Doctrine\\Common\\Collections\\Collection<int, \\' . $fieldMapping['targetDocument'] . '>';
+            }
+        }
+        $lines[] = $this->spaces.' * @var ' . $typeDocType;
 
         if ($this->generateAnnotations) {
             $lines[] = $this->spaces.' *';
