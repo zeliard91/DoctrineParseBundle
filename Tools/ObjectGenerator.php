@@ -108,7 +108,7 @@ public function <methodName>(): <methodTypeHint>
 }';
 
     private static $getMethodTemplate =
-    'public function <methodName>(): ?<methodTypeHint>
+    'public function <methodName>(): null|<methodTypeHint>
 {
 <spaces>return $this-><fieldName>;
 }';
@@ -755,7 +755,7 @@ public function <methodName>()
                 if ($code = $code = $this->generateObjectStubMethod($metadata, 'set', $fieldMapping['fieldName'], $type, 'null')) {
                     $methods[] = $code;
                 }
-                if ($code = $code = $this->generateObjectStubMethod($metadata, 'get', $fieldMapping['fieldName'], $fieldMapping['type'])) {
+                if ($code = $code = $this->generateObjectStubMethod($metadata, 'get', $fieldMapping['fieldName'], $type)) {
                     $methods[] = $code;
                 }
             } elseif ($fieldMapping['type'] === ClassMetadata::ONE) {
