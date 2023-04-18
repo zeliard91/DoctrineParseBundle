@@ -2119,13 +2119,11 @@ class UnitOfWork implements PropertyChangedListener
         foreach ($class->associationMappings as $field => $assoc) {
             if (($val = $class->reflFields[$field]->getValue($object)) !== null) {
                 $this->computeAssociationChanges($assoc, $val);
-                if (!isset($this->objectChangeSets[$oid]) &&
-                    $assoc['isOwningSide'] &&
+                if ($assoc['isOwningSide'] &&
                     $assoc['type'] == ClassMetadata::MANY &&
                     $val instanceof PersistentCollection &&
                     $val->isDirty()) {
                     $this->getCollectionPersister($assoc)->update($val);
-                    $this->scheduleExtraUpdate($object, [$assoc['name'] => [$originalData->get($assoc['name']), $actualData->get($assoc['name'])]]);
                 }
             }
         }

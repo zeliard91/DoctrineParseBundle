@@ -91,7 +91,7 @@ class User
     /**
      * Add post
      *
-     * @param Redking\ParseBundle\Tests\Models\Blog\Post $post
+     * @param \Redking\ParseBundle\Tests\Models\Blog\Post $post
      */
     public function addPost(\Redking\ParseBundle\Tests\Models\Blog\Post $post)
     {
@@ -101,7 +101,7 @@ class User
     /**
      * Remove post
      *
-     * @param Redking\ParseBundle\Tests\Models\Blog\Post $post
+     * @param \Redking\ParseBundle\Tests\Models\Blog\Post $post
      */
     public function removePost(\Redking\ParseBundle\Tests\Models\Blog\Post $post)
     {
@@ -121,7 +121,7 @@ class User
     /**
      * Add picture
      *
-     * @param Redking\ParseBundle\Tests\Models\Blog\Picture $picture
+     * @param \Redking\ParseBundle\Tests\Models\Blog\Picture $picture
      */
     public function addPicture(\Redking\ParseBundle\Tests\Models\Blog\Picture $picture)
     {
@@ -131,7 +131,7 @@ class User
     /**
      * Remove picture
      *
-     * @param Redking\ParseBundle\Tests\Models\Blog\Picture $picture
+     * @param \Redking\ParseBundle\Tests\Models\Blog\Picture $picture
      */
     public function removePicture(\Redking\ParseBundle\Tests\Models\Blog\Picture $picture)
     {
@@ -151,7 +151,7 @@ class User
     /**
      * Set avatar
      *
-     * @param Redking\ParseBundle\Tests\Models\Blog\Picture $avatar
+     * @param \Redking\ParseBundle\Tests\Models\Blog\Picture $avatar
      */
     public function setAvatar(\Redking\ParseBundle\Tests\Models\Blog\Picture $avatar)
     {
@@ -163,7 +163,7 @@ class User
     /**
      * Get avatar
      *
-     * @return Redking\ParseBundle\Tests\Models\Blog\Picture $avatar
+     * @return \Redking\ParseBundle\Tests\Models\Blog\Picture $avatar
      */
     public function getAvatar()
     {
@@ -195,7 +195,7 @@ class User
     /**
      * Add address
      *
-     * @param Redking\ParseBundle\Tests\Models\Blog\Address $address
+     * @param \Redking\ParseBundle\Tests\Models\Blog\Address $address
      */
     public function addAddress(\Redking\ParseBundle\Tests\Models\Blog\Address $address)
     {
@@ -205,7 +205,7 @@ class User
     /**
      * Remove address
      *
-     * @param Redking\ParseBundle\Tests\Models\Blog\Address $address
+     * @param \Redking\ParseBundle\Tests\Models\Blog\Address $address
      */
     public function removeAddress(\Redking\ParseBundle\Tests\Models\Blog\Address $address)
     {
@@ -242,7 +242,7 @@ class User
     /**
      * Add screenshot
      *
-     * @param Redking\ParseBundle\Tests\Models\Blog\Picture $screenshot
+     * @param \Redking\ParseBundle\Tests\Models\Blog\Picture $screenshot
      */
     public function addScreenshot(\Redking\ParseBundle\Tests\Models\Blog\Picture $screenshot)
     {
@@ -252,7 +252,7 @@ class User
     /**
      * Remove screenshot
      *
-     * @param Redking\ParseBundle\Tests\Models\Blog\Picture $screenshot
+     * @param \Redking\ParseBundle\Tests\Models\Blog\Picture $screenshot
      */
     public function removeScreenshot(\Redking\ParseBundle\Tests\Models\Blog\Picture $screenshot)
     {
@@ -272,7 +272,7 @@ class User
     /**
      * Set portrait
      *
-     * @param Redking\ParseBundle\Tests\Models\Blog\Picture $portrait
+     * @param \Redking\ParseBundle\Tests\Models\Blog\Picture $portrait
      */
     public function setPortrait(\Redking\ParseBundle\Tests\Models\Blog\Picture $portrait = null)
     {
@@ -284,7 +284,7 @@ class User
     /**
      * Get portrait
      *
-     * @return Redking\ParseBundle\Tests\Models\Blog\Picture $portrait
+     * @return \Redking\ParseBundle\Tests\Models\Blog\Picture $portrait
      */
     public function getPortrait()
     {
