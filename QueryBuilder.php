@@ -3,6 +3,7 @@
 namespace Redking\ParseBundle;
 
 use Doctrine\Common\Collections\Criteria;
+use Parse\ParseServerInfo;
 use Redking\ParseBundle\Query\Expr;
 
 class QueryBuilder
@@ -491,7 +492,39 @@ class QueryBuilder
     public function aggregate(array $pipeline)
     {
         $this->query['type'] = Query::TYPE_AGGREGATE;
+
+        if (version_compare(ParseServerInfo::getVersion(), '6.0.0') >= 0) {
+            $pipeline = self::getAggregateForNewParseVersion($pipeline);
+        }
+
         $this->expr->aggregate($pipeline);
         return $this;
+    }
+
+    /**
+     * Replace aggregate previous stage names and id for Parse Server > 6 (should be native mongodb syntax)
+     */
+    public static function getAggregateForNewParseVersion(array $pipeline): array
+    {
+        $replacements = [
+            'project' => '$project',
+            'group' => '$group',
+            'match' => '$match',
+            'lookup' => '$lookup',
+            'unwind' => '$unwind',
+            'sort' => '$sort',
+            'objectId' => '_id'
+        ];
+
+        $newArray = [];
+        foreach ($pipeline as $key => $value) {
+            if (is_array($value)) {
+                $newKey = $replacements[$key] ?? $key;
+                $newArray[$newKey] = self::getAggregateForNewParseVersion($value);
+            } else {
+                $newArray[$key] = $value;
+            }
+        }
+        return $newArray;
     }
 }

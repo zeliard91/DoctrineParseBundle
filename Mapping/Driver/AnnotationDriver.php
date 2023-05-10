@@ -44,7 +44,7 @@ class AnnotationDriver implements MappingDriver
      */
     public static function registerAnnotationClasses()
     {
-        AnnotationRegistry::registerFile(__DIR__ . '/../Annotations/DoctrineAnnotations.php');
+        AnnotationRegistry::loadAnnotationClass(__DIR__ . '/../Annotations/DoctrineAnnotations.php');
     }
 
     /**

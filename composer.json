@@ -16,7 +16,7 @@
         "doctrine/data-fixtures": "^1.5.3",
         "doctrine/persistence": "^2.5.0",
         "friendsofphp/proxy-manager-lts": "^1.0",
-        "parse/php-sdk": "^1.2",
+        "parse/php-sdk": "^1.2|^2.0",
         "symfony/framework-bundle": "^4.2 || ^5.4",
         "symfony/config": "^4.2 || ^5.4",
         "symfony/console": "^4.2 || ^5.4",
