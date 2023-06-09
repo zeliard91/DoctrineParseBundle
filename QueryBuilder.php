@@ -518,13 +518,14 @@ class QueryBuilder
 
         $newArray = [];
         foreach ($pipeline as $key => $value) {
+            $newKey = $replacements[$key] ?? $key;
             if (is_array($value)) {
-                $newKey = $replacements[$key] ?? $key;
                 $newArray[$newKey] = self::getAggregateForNewParseVersion($value);
             } else {
-                $newArray[$key] = $value;
+                $newArray[$newKey] = $value;
             }
         }
+
         return $newArray;
     }
 }
