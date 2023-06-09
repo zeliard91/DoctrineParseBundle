@@ -5,10 +5,9 @@ namespace Redking\ParseBundle\Bridge\Parse\Storage;
 use Parse\ParseStorageInterface;
 use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\SessionFactoryInterface;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
-use Symfony\Component\HttpFoundation\Session\Storage\MockFileSessionStorage;
+use Symfony\Component\Security\Http\FirewallMapInterface;
 
 class ParseSessionStorage implements ParseStorageInterface
 {
@@ -28,20 +27,22 @@ class ParseSessionStorage implements ParseStorageInterface
     private $sessionStorageFactory;
 
     /**
+     * @var FirewallMapInterface
+     */
+    private $firewallMap;
+
+    /**
      * Parse will store its values in a specific key.
      *
      * @var string
      */
-    private $storageKey = '_parse_data';
+    private $storageKey;
 
-    /**
-     * @param RequestStack $requestStack
-     * @param SessionFactoryInterface $sessionStorageFactory
-     */
-    public function __construct(RequestStack $requestStack, SessionFactoryInterface $sessionStorageFactory)
+    public function __construct(RequestStack $requestStack, SessionFactoryInterface $sessionStorageFactory, FirewallMapInterface $firewallMap)
     {
         $this->requestStack = $requestStack;
         $this->sessionStorageFactory = $sessionStorageFactory;
+        $this->firewallMap = $firewallMap;
     }
 
     /**
@@ -78,14 +79,31 @@ class ParseSessionStorage implements ParseStorageInterface
         }
     }
 
+    protected function getStorageKey(): string
+    {
+        if (null === $this->storageKey) {
+            $this->storageKey = '_parse_data';
+            $request = $this->requestStack->getCurrentRequest();
+            if (null !== $request) {
+                $firewallConfig = $this->firewallMap->getFirewallConfig($request);
+    
+                if (null !== $firewallConfig) {
+                    $this->storageKey .= '_' . $firewallConfig->getName();
+                }
+            }
+        }
+
+        return $this->storageKey;
+    }
+
     /**
      * {@inheritdoc}
      */
     public function set($key, $value)
     {
-        $data = $this->getSession()->get($this->storageKey);
+        $data = $this->getSession()->get($this->getStorageKey());
         $data[$key] = $value;
-        $this->getSession()->set($this->storageKey, $data);
+        $this->getSession()->set($this->getStorageKey(), $data);
 
         return null;
     }
@@ -95,9 +113,9 @@ class ParseSessionStorage implements ParseStorageInterface
      */
     public function remove($key)
     {
-        $data = $this->getSession()->get($this->storageKey);
+        $data = $this->getSession()->get($this->getStorageKey());
         unset($data[$key]);
-        $this->getSession()->set($this->storageKey, $data);
+        $this->getSession()->set($this->getStorageKey(), $data);
 
         return null;
     }
@@ -107,7 +125,7 @@ class ParseSessionStorage implements ParseStorageInterface
      */
     public function get($key)
     {
-        $data = $this->getSession()->get($this->storageKey);
+        $data = $this->getSession()->get($this->getStorageKey());
 
         return isset($data[$key]) ? $data[$key] : null;
     }
@@ -117,7 +135,7 @@ class ParseSessionStorage implements ParseStorageInterface
      */
     public function clear()
     {
-        $this->getSession()->set($this->storageKey, []);
+        $this->getSession()->set($this->getStorageKey(), []);
 
         return null;
     }
@@ -135,7 +153,7 @@ class ParseSessionStorage implements ParseStorageInterface
      */
     public function getKeys()
     {
-        return array_keys($this->getSession()->get($this->storageKey));
+        return array_keys($this->getSession()->get($this->getStorageKey()));
     }
 
     /**
@@ -143,6 +161,6 @@ class ParseSessionStorage implements ParseStorageInterface
      */
     public function getAll()
     {
-        return $this->getSession()->get($this->storageKey);
+        return $this->getSession()->get($this->getStorageKey());
     }
 }
