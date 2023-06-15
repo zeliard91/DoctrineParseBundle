@@ -24,6 +24,8 @@ class QueryArg
             $date = clone $value;
             $date->setTimeZone(new \DateTimeZone('UTC'));
             $this->value = $date;
+        } elseif ($value instanceof \DateTimeImmutable) {
+            $this->value = $value->setTimeZone(new \DateTimeZone('UTC'));
         } elseif ($value instanceof \BackedEnum) {
             $this->value = $value->value;
         } elseif (is_iterable($value)) {
