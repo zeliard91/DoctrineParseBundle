@@ -8,6 +8,7 @@ use Parse\ParseClient;
 use Parse\ParseObject;
 use Parse\ParseUser;
 use Parse\ParseStorageInterface;
+use Redking\ParseBundle\HttpClient\SymfonyClient;
 use Redking\ParseBundle\Mapping\ClassMetadata;
 use Redking\ParseBundle\Mapping\ClassMetadataFactory;
 use Redking\ParseBundle\Proxy\ProxyFactory;
@@ -61,7 +62,7 @@ class ObjectManager implements BaseObjectManager
      */
     private $repositoryFactory;
 
-    public function __construct(Configuration $config = null, EventManager $eventManager = null, ParseStorageInterface $parseStorage = null)
+    public function __construct(Configuration $config = null, EventManager $eventManager = null, ParseStorageInterface $parseStorage = null, SymfonyClient $symfonyClient = null)
     {
         $this->config = $config ?: new Configuration();
         $this->metadataFactory = new ClassMetadataFactory();
@@ -86,15 +87,16 @@ class ObjectManager implements BaseObjectManager
         $this->schemaManager = new SchemaManager($this, $this->metadataFactory);
 
         $this->initParseConnection($parseStorage);
+        $this->setHttpClient($symfonyClient);
     }
 
     /**
      * Creates a new Document that operates on the given Mongo connection
      * and uses the given Configuration.
      */
-    public static function create(Configuration $config = null, EventManager $eventManager = null, ParseStorageInterface $parseStorage = null): self
+    public static function create(Configuration $config = null, EventManager $eventManager = null, ParseStorageInterface $parseStorage = null, SymfonyClient $symfonyClient = null): self
     {
-        return new static($config, $eventManager, $parseStorage);
+        return new static($config, $eventManager, $parseStorage, $symfonyClient);
     }
 
     /**
@@ -112,6 +114,12 @@ class ObjectManager implements BaseObjectManager
         $params = $this->config->getConnectionParameters();
         ParseClient::initialize($params['app_id'], $params['rest_key'], $params['master_key']);
         ParseClient::setServerURL($params['server_url'], $params['mount_path']);
+    }
+
+    public function setHttpClient(SymfonyClient $symfonyClient = null) {
+        if (null !== $symfonyClient) {
+            ParseClient::setHttpClient($symfonyClient);
+        }
     }
 
     public function getConfiguration()

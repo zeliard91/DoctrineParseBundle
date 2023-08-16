@@ -150,6 +150,7 @@ class RedkingParseExtension extends AbstractDoctrineExtension
             new Reference($configurationId),
             new Reference('redking_parse.event_manager'),
             new Reference('doctrine_parse.session_storage'),
+            new Reference('redking_parse.http_client'),
         ];
         $omDef = new Definition('Redking\ParseBundle\ObjectManager', $omArgs);
         $omDef->setFactory(['Redking\ParseBundle\ObjectManager', 'create']);

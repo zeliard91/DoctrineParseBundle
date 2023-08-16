@@ -137,3 +137,9 @@ services:
             - "@session.factory"
             - "@security.firewall.map"
 
+    # profiler
+    redking_parse.http_client:
+        class: Redking\ParseBundle\HttpClient\SymfonyClient
+        public: false
+        arguments:
+            - "@?http_client"
