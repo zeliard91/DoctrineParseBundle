@@ -473,7 +473,7 @@ public function <methodName>()
         $existing_traits = array_keys($this->getTraits($metadata));
 
         $traits = [];
-        if (!in_array('Redking\\ParseBundle\\ObjectTrait', $existing_traits) && !in_array('Redking\\ParseBundle\\ACLTrait', $existing_traits)) {
+        if (false === $this->regenerateObjectIfExists && !in_array('Redking\\ParseBundle\\ObjectTrait', $existing_traits) && !in_array('Redking\\ParseBundle\\ACLTrait', $existing_traits)) {
             $traits[] = $this->spaces.'use \Redking\ParseBundle\ACLTrait;'."\n";
         }
 
@@ -484,7 +484,7 @@ public function <methodName>()
     {
         $collections = array();
 
-        if ($this->hasMethod('__construct', $metadata)) {
+        if (false === $this->regenerateObjectIfExists && $this->hasMethod('__construct', $metadata)) {
             if (!$this->overrideConstruct) {
                 return '';
             } else {
@@ -816,7 +816,7 @@ public function <methodName>()
         $lines = array();
 
         foreach ($metadata->fieldMappings as $fieldMapping) {
-            if ($this->hasProperty($fieldMapping['fieldName'], $metadata) ||
+            if ((false === $this->regenerateObjectIfExists && $this->hasProperty($fieldMapping['fieldName'], $metadata)) ||
                 $metadata->isInheritedField($fieldMapping['fieldName'])) {
                 continue;
             }
@@ -836,7 +836,7 @@ public function <methodName>()
         $lines = array();
 
         foreach ($metadata->fieldMappings as $fieldMapping) {
-            if ($this->hasProperty($fieldMapping['fieldName'], $metadata) ||
+            if ((false === $this->regenerateObjectIfExists && $this->hasProperty($fieldMapping['fieldName'], $metadata)) ||
                 $metadata->isInheritedField($fieldMapping['fieldName'])) {
                 continue;
             }
@@ -862,7 +862,7 @@ public function <methodName>()
         $methodName = ($type === 'getWithDoc' ? 'get' : $type) . $this->inflector->classify($formattedFieldName);
         $variableName = $this->inflector->camelize($formattedFieldName);
 
-        if ($this->hasMethod($methodName, $metadata)) {
+        if (false === $this->regenerateObjectIfExists && $this->hasMethod($methodName, $metadata)) {
             return;
         }
 
@@ -923,7 +923,7 @@ public function <methodName>()
 
     private function generateLifecycleCallbackMethod($name, $methodName, ClassMetadata $metadata)
     {
-        if ($this->hasMethod($methodName, $metadata)) {
+        if (false === $this->regenerateObjectIfExists && $this->hasMethod($methodName, $metadata)) {
             return;
         }
 
