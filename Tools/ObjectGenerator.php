@@ -475,6 +475,8 @@ public function <methodName>()
         $traits = [];
         if (false === $this->regenerateObjectIfExists && !in_array('Redking\\ParseBundle\\ObjectTrait', $existing_traits) && !in_array('Redking\\ParseBundle\\ACLTrait', $existing_traits)) {
             $traits[] = $this->spaces.'use \Redking\ParseBundle\ACLTrait;'."\n";
+        } elseif ($this->regenerateObjectIfExists && !in_array('Redking\\ParseBundle\\ACLTrait', $existing_traits)) {
+            $traits[] = $this->spaces.'use \Redking\ParseBundle\ACLTrait;'."\n";
         }
 
         return implode("\n\n", $traits);
