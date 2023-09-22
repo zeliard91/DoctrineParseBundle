@@ -528,4 +528,9 @@ class QueryBuilder
 
         return $newArray;
     }
+
+    public function getLimit(): ?int
+    {
+        return $this->query['limit'] ?? null;
+    }
 }
