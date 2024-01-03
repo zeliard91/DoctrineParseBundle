@@ -1441,7 +1441,7 @@ class UnitOfWork implements PropertyChangedListener
         // Look for changes in associations of the entity
         foreach ($class->associationMappings as $field => $assoc) {
             if (($val = $class->reflFields[$field]->getValue($object)) !== null) {
-                $this->computeAssociationChanges($assoc, $val);
+                $this->computeAssociationChanges($assoc, $val, $class->getName());
                 if (!isset($this->objectChangeSets[$oid]) &&
                     $assoc['isOwningSide'] &&
                     $assoc['type'] == ClassMetadata::MANY &&
@@ -1612,11 +1612,12 @@ class UnitOfWork implements PropertyChangedListener
      *
      * @param array $assoc
      * @param mixed $value The value of the association.
+     * @param string|null $objectClass The object class name of the parent side
      *
      * @throws RedkingParseException
      * @throws ORMException
      */
-    private function computeAssociationChanges($assoc, $value)
+    private function computeAssociationChanges($assoc, $value, string $objectClass = null)
     {
         if ($value instanceof Proxy && !$value->__isInitialized__) {
             return;
@@ -1655,7 +1656,7 @@ class UnitOfWork implements PropertyChangedListener
             switch ($state) {
                 case self::STATE_NEW:
                     if (!$assoc['isCascadePersist']) {
-                        throw RedkingParseException::newObjectFoundThroughRelationship($assoc, $entry);
+                        throw RedkingParseException::newObjectFoundThroughRelationship($assoc, $entry, $objectClass);
                     }
 
                     $this->persistNew($targetClass, $entry);
@@ -2118,7 +2119,7 @@ class UnitOfWork implements PropertyChangedListener
         // Look for changes in associations of the entity
         foreach ($class->associationMappings as $field => $assoc) {
             if (($val = $class->reflFields[$field]->getValue($object)) !== null) {
-                $this->computeAssociationChanges($assoc, $val);
+                $this->computeAssociationChanges($assoc, $val, $class->getName());
                 if ($assoc['isOwningSide'] &&
                     $assoc['type'] == ClassMetadata::MANY &&
                     $val instanceof PersistentCollection &&
