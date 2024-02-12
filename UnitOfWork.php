@@ -1086,7 +1086,7 @@ class UnitOfWork implements PropertyChangedListener
     /**
      * Executes all object updates for entities of the specified type.
      *
-     * @param \Doctrine\ORM\Mapping\ClassMetadata $class
+     * @param \Redking\ParseBundle\Mapping\ClassMetadata $class
      */
     private function executeUpdates(ClassMetadata $class, array $objects)
     {
@@ -1112,7 +1112,7 @@ class UnitOfWork implements PropertyChangedListener
 
             if (!empty($this->objectChangeSets[$oid]) || !empty($this->getCollectionChangeSet($oid))) {
                 $updatedOids[] = $oid;
-                $persister->addUpdate($oid, $this->objectChangeSets[$oid]+$this->getCollectionChangeSet($oid));
+                $persister->addUpdate($oid, $this->objectChangeSets[$oid] ?? [] + $this->getCollectionChangeSet($oid));
             }
         }
 
