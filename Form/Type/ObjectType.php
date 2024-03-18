@@ -38,12 +38,12 @@ class ObjectType extends DoctrineType
      * Return the default loader object.
      *
      * @param ObjectManager $manager
-     * @param QueryBuilder  $queryBuilder
+     * @param object  $queryBuilder
      * @param string        $class
      *
      * @return ParseQueryBuilderLoader
      */
-    public function getLoader(ObjectManager $manager, $queryBuilder, $class)
+    public function getLoader(ObjectManager $manager, object $queryBuilder, string $class): ParseQueryBuilderLoader
     {
         return new ParseQueryBuilderLoader($queryBuilder, $manager, $class);
     }

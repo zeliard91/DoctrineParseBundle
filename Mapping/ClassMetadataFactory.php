@@ -2,6 +2,9 @@
 
 namespace Redking\ParseBundle\Mapping;
 
+use Doctrine\Common\Cache\Cache;
+use Doctrine\Common\Cache\Psr6\DoctrineProvider;
+use Doctrine\Common\EventManager;
 use Doctrine\Persistence\Mapping\AbstractClassMetadataFactory;
 use Doctrine\Persistence\Mapping\ClassMetadata as ClassMetadataInterface;
 use Doctrine\Persistence\Mapping\Driver\MappingDriver;
@@ -21,6 +24,16 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
      * @var ObjectManager
      */
     private $om;
+
+    /**
+     * @var MappingDriver
+     */
+    private $driver;
+
+    /**
+     * @var EventManager
+     */
+    private $evm;
 
     /**
      * @param ObjectManager $om
@@ -198,5 +211,10 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
             }
             $subClass->addInheritedAssociationMapping($mapping);
         }
+    }
+
+    public function getCacheDriver(): Cache
+    {
+        return DoctrineProvider::wrap($this->getCache());
     }
 }

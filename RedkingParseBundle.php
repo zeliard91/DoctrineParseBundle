@@ -18,7 +18,7 @@ use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 class RedkingParseBundle extends Bundle
 {
     /**
-     * {@inheritdoc}
+     * @return void
      */
     public function build(ContainerBuilder $container)
     {
