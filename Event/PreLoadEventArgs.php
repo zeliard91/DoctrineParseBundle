@@ -3,6 +3,7 @@
 namespace Redking\ParseBundle\Event;
 
 use Doctrine\Persistence\ObjectManager;
+use Parse\ParseObject;
 
 /**
  * Class that holds event arguments for a preLoad event.
@@ -12,7 +13,7 @@ use Doctrine\Persistence\ObjectManager;
 class PreLoadEventArgs extends LifecycleEventArgs
 {
     /**
-     * @var array
+     * @var ParseObject
      */
     private $data;
 
@@ -21,20 +22,20 @@ class PreLoadEventArgs extends LifecycleEventArgs
      *
      * @param object          $object
      * @param ObjectManager   $om
-     * @param array           $data     Array of data to be loaded and hydrated
+     * @param ParseObject     $data     Data to be loaded and hydrated
      */
-    public function __construct($object, ObjectManager $om, array &$data)
+    public function __construct($object, ObjectManager $om, ParseObject $data)
     {
         parent::__construct($object, $om);
-        $this->data =& $data;
+        $this->data = $data;
     }
 
     /**
-     * Get the array of data to be loaded and hydrated.
+     * Get the object to be loaded and hydrated.
      *
-     * @return array
+     * @return ParseObject
      */
-    public function &getData()
+    public function getData()
     {
         return $this->data;
     }

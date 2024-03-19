@@ -12,6 +12,7 @@ use Redking\ParseBundle\ObjectManager;
 use Redking\ParseBundle\PersistentCollection;
 use Redking\ParseBundle\Types\Type;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\EventManager;
 
 class ParseObjectHydrator
 {
@@ -24,6 +25,11 @@ class ParseObjectHydrator
      * @var ClassMetadata
      */
     private $class;
+
+    /**
+     * @var EventManager
+     */
+    private $evm;
 
     public function __construct(ObjectManager $om, ClassMetadata $class)
     {
@@ -115,7 +121,7 @@ class ParseObjectHydrator
                     $reflField->setValue($object, $pColl);
 
                     if ($assoc['fetch'] == ClassMetadata::FETCH_EAGER) {
-                        $this->loadCollection($pColl);
+                        // $this->loadCollection($pColl);
                         $pColl->takeSnapshot();
                     }
 
