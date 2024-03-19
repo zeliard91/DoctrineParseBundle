@@ -257,6 +257,11 @@ class UnitOfWork implements PropertyChangedListener
      */
     private $cloner;
 
+    /**
+     * @var array
+     */
+    private $readOnlyObjects = array();
+
     public function __construct(ObjectManager $om)
     {
         $this->om = $om;

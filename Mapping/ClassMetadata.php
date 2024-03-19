@@ -312,6 +312,21 @@ class ClassMetadata implements BaseClassMetadata
     private $reflectionService;
 
     /**
+     * @var string
+     */
+    public $namespace;
+
+    /**
+     * @var string
+     */
+    private $rootDocumentName;
+
+    /**
+     * @var array
+     */
+    private $embeddedClasses = [];
+
+    /**
      * Initializes a new ClassMetadata instance that will hold the object-relational mapping
      * metadata of the class with the given name.
      *
