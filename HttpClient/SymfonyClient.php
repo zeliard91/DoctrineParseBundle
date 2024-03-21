@@ -2,9 +2,11 @@
 
 namespace Redking\ParseBundle\HttpClient;
 
+use Exception;
 use Parse\HttpClients\ParseHttpable;
 use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpClient\Exception\ServerException;
+use Symfony\Component\HttpClient\Exception\TransportException;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpClient\TraceableHttpClient;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -119,9 +121,9 @@ class SymfonyClient implements ParseHttpable
      * @param string $method
      * @param array $data
      * 
-     * @return string
+     * @return string|false
      */
-    public function send($url, $method = 'GET', $data = array())
+    public function send($url, $method = 'GET', $data = array()): string|false
     {
         $options = $this->options;
 
@@ -138,6 +140,11 @@ class SymfonyClient implements ParseHttpable
         } catch (ClientException|ServerException $e) {
             $this->responseCode = $this->response->getStatusCode();
             $this->errorMessage = $this->response->getContent(false);
+
+            return false;
+        } catch (TransportException $e) {
+            $this->responseCode = 500;
+            $this->errorMessage = substr($e->getMessage(), 0, 256);
 
             return false;
         }
