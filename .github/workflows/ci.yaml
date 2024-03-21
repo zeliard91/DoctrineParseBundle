@@ -1,0 +1,62 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+
+env:
+  DOCTRINE_PARSE_APP_ID: u88dwhX625F5449gB64zc3AWNs64TUwMFVgRwgYkr
+  DOCTRINE_PARSE_MASTER_KEY: 7TH7Pc7p8m2zw4P7turJp3pJ467iVMzVkkTU9RX66
+  DOCTRINE_PARSE_REST_KEY: h8irZEmQ8yaXn7xESVS7nf5Yw87F3Q6c34E78sbU2
+  DOCTRINE_PARSE_SERVER_URL: http://localhost:1337
+
+jobs:
+  test:
+    name: 'Tests - PHP ${{ matrix.php-version }}, Sf ${{ matrix.symfony-version }}'
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo:5.0.17
+      
+      parse-server:
+        image: zeliard91/parse-server:6.1.0
+        env:
+          PARSE_SERVER_DATABASE_URI: mongodb://mongo:27017/test
+          PARSE_SERVER_MASTER_KEY_IPS: 0.0.0.0/0
+          PARSE_SERVER_ALLOW_CLIENT_CLASS_CREATION: 1
+          PARSE_SERVER_APPLICATION_ID: ${{ env.DOCTRINE_PARSE_APP_ID }}
+          PARSE_SERVER_MASTER_KEY: ${{ env.DOCTRINE_PARSE_MASTER_KEY }}
+          PARSE_SERVER_REST_API_KEY: ${{ env.DOCTRINE_PARSE_REST_KEY }}
+        ports:
+          - 1337:1337
+  
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - php-version: '8.1'
+            symfony-version: '5.4.*'
+
+          - php-version: '8.1'
+            symfony-version: '6.4.*'
+          
+          - php-version: '8.2'
+            symfony-version: '6.4.*'
+          
+          - php-version: '8.3'
+            symfony-version: '6.4.*'
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v3
+      - name: 'Setup Build'
+        uses: ./.github/actions/setup-build
+        with:
+          php-version: '${{ matrix.php-version }}'
+          composer-token: ${{ secrets.GITHUB_TOKEN }}
+          composer-require: '${{ matrix.composer-require }}'
+          symfony-version: '${{ matrix.symfony-version }}'
+      - name: 'Run tests'
+        run: vendor/bin/phpunit

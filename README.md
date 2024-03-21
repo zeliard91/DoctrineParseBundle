@@ -1,7 +1,7 @@
 Redking Doctrine Parse Bundle
 =============================
 
-[![Build Status](https://travis-ci.org/zeliard91/DoctrineParseBundle.svg?branch=master)](https://travis-ci.org/zeliard91/DoctrineParseBundle)
+![Build Status](https://github.com/zeliard91/DoctrineParseBundle/actions/workflows/ci.yaml/badge.svg)
 
 This bundle provides object-relational mapping for the [Parse.com API](https://github.com/ParsePlatform/parse-php-sdk).
 

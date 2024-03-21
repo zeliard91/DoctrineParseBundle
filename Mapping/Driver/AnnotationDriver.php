@@ -19,6 +19,11 @@ class AnnotationDriver implements MappingDriver
 {
     use ColocatedMappingDriver;
 
+    /**
+     * @var Reader
+     */
+    private $reader;
+
     protected $entityAnnotationClasses = array(
         'Redking\\ParseBundle\\Mapping\\Annotations\\ParseObject' => 1,
     );
