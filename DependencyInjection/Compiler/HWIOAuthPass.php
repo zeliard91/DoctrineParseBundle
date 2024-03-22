@@ -15,10 +15,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 class HWIOAuthPass implements CompilerPassInterface
 {
-    /**
-     * {@inheritDoc}
-     */
-    public function process(ContainerBuilder $container)
+    public function process(ContainerBuilder $container): void
     {
         $bundles = $container->getParameter('kernel.bundles');
 

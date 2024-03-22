@@ -3,14 +3,11 @@
 namespace Redking\ParseBundle\Form\DataMapper;
 
 use Parse\ParseException;
-use Symfony\Component\Form\Extension\Core\DataMapper\PropertyPathMapper;
+use Symfony\Component\Form\Extension\Core\DataMapper\DataMapper;
 
-class GeoTypeDataMapper extends PropertyPathMapper
+class GeoTypeDataMapper extends DataMapper
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function mapFormsToData($forms, &$data)
+    public function mapFormsToData(\Traversable $forms, mixed &$data): void
     {
         // If the mapping of latitude or longitude in ParseGeoPoint fails, the value is cleared.
         try {

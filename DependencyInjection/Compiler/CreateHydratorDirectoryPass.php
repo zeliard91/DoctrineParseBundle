@@ -16,7 +16,7 @@ use function sprintf;
 
 class CreateHydratorDirectoryPass implements CompilerPassInterface
 {
-    public function process(ContainerBuilder $container)
+    public function process(ContainerBuilder $container): void
     {
         if (! $container->hasParameter('doctrine.parse.hydrator_dir')) {
             return;
