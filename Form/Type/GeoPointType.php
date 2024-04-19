@@ -4,11 +4,11 @@ namespace Redking\ParseBundle\Form\Type;
 
 use Parse\ParseGeoPoint;
 use Redking\ParseBundle\Form\DataMapper\GeoTypeDataMapper;
+use Redking\ParseBundle\Form\DataMapper\GeoTypeLegacyDataMapper;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\Form\FormEvent;
-use Symfony\Component\Form\FormEvents;
+use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -16,7 +16,12 @@ class GeoPointType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder->setDataMapper(new GeoTypeDataMapper());
+        if (Kernel::MAJOR_VERSION > 5) {
+            $builder->setDataMapper(new GeoTypeDataMapper());
+        } else {
+            $builder->setDataMapper(new GeoTypeLegacyDataMapper());
+        }
+
         $builder
             ->add('latitude', NumberType::class, [
                 'scale' => 6,
