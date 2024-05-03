@@ -16,7 +16,7 @@ use function sprintf;
 
 class CreateProxyDirectoryPass implements CompilerPassInterface
 {
-    public function process(ContainerBuilder $container)
+    public function process(ContainerBuilder $container): void
     {
         if (! $container->hasParameter('doctrine.parse.proxy_dir')) {
             return;

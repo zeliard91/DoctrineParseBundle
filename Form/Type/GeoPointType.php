@@ -4,23 +4,24 @@ namespace Redking\ParseBundle\Form\Type;
 
 use Parse\ParseGeoPoint;
 use Redking\ParseBundle\Form\DataMapper\GeoTypeDataMapper;
+use Redking\ParseBundle\Form\DataMapper\GeoTypeLegacyDataMapper;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\Form\FormEvent;
-use Symfony\Component\Form\FormEvents;
+use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints as Assert;
 
 class GeoPointType extends AbstractType
 {
-
-    /**
-     * {@inheritdoc}
-     */
-    public function buildForm(FormBuilderInterface $builder, array $options)
+    public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder->setDataMapper(new GeoTypeDataMapper());
+        if (Kernel::MAJOR_VERSION > 5) {
+            $builder->setDataMapper(new GeoTypeDataMapper());
+        } else {
+            $builder->setDataMapper(new GeoTypeLegacyDataMapper());
+        }
+
         $builder
             ->add('latitude', NumberType::class, [
                 'scale' => 6,
@@ -43,10 +44,7 @@ class GeoPointType extends AbstractType
         ;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function configureOptions(OptionsResolver $resolver)
+    public function configureOptions(OptionsResolver $resolver): void
     {
         parent::configureOptions($resolver);
 
@@ -56,18 +54,12 @@ class GeoPointType extends AbstractType
         ));
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getName()
+    public function getName(): string
     {
         return $this->getBlockPrefix();
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getBlockPrefix()
+    public function getBlockPrefix(): string
     {
         return 'geopoint';
     }

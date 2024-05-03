@@ -35,6 +35,7 @@
     "require-dev": {
         "doctrine/data-fixtures": "^1.2",
         "symfony/form": "^4.2 || ^5.4 || ^6.4",
+        "symfony/validator": "^4.2 || ^5.4 || ^6.4",
         "symfony/maker-bundle": "^1.11",
         "symfony/mime": "^4.2 || ^5.4 || ^6.4",
         "symfony/phpunit-bridge": "^4.2 || ^5.4 || ^6.4",
