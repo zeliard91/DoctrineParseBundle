@@ -2,6 +2,8 @@
 
 namespace Redking\ParseBundle;
 
+use BadMethodCallException;
+use Closure;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
@@ -486,7 +488,7 @@ class PersistentCollection implements Collection
             && $this->association['fetch'] === ClassMetadata::FETCH_EXTRA_LAZY
             && isset($this->association['indexBy'])
         ) {
-            if (!$this->typeClass->isIdentifierComposite && $this->typeClass->isIdentifier($this->association['indexBy'])) {
+            if ($this->typeClass->isIdentifier($this->association['indexBy'])) {
                 return $this->om->find($this->typeClass->name, $key);
             }
 
@@ -851,5 +853,37 @@ class PersistentCollection implements Collection
         $persister = $this->om->getUnitOfWork()->getObjectPersister($this->association['targetEntity']);
 
         return new ArrayCollection($persister->loadCriteria($criteria));
+    }
+
+    /**
+     * @psalm-param Closure(TKey, T):bool $p
+     *
+     * @psalm-return T|null
+     */
+    public function findFirst(Closure $p)
+    {
+        if (! method_exists($this->coll, 'findFirst')) {
+            throw new BadMethodCallException('findFirst() is only available since doctrine/collections v2');
+        }
+
+        return $this->coll->findFirst($p);
+    }
+
+    /**
+     * @psalm-param Closure(TReturn|TInitial|null, T):(TInitial|TReturn) $func
+     * @psalm-param TInitial|null $initial
+     *
+     * @psalm-return TReturn|TInitial|null
+     *
+     * @psalm-template TReturn
+     * @psalm-template TInitial
+     */
+    public function reduce(Closure $func, $initial = null)
+    {
+        if (! method_exists($this->coll, 'reduce')) {
+            throw new BadMethodCallException('reduce() is only available since doctrine/collections v2');
+        }
+
+        return $this->coll->reduce($func, $initial);
     }
 }
