@@ -65,10 +65,17 @@ class ParseUserProvider implements UserProviderInterface, OAuthAwareUserProvider
         $username = method_exists($response, 'getUserIdentifier') ? $response->getUserIdentifier() : $response->getUsername();
         $classmetadata = $this->om->getClassMetadata($this->class);
 
+        // Try to find user by Parse Auth Data
         $user = $this->findUserByAuthUsername($resourceOwnerName, $username);
 
+        // Or try to find it by resource name id
         if (null === $user && $classmetadata->hasField($this->properties[$resourceOwnerName])) {
             $user = $this->findUser([$this->properties[$resourceOwnerName] => $username]);
+        }
+
+        // Finally, try to find by the username given by auth response
+        if (null === $user) {
+            $user = $this->findUser(['email' => $response->getEmail()]);
         }
 
         if (null === $user) {
@@ -94,8 +101,16 @@ class ParseUserProvider implements UserProviderInterface, OAuthAwareUserProvider
             $this->om->persist($user);
             $this->om->flush();
         } else {
-            if ($this->propertyAccessor->isWritable($user, 'lastLoginAt')) {
-                $this->propertyAccessor->setValue($user, 'lastLoginAt', new DateTime());
+            $userData = [
+                $this->properties[$resourceOwnerName] => $response->getUserIdentifier(),
+                'lastLoginAt' => new DateTime(),
+                'authData' => $this->getParseAuthData($response, $user),
+            ];
+
+            foreach ($userData as $fieldName => $value) {
+                if ($this->propertyAccessor->isWritable($user, $fieldName)) {
+                    $this->propertyAccessor->setValue($user, $fieldName, $value);
+                }
             }
 
             $this->om->flush();
@@ -172,9 +187,13 @@ class ParseUserProvider implements UserProviderInterface, OAuthAwareUserProvider
         return $exception;
     }
 
-    protected function getParseAuthData(UserResponseInterface $response): array
+    protected function getParseAuthData(UserResponseInterface $response, ?UserInterface $user = null): array
     {
-        $authData = [];
+        if (null === $user) {
+            $authData = [];
+        } elseif ($this->propertyAccessor->isReadable($user, 'authData')) {
+            $authData = $this->propertyAccessor->getValue($user, 'authData') ?? [];
+        }
 
         switch ($response->getResourceOwner()->getName()) {
             case 'google':
