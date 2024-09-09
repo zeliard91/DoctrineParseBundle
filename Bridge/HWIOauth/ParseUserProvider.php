@@ -121,6 +121,7 @@ class ParseUserProvider implements UserProviderInterface, OAuthAwareUserProvider
 
     private function findUser(array $criteria): ?UserInterface
     {
+        $this->om->getConfiguration()->setAlwaysMaster(true);
         if (null === $this->repository) {
             $this->repository = $this->om->getRepository($this->class);
         }
@@ -130,6 +131,7 @@ class ParseUserProvider implements UserProviderInterface, OAuthAwareUserProvider
 
     private function findUserByAuthUsername(string $authService, string $username): ?UserInterface
     {
+        $this->om->getConfiguration()->setAlwaysMaster(true);
         if (null === $this->repository) {
             $this->repository = $this->om->getRepository($this->class);
         }
