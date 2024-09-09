@@ -2,6 +2,7 @@
 
 namespace Redking\ParseBundle;
 
+use Doctrine\Common\Collections\Collection;
 use Doctrine\Persistence\ObjectRepository as BaseObjectRepository;
 use Doctrine\Common\Collections\Selectable;
 use Doctrine\Common\Collections\Criteria;
