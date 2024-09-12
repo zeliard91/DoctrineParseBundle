@@ -199,17 +199,16 @@ class ProxyFactory extends AbstractProxyFactory
 
             $proxy->__setInitialized(true);
             $proxy->__setInitializer(null);
-            $class = $objectPersister->getClassMetadata();
             $original = $objectPersister->load($classMetadata->getIdentifierValues($proxy));
 
             if (null === $original) {
                 throw ParseObjectNotFoundException::objectNotFound(get_class($proxy), $classMetadata->getIdentifierValues($proxy));
             }
 
-            foreach ($class->getReflectionClass()->getProperties() as $reflectionProperty) {
+            foreach ($classMetadata->getReflectionClass()->getProperties() as $reflectionProperty) {
                 $propertyName = $reflectionProperty->getName();
 
-                if ($class->hasField($propertyName) || $class->hasAssociation($propertyName)) {
+                if ($classMetadata->hasField($propertyName) || $classMetadata->hasAssociation($propertyName)) {
                     $reflectionProperty->setAccessible(true);
                     $reflectionProperty->setValue($proxy, $reflectionProperty->getValue($original));
                 }
