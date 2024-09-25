@@ -41,7 +41,7 @@ class ParseFileTransformer implements DataTransformerInterface
             if ($this->options['force_name'] !== false && $this->options['force_name'] !== '') {
                 $fileName = $this->options['force_name'];
             } elseif (true === $this->options['autocorrect_name']) {
-                $fileName = (new AsciiSlugger())->slug(pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $uploadedFile->getClientOriginalExtension();
+                $fileName = (new AsciiSlugger())->slug(pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME))->truncate(124) . '.' . $uploadedFile->getClientOriginalExtension();
             } else {
                 $fileName = $uploadedFile->getClientOriginalName();
                 $fileName = str_replace(' ', '-', $fileName);

@@ -95,6 +95,7 @@ class User
      */
     public function addPost(\Redking\ParseBundle\Tests\Models\Blog\Post $post)
     {
+        $post->setUser($this);
         $this->posts[] = $post;
     }
 

@@ -10,7 +10,6 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Bridge\Doctrine\DependencyInjection\CompilerPass\RegisterEventListenersAndSubscribersPass;
-use Redking\ParseBundle\DependencyInjection\Compiler\HWIOAuthPass;
 use Redking\ParseBundle\DependencyInjection\Compiler\SessionCompilerPass;
 use Redking\ParseBundle\DependencyInjection\RedkingParseExtension;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
@@ -27,7 +26,6 @@ class RedkingParseBundle extends Bundle
         $container->addCompilerPass(new CreateProxyDirectoryPass(), PassConfig::TYPE_BEFORE_REMOVING);
         $container->addCompilerPass(new CreateHydratorDirectoryPass(), PassConfig::TYPE_BEFORE_REMOVING);
 
-        $container->addCompilerPass(new HWIOAuthPass());
         $container->addCompilerPass(new SessionCompilerPass());
     }
 
