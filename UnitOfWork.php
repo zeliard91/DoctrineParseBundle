@@ -350,7 +350,7 @@ class UnitOfWork implements PropertyChangedListener
      */
     public function getIdentityMap()
     {
-        return $this->objectIdentifiers;
+        return $this->identityMap;
     }
 
     /**
