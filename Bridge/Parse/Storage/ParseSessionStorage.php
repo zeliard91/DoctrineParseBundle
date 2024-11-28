@@ -97,7 +97,10 @@ class ParseSessionStorage implements ParseStorageInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @param string $key   The key to set
+     * @param mixed  $value The value to set
+     *
+     * @return null
      */
     public function set($key, $value)
     {
@@ -109,7 +112,9 @@ class ParseSessionStorage implements ParseStorageInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @param string $key The key to remove.
+     *
+     * @return null
      */
     public function remove($key)
     {
@@ -121,6 +126,8 @@ class ParseSessionStorage implements ParseStorageInterface
     }
 
     /**
+     * @param string $key The key to get the value for
+     *
      * @return mixed
      */
     public function get($key)
@@ -131,7 +138,7 @@ class ParseSessionStorage implements ParseStorageInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @return null
      */
     public function clear()
     {
@@ -141,7 +148,7 @@ class ParseSessionStorage implements ParseStorageInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @return null
      */
     public function save()
     {
@@ -151,7 +158,7 @@ class ParseSessionStorage implements ParseStorageInterface
     /**
      * @return array
      */
-    public function getKeys()
+    public function getKeys(): array
     {
         return array_keys($this->getSession()->get($this->getStorageKey()));
     }
@@ -159,7 +166,7 @@ class ParseSessionStorage implements ParseStorageInterface
     /**
      * @return array
      */
-    public function getAll()
+    public function getAll(): array
     {
         return $this->getSession()->get($this->getStorageKey());
     }
