@@ -2519,6 +2519,14 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /**
+     * Used for Doctrine fixtures
+     */
+    public function getDocumentIdentifier(object $object): mixed
+    {
+        return $this->getObjectIdentifier($object);
+    }
+
+    /**
      * Returns ParseACL based on model's data.
      * 
      * @param  object $object
