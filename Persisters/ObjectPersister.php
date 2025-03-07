@@ -574,7 +574,11 @@ class ObjectPersister
 
         $qb = $this->om->createQueryBuilder($this->class->name);
 
-        $qb->field($mapping['mappedBy'])->equals($originalData);
+        /**
+         * @note : Can not use equalTo since parse php sdk 2.3.1
+         * @see https://github.com/parse-community/parse-php-sdk/issues/516
+         */
+        $qb->field($mapping['mappedBy'])->in([$originalData]);
 
         if (null !== $limit) {
             $qb->limit($limit);

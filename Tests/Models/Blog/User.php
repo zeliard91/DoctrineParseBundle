@@ -32,7 +32,7 @@ class User
     private $posts;
 
     /**
-     * @ORM\ReferenceMany(targetDocument="Redking\ParseBundle\Tests\Models\Blog\Picture", cascade="all", orphanRemoval=true)
+     * @ORM\ReferenceMany(targetDocument="Redking\ParseBundle\Tests\Models\Blog\Picture", cascade="all", orphanRemoval=true, inversedBy="users")
      */
     private $pictures;
 
