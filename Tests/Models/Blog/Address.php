@@ -83,7 +83,7 @@ class Address
      *
      * @param Redking\ParseBundle\Tests\Models\Blog\User $user
      */
-    public function removePost(\Redking\ParseBundle\Tests\Models\Blog\User $user)
+    public function removeUser(\Redking\ParseBundle\Tests\Models\Blog\User $user)
     {
         $this->users->removeElement($user);
     }
