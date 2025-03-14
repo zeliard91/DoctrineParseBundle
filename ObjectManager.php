@@ -325,4 +325,9 @@ class ObjectManager implements BaseObjectManager
     {
         return $this->schemaManager;
     }
+
+    public function isUninitializedObject($value): bool
+    {
+        return $value instanceof Proxy\Proxy && !$value->__isInitialized();
+    }
 }

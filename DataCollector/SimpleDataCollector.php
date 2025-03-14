@@ -31,7 +31,7 @@ class SimpleDataCollector extends DataCollector
         $this->stopwatch = $stopwatch;
     }
 
-    public function logQuery(array $query)
+    public function logQuery(array $query): void
     {
         if (null !== $this->stopwatch) {
             $event = $this->stopwatch->stop('doctrine');
@@ -45,21 +45,21 @@ class SimpleDataCollector extends DataCollector
         $this->queryTimes[] = $queryTime;
     }
 
-    public function reset()
+    public function reset(): void
     {
         $this->data = array();
         $this->queries = array();
         $this->queryTimes = array();
     }
 
-    public function startQuery()
+    public function startQuery(): void
     {
         if (null !== $this->stopwatch) {
             $this->stopwatch->start('doctrine', 'doctrine');
         }
     }
 
-    public function collect(Request $request, Response $response, \Throwable $exception = null)
+    public function collect(Request $request, Response $response, \Throwable $exception = null): void
     {
         $this->data['nb_queries'] = count($this->queries);
         $this->data['queries'] = array_map('json_encode', $this->queries);
