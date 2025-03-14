@@ -14,7 +14,7 @@ class MappingInfoCommand extends DoctrineParseCommand
     /**
      * {@inheritDoc}
      */
-    protected function configure()
+    protected function configure(): void
     {
         $this
             ->setName('doctrine:parse:mapping:info')

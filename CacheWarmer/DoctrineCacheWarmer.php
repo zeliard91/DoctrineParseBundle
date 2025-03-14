@@ -44,7 +44,7 @@ class DoctrineCacheWarmer implements CacheWarmerInterface
     /**
      * @return string[]
      */
-    public function warmUp($cacheDir)
+    public function warmUp($cacheDir, $buildDir = null)
     {
         // Clear metadata cache
         $registry = $this->container->get('doctrine_parse');

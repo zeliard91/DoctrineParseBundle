@@ -27,7 +27,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class GenerateObjectsDoctrineParseCommand extends DoctrineParseCommand
 {
-    protected function configure()
+    protected function configure(): void
     {
         $this
             ->setName('doctrine:parse:generate:objects')

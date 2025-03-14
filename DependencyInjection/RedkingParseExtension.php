@@ -28,7 +28,7 @@ class RedkingParseExtension extends AbstractDoctrineExtension
     public const CONFIGURATION_TAG = 'doctrine.parse.configuration';
 
     /**
-     * {@inheritdoc}
+     * @return void
      */
     public function load(array $configs, ContainerBuilder $container)
     {
@@ -346,7 +346,7 @@ class RedkingParseExtension extends AbstractDoctrineExtension
                 break;
 
             case 'redis':
-                if (! empty($cacheDriver['class']) && $cacheDriver['class'] !== RedisCache::class) {
+                if (! empty($cacheDriver['class']) && $cacheDriver['class'] !== RedisCache::class && $cacheDriver['class'] !== 'Redis') {
                     return parent::loadCacheDriver($cacheName, $objectManagerName, $cacheDriver, $container);
                 }
 
