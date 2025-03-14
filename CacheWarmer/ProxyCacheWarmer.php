@@ -53,10 +53,10 @@ class ProxyCacheWarmer implements CacheWarmerInterface
 
     /**
      * @param string $cacheDir
-     *
+     * @param string|null $buildDir
      * @return string[]
      */
-    public function warmUp($cacheDir)
+    public function warmUp($cacheDir, $buildDir = null)
     {
         // we need the directory no matter the proxy cache generation strategy.
         $proxyCacheDir = (string) $this->container->getParameter('doctrine_parse.proxy_dir');

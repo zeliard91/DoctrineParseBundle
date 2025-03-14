@@ -61,7 +61,7 @@ class LoadDataFixturesDoctrineParseCommand extends DoctrineParseCommand
     }
 
 
-    protected function configure()
+    protected function configure(): void
     {
         $this
             ->setName('doctrine:parse:fixtures:load')
