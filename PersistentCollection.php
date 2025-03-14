@@ -408,7 +408,7 @@ class PersistentCollection implements Collection
                 return $element;
             }
 
-            return null;
+            return false;
         }
 
         $this->initialize();
@@ -860,7 +860,7 @@ class PersistentCollection implements Collection
      *
      * @psalm-return T|null
      */
-    public function findFirst(Closure $p)
+    public function findFirst(Closure $p): mixed
     {
         if (! method_exists($this->coll, 'findFirst')) {
             throw new BadMethodCallException('findFirst() is only available since doctrine/collections v2');
@@ -878,7 +878,7 @@ class PersistentCollection implements Collection
      * @psalm-template TReturn
      * @psalm-template TInitial
      */
-    public function reduce(Closure $func, $initial = null)
+    public function reduce(Closure $func, $initial = null): mixed
     {
         if (! method_exists($this->coll, 'reduce')) {
             throw new BadMethodCallException('reduce() is only available since doctrine/collections v2');
