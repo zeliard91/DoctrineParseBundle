@@ -4,6 +4,7 @@ namespace Redking\ParseBundle\DependencyInjection;
 
 use Doctrine\Common\Cache\MemcacheCache;
 use Doctrine\Common\Cache\RedisCache;
+use Redking\ParseBundle\Attribute\MapParseObject;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader;
@@ -16,6 +17,7 @@ use Symfony\Component\Cache\Adapter\MemcachedAdapter;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\DependencyInjection\Alias;
 use Symfony\Component\DependencyInjection\ChildDefinition;
+use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 
 /**
  * This is the class that loads and manages your bundle configuration.
@@ -159,6 +161,8 @@ class RedkingParseExtension extends AbstractDoctrineExtension
 
         $container->setAlias('doctrine.parse.object_manager', 'redking_parse.manager');
         $container->getAlias('doctrine.parse.object_manager')->setPublic(true);
+
+        $this->loadEntityValueResolverServices($container, $config);
     }
 
     /**
@@ -382,5 +386,38 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         $container->setDefinition($cacheDriverServiceId, $cacheDef);
 
         return $cacheDriverServiceId;
+    }
+
+    /** @param array<string, mixed> $config */
+    private function loadEntityValueResolverServices(ContainerBuilder $container, array $config): void
+    {
+        if (! class_exists(ExpressionLanguage::class)) {
+            $container->removeDefinition('doctrine_parse.object_value_resolver.expression_language');
+        }
+
+        $controllerResolverDefaults = [];
+
+        if (! $config['controller_resolver']['enabled']) {
+            $controllerResolverDefaults['disabled'] = true;
+        }
+
+        if (! $config['controller_resolver']['auto_mapping']) {
+            $controllerResolverDefaults['mapping'] = [];
+        }
+
+        if ($controllerResolverDefaults === []) {
+            return;
+        }
+
+        $container->getDefinition('doctrine_parse.object_value_resolver')->setArgument(2, (new Definition(MapParseObject::class))->setArguments([
+            null,
+            null,
+            null,
+            $controllerResolverDefaults['mapping'] ?? null,
+            null,
+            null,
+            null,
+            $controllerResolverDefaults['disabled'] ?? false,
+        ]));
     }
 }
