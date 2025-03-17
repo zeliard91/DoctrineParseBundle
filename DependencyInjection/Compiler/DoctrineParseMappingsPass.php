@@ -14,6 +14,7 @@ namespace Redking\ParseBundle\DependencyInjection\Compiler;
 
 use Doctrine\Persistence\Mapping\Driver\SymfonyFileLocator;
 use Redking\ParseBundle\Mapping\Driver\AnnotationDriver;
+use Redking\ParseBundle\Mapping\Driver\AttributeDriver;
 use Redking\ParseBundle\Mapping\Driver\YamlDriver;
 use Symfony\Bridge\Doctrine\DependencyInjection\CompilerPass\RegisterMappingsPass;
 use Symfony\Component\DependencyInjection\Definition;
@@ -139,12 +140,12 @@ class DoctrineParseMappingsPass extends RegisterMappingsPass
      *
      * @return self
      */
-    public static function createAnnotationMappingDriver(array $namespaces, array $directories, array $managerParameters = array(), $enabledParameter = false, array $aliasMap = array())
-    {
-        $driver = new Definition(AnnotationDriver::class, [new Reference('annotation_reader'), $directories]);
+    // public static function createAnnotationMappingDriver(array $namespaces, array $directories, array $managerParameters = array(), $enabledParameter = false, array $aliasMap = array())
+    // {
+    //     $driver = new Definition(AnnotationDriver::class, [new Reference('annotation_reader'), $directories]);
 
-        return new self($driver, $namespaces, $managerParameters, $enabledParameter, $aliasMap);
-    }
+    //     return new self($driver, $namespaces, $managerParameters, $enabledParameter, $aliasMap);
+    // }
 
     /*
      * @param array    $namespaces        List of namespaces that are handled with static php mapping
@@ -166,4 +167,23 @@ class DoctrineParseMappingsPass extends RegisterMappingsPass
 
         return new DoctrineOrmMappingsPass($driver, $namespaces, $managerParameters, $enabledParameter, $aliasMap);
     }*/
+
+    /**
+     * @param array        $namespaces        List of namespaces that are handled with attribute mapping
+     * @param array        $directories       List of directories to look for attribute mapping files
+     * @param string[]     $managerParameters List of parameters that could which object manager name
+     *                                        your bundle uses. This compiler pass will automatically
+     *                                        append the parameter name for the default entity manager
+     *                                        to this list.
+     * @param string|false $enabledParameter  Service container parameter that must be present to
+     *                                        enable the mapping. Set to false to not do any check,
+     *                                        optional.
+     * @param string[]     $aliasMap          Map of alias to namespace.
+     */
+    public static function createAttributeMappingDriver(array $namespaces, array $directories, array $managerParameters, string|false $enabledParameter = false, array $aliasMap = []): DoctrineParseMappingsPass
+    {
+        $driver = new Definition(AttributeDriver::class, [$directories]);
+
+        return new DoctrineParseMappingsPass($driver, $namespaces, $managerParameters, $enabledParameter, $aliasMap);
+    }
 }

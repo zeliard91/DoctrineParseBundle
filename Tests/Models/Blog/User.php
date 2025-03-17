@@ -4,56 +4,36 @@ namespace Redking\ParseBundle\Tests\Models\Blog;
 
 use Redking\ParseBundle\Mapping\Annotations as ORM;
 
-/**
- * @ORM\ParseObject(collection="_User")
- */
+#[ORM\ParseObject(collection: "_User")]
 class User
 {
     use \Redking\ParseBundle\ObjectTrait;
 
-    /**
-     * @ORM\Field(type="string", name="username")
-     */
+    #[ORM\Field(type: "string", name: "username")]
     private $name;
 
-    /**
-     * @ORM\Field(type="string")
-     */
+    #[ORM\Field(type: "string")]
     private $password;
 
-    /**
-     * @ORM\Field(type="date")
-     */
+    #[ORM\Field(type: "date")]
     private $birthday;
 
-    /**
-     * @ORM\ReferenceMany(targetDocument="Redking\ParseBundle\Tests\Models\Blog\Post", mappedBy="user")
-     */
+    #[ORM\ReferenceMany(targetDocument: "Redking\ParseBundle\Tests\Models\Blog\Post", mappedBy: "user")]
     private $posts;
 
-    /**
-     * @ORM\ReferenceMany(targetDocument="Redking\ParseBundle\Tests\Models\Blog\Picture", cascade="all", orphanRemoval=true, inversedBy="users")
-     */
+    #[ORM\ReferenceMany(targetDocument: "Redking\ParseBundle\Tests\Models\Blog\Picture", cascade: "all", orphanRemoval: true, inversedBy: "users")]
     private $pictures;
 
-    /**
-     * @ORM\ReferenceOne(targetDocument="Redking\ParseBundle\Tests\Models\Blog\Picture")
-     */
+    #[ORM\ReferenceOne(targetDocument: "Redking\ParseBundle\Tests\Models\Blog\Picture")]
     private $avatar;
 
-    /**
-     * @ORM\ReferenceMany(targetDocument="Redking\ParseBundle\Tests\Models\Blog\Address", cascade="all", implementation="relation", inversedBy="users")
-     */
+    #[ORM\ReferenceMany(targetDocument: "Redking\ParseBundle\Tests\Models\Blog\Address", cascade: "all", implementation: "relation", inversedBy: "users")]
     private $addresses;
 
-    /**
-     * @ORM\ReferenceMany(targetDocument="Redking\ParseBundle\Tests\Models\Blog\Picture")
-     */
+    #[ORM\ReferenceMany(targetDocument: "Redking\ParseBundle\Tests\Models\Blog\Picture")]
     private $screenshots;
 
-    /**
-     * @ORM\ReferenceOne(targetDocument="Redking\ParseBundle\Tests\Models\Blog\Picture", orphanRemoval=true)
-     */
+    #[ORM\ReferenceOne(targetDocument: "Redking\ParseBundle\Tests\Models\Blog\Picture", orphanRemoval: true)]
     private $portrait;
 
     public function __construct()

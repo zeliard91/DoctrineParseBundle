@@ -4,31 +4,21 @@ namespace Redking\ParseBundle\Tests\Models\Blog;
 
 use Redking\ParseBundle\Mapping\Annotations as ORM;
 
-/**
- * @ORM\ParseObject(collection="blog_address")
- */
+#[ORM\ParseObject(collection: "blog_address")]
 class Address
 {
     use \Redking\ParseBundle\ObjectTrait;
 
-    /**
-     * @ORM\Field(type="string")
-     */
+    #[ORM\Field(type: "string")]
     private $city;
 
-    /**
-     * @ORM\ReferenceMany(targetDocument="Redking\ParseBundle\Tests\Models\Blog\User", implementation="relation", mappedBy="addresses")
-     */
+    #[ORM\ReferenceMany(targetDocument: "Redking\ParseBundle\Tests\Models\Blog\User", implementation: "relation", mappedBy: "addresses")]
     private $users;
 
-    /**
-     * @ORM\Field(type="boolean")
-     */
+    #[ORM\Field(type: "boolean")]
     private $isDefault = false;
 
-    /**
-     * @ORM\Field(type="float")
-     */
+    #[ORM\Field(type: "float")]
     private $order;
 
     public function __construct()
