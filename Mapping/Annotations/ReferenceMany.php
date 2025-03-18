@@ -41,6 +41,7 @@ final class ReferenceMany extends AbstractField
         ?string $discriminatorField = null,
         ?array $discriminatorMap = null,
         ?string $defaultDiscriminatorValue = null,
+        bool $lazyLoad = true,
         public $cascade = null,
         ?bool $orphanRemoval = null,
         ?string $inversedBy = null,
@@ -51,6 +52,7 @@ final class ReferenceMany extends AbstractField
         ?int $limit = null,
         ?int $skip = null,
         ?string $implementation = ClassMetadata::ASSOCIATION_IMPL_ARRAY,
+        ?array $includeKeys = [],
     ) {
         parent::__construct($name, ClassMetadata::MANY, $nullable);
 
@@ -58,6 +60,7 @@ final class ReferenceMany extends AbstractField
         $this->discriminatorField = $discriminatorField;
         $this->discriminatorMap = $discriminatorMap;
         $this->defaultDiscriminatorValue = $defaultDiscriminatorValue;
+        $this->lazyLoad = $lazyLoad;
         $this->inversedBy = $inversedBy;
         $this->orphanRemoval = $orphanRemoval;
         $this->mappedBy = $mappedBy;
@@ -67,5 +70,6 @@ final class ReferenceMany extends AbstractField
         $this->limit = $limit;
         $this->skip = $skip;
         $this->implementation = $implementation;
+        $this->includeKeys = $includeKeys;
     }
 }

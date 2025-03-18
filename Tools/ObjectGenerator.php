@@ -57,6 +57,9 @@ class ObjectGenerator
     /** Whether or not to generate annotations */
     private $generateAnnotations = false;
 
+    /** Whether or not to generate attributes */
+    private $generateAttributes = false;
+
     /** Whether or not to generate stub methods */
     private $generateObjectStubMethods = false;
 
@@ -312,6 +315,11 @@ public function <methodName>()
     public function setGenerateAnnotations($bool)
     {
         $this->generateAnnotations = $bool;
+    }
+
+    public function setGenerateAttributes(bool $bool)
+    {
+        $this->generateAttributes = $bool;
     }
 
     /**
@@ -647,7 +655,7 @@ public function <methodName>()
 
     private function generateObjectImports(ClassMetadata $metadata)
     {
-        if ($this->generateAnnotations) {
+        if ($this->generateAnnotations || $this->generateAttributes) {
             return 'use Redking\\ParseBundle\\Mapping\\Annotations as ORM;';
         }
     }
@@ -702,6 +710,14 @@ public function <methodName>()
         }
 
         $lines[] = ' */';
+
+        if ($this->generateAttributes) {
+            $attributes = ['collection: "'.$metadata->collection.'"'];
+            if ($metadata->customRepositoryClassName) {
+                $attributes[] = 'repositoryClass="'.$metadata->customRepositoryClassName.'"';
+            }
+            $lines[] = '#[ORM\ParseObject('.implode(',', $attributes).')]';
+        }
 
         return implode("\n", $lines);
     }
@@ -957,66 +973,96 @@ public function <methodName>()
         }
         $lines[] = $this->spaces.' * @var ' . $typeDocType;
 
+        $type = null;
+        switch ($fieldMapping['association']) {
+            case ClassMetadata::REFERENCE_ONE:
+                $type = 'ReferenceOne';
+                break;
+            case ClassMetadata::REFERENCE_MANY:
+                $type = 'ReferenceMany';
+                break;
+        }
+        $typeOptions = array();
+
+        if (isset($fieldMapping['targetDocument'])) {
+            $typeOptions[] = 'targetDocument="'.$fieldMapping['targetDocument'].'"';
+        }
+
+        if (isset($fieldMapping['cascade']) && $fieldMapping['cascade']) {
+            $cascades = array();
+
+            if ($fieldMapping['isCascadePersist']) {
+                $cascades[] = '"persist"';
+            }
+            if ($fieldMapping['isCascadeRemove']) {
+                $cascades[] = '"remove"';
+            }
+            if ($fieldMapping['isCascadeDetach']) {
+                $cascades[] = '"detach"';
+            }
+            if ($fieldMapping['isCascadeMerge']) {
+                $cascades[] = '"merge"';
+            }
+            if ($fieldMapping['isCascadeRefresh']) {
+                $cascades[] = '"refresh"';
+            }
+
+            $typeOptions[] = 'cascade={'.implode(',', $cascades).'}';
+        }
+
+        if (isset($fieldMapping['implementation'])) {
+            $typeOptions[] = 'implementation="'.$fieldMapping['implementation'].'"';
+        }
+
+        if (isset($fieldMapping['inversedBy'])) {
+            $typeOptions[] = 'inversedBy="'.$fieldMapping['inversedBy'].'"';
+        }
+        if (isset($fieldMapping['mappedBy'])) {
+            $typeOptions[] = 'mappedBy="'.$fieldMapping['mappedBy'].'"';
+        }
+        if (isset($fieldMapping['orphanRemoval']) && $fieldMapping['orphanRemoval']) {
+            $typeOptions[] = 'orphanRemoval=true';
+        }
+
         if ($this->generateAnnotations) {
             $lines[] = $this->spaces.' *';
-
-            $type = null;
-            switch ($fieldMapping['association']) {
-                case ClassMetadata::REFERENCE_ONE:
-                    $type = 'ReferenceOne';
-                    break;
-                case ClassMetadata::REFERENCE_MANY:
-                    $type = 'ReferenceMany';
-                    break;
-            }
-            $typeOptions = array();
-
-            if (isset($fieldMapping['targetDocument'])) {
-                $typeOptions[] = 'targetDocument="'.$fieldMapping['targetDocument'].'"';
-            }
-
-            if (isset($fieldMapping['cascade']) && $fieldMapping['cascade']) {
-                $cascades = array();
-
-                if ($fieldMapping['isCascadePersist']) {
-                    $cascades[] = '"persist"';
-                }
-                if ($fieldMapping['isCascadeRemove']) {
-                    $cascades[] = '"remove"';
-                }
-                if ($fieldMapping['isCascadeDetach']) {
-                    $cascades[] = '"detach"';
-                }
-                if ($fieldMapping['isCascadeMerge']) {
-                    $cascades[] = '"merge"';
-                }
-                if ($fieldMapping['isCascadeRefresh']) {
-                    $cascades[] = '"refresh"';
-                }
-
-                $typeOptions[] = 'cascade={'.implode(',', $cascades).'}';
-            }
-
-            if (isset($fieldMapping['implementation'])) {
-                $typeOptions[] = 'implementation="'.$fieldMapping['implementation'].'"';
-            }
-
-            if (isset($fieldMapping['inversedBy'])) {
-                $typeOptions[] = 'inversedBy="'.$fieldMapping['inversedBy'].'"';
-            }
-            if (isset($fieldMapping['mappedBy'])) {
-                $typeOptions[] = 'mappedBy="'.$fieldMapping['mappedBy'].'"';
-            }
-            if (isset($fieldMapping['orphanRemoval']) && $fieldMapping['orphanRemoval']) {
-                $typeOptions[] = 'orphanRemoval=true';
-            }
-
             $lines[] = $this->spaces.' * @ORM\\'.$type.'('.implode(', ', $typeOptions).')';
         }
 
         $lines[] = $this->spaces.' */';
 
+        if ($this->generateAttributes) {
+            $lines[] = $this->spaces . $this->convertAnnotationToAttribute('#[ORM\\'.$type.'('.implode(', ', $typeOptions).')]');
+        }
+
         return implode("\n", $lines);
+    }
+
+    private function convertAnnotationToAttribute(string $annotation): string
+    {
+        $attribute = str_replace(
+            [
+                '=',
+                '{',
+                '}',
+            ],
+            [
+                ':',
+                '[',
+                ']',
+            ],
+            $annotation
+        );
+
+        $attribute = preg_replace_callback(
+            '/targetDocument:\"([^\"]+)\"/',
+            function ($matches) {
+                return 'targetDocument:\\' . $matches[1] . '::class';
+            },
+            $attribute
+        );
+
+        return $attribute;
     }
 
     private function generateFieldMappingPropertyDocBlock(array $fieldMapping, ClassMetadata $metadata)
@@ -1030,30 +1076,9 @@ public function <methodName>()
 
             $field = array();
             if (isset($fieldMapping['id']) && $fieldMapping['id']) {
-                if (isset($fieldMapping['strategy'])) {
-                    $field[] = 'strategy="'.$this->getIdGeneratorTypeString($metadata->generatorType).'"';
-                }
-                $lines[] = $this->spaces.' * @ORM\\Id('.implode(', ', $field).')';
+                $lines[] = $this->spaces.' * @ORM\\Id()';
             } else {
-                if (isset($fieldMapping['name'])) {
-                    $field[] = 'name="'.$fieldMapping['name'].'"';
-                }
-
-                if (isset($fieldMapping['type'])) {
-                    $field[] = 'type="'.$fieldMapping['type'].'"';
-                }
-
-                if (isset($fieldMapping['nullable']) && $fieldMapping['nullable'] === true) {
-                    $field[] = 'nullable='.var_export($fieldMapping['nullable'], true);
-                }
-                if (isset($fieldMapping['options'])) {
-                    $options = array();
-                    foreach ($fieldMapping['options'] as $key => $value) {
-                        $options[] = '"'.$key.'" = "'.$value.'"';
-                    }
-                    $field[] = 'options={'.implode(', ', $options).'}';
-                }
-                $lines[] = $this->spaces.' * @ORM\\Field('.implode(', ', $field).')';
+                $lines[] = $this->spaces.' * @ORM\\Field('.implode(', ', $this->getFieldOptions($fieldMapping)).')';
             }
 
             if (isset($fieldMapping['version']) && $fieldMapping['version']) {
@@ -1063,7 +1088,48 @@ public function <methodName>()
 
         $lines[] = $this->spaces.' */';
 
+        if ($this->generateAttributes) {
+            $type = 'Field';
+            if (isset($fieldMapping['id']) && $fieldMapping['id']) {
+                $type = 'Id';
+            }
+            if ($fieldMapping['name'] === $fieldMapping['fieldName']) {
+                unset($fieldMapping['name']);
+            }
+            $lines[] = $this->spaces . $this->convertAnnotationToAttribute('#[ORM\\'.$type.'('.implode(', ', $this->getFieldOptions($fieldMapping)).')]');
+        }
+
         return implode("\n", $lines);
+    }
+
+    private function getFieldOptions(array $fieldMapping): array
+    {
+        $field = [];
+
+        if (isset($fieldMapping['id']) && $fieldMapping['id']) {
+            return $field;
+        }
+
+        if (isset($fieldMapping['name'])) {
+            $field[] = 'name="'.$fieldMapping['name'].'"';
+        }
+
+        if (isset($fieldMapping['type'])) {
+            $field[] = 'type="'.$fieldMapping['type'].'"';
+        }
+
+        if (isset($fieldMapping['nullable']) && $fieldMapping['nullable'] === true) {
+            $field[] = 'nullable='.var_export($fieldMapping['nullable'], true);
+        }
+        if (isset($fieldMapping['options'])) {
+            $options = array();
+            foreach ($fieldMapping['options'] as $key => $value) {
+                $options[] = '"'.$key.'" = "'.$value.'"';
+            }
+            $field[] = 'options={'.implode(', ', $options).'}';
+        }
+
+        return $field;
     }
 
     private function prefixCodeWithSpaces($code, $num = 1)
