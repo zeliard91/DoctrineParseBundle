@@ -15,16 +15,15 @@ namespace App\Controller;
 
 use App\ParseObject\Post;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
 
 class PostController extends AbstractController
 {
     /**
      * Edit a Post.
-     *
-     * @Route(path="/post/{post}/edit", name="app_post_edit")
      */
+    #[Route('/post/{post}/edit', name: 'app_post_edit')]
     public function edit(Post $post, Request $request)
     {
         // build and handle form with $post

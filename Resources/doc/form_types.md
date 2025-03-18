@@ -79,10 +79,8 @@ class User
 {
     // ...
 
-    /**
-     * @ORM\Field(type="file")
-     * @ParseAssert\ParseFileImage(maxSize="2M")
-     */
+    #[ORM\Field(type: 'file')]
+    #[ParseAssert\ParseFileImage(maxSize: '2M')]
     protected $avatar;
 }
 ```
