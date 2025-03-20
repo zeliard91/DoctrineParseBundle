@@ -8,7 +8,7 @@ use Parse\ParseQuery;
 use Parse\ParseMemoryStorage;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use Redking\ParseBundle\Configuration;
-use Redking\ParseBundle\Mapping\Driver\AnnotationDriver;
+use Redking\ParseBundle\Mapping\Driver\AttributeDriver;
 use Redking\ParseBundle\ObjectManager;
 
 abstract class TestCase extends BaseTestCase
@@ -59,7 +59,7 @@ abstract class TestCase extends BaseTestCase
 
     protected function createMetadataDriverImpl()
     {
-        return AnnotationDriver::create(__DIR__ . '/Models');
+        return AttributeDriver::create(__DIR__ . '/Models');
     }
 
     /**

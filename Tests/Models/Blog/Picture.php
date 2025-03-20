@@ -4,36 +4,24 @@ namespace Redking\ParseBundle\Tests\Models\Blog;
 
 use Redking\ParseBundle\Mapping\Annotations as ORM;
 
-/**
- * @ORM\ParseObject(collection="blog_picture")
- */
+#[ORM\ParseObject(collection: "blog_picture")]
 class Picture
 {
     use \Redking\ParseBundle\ObjectTrait;
 
-    /**
-     * @ORM\Field(type="string")
-     */
+    #[ORM\Field(type: "string")]
     private $file;
 
-    /**
-     * @ORM\Field(type="geopoint")
-     */
+    #[ORM\Field(type: "geopoint")]
     private $location;
 
-    /**
-     * @ORM\Field(type="object")
-     */
+    #[ORM\Field(type: "object")]
     private $exif;
 
-    /**
-     * @ORM\Field(type="file")
-     */
+    #[ORM\Field(type: "file")]
     private $media;
 
-    /**
-     * @ORM\ReferenceMany(targetDocument="Redking\ParseBundle\Tests\Models\Blog\User", mappedBy="pictures")
-     */
+    #[ORM\ReferenceMany(targetDocument: "Redking\ParseBundle\Tests\Models\Blog\User", mappedBy: "pictures")]
     private $users;
 
     public function __construct()

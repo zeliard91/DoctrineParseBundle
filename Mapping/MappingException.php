@@ -20,6 +20,8 @@
 namespace Redking\ParseBundle\Mapping;
 
 use Doctrine\Persistence\Mapping\MappingException as BaseMappingException;
+use Redking\ParseBundle\Mapping\Annotations\AbstractParseObject;
+use ReflectionObject;
 
 /**
  * Class for all exceptions related to the Doctrine MongoDB ODM.
@@ -311,5 +313,15 @@ class MappingException extends BaseMappingException
     public static function objectListenerMethodNotFound($listenerName, $methodName, $className)
     {
         return new self(sprintf('Object Listener "%s" declared on "%s" has no method "%s".', $listenerName, $className, $methodName));
+    }
+
+    public static function classCanOnlyBeMappedByOneAbstractParseObject(string $className, AbstractParseObject $mappedAs, AbstractParseObject $offending): self
+    {
+        return new self(sprintf(
+            "Can not map class '%s' as %s because it was already mapped as %s.",
+            $className,
+            (new ReflectionObject($offending))->getShortName(),
+            (new ReflectionObject($mappedAs))->getShortName(),
+        ));
     }
 }

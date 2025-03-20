@@ -3,7 +3,7 @@
 You need to define the mapping for the models stored in Parse.
 The files need to be stored in the `ParseObject` directory of your app.
 
-The mapping can be defined with annotations or in yaml.
+The mapping can be defined with attributes or in yaml.
 
 ## Drivers
 
@@ -18,9 +18,7 @@ use App\ParseObject\User;
 use Redking\ParseBundle\Mapping\Annotations as ORM;
 use Redking\ParseBundle\ObjectTrait;
 
-/**
- * @ORM\ParseObject(collection="Post")
- */
+#[ORM\ParseObject(collection:'Post')]
 class Post
 {
     // Define $id, $createdAt and $updatedAt
@@ -28,14 +26,14 @@ class Post
 
     /**
      * @var string
-     * @ORM\Field(type="string", name="Title")
      */
+    #[ORM\Field(type: 'string', name: 'Title')]
     protected $title;
 
     /**
      * @var App\ParseObject\User
-     * @ORM\ReferenceOne(targetDocument="App\ParseObject\User")
      */
+    #[ORM\ReferenceOne(targetDocument: \App\ParseObject\User::class)]
     protected $author;
 
     public function getId(): string
@@ -100,9 +98,7 @@ For that, you have to specify it in the mapping:
 
 ```php
 <?php
-/**
- * @ORM\ParseObject(collection="Post", repositoryClass="App\Repository\PostRepository")
- */
+#[ORM\ParseObject(collection: 'Post', repositoryClass: \App\Repository\PostRepository::class)]
 class Post
 {
     ...

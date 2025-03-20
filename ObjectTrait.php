@@ -17,20 +17,20 @@ trait ObjectTrait
 
     /**
      * @var string
-     * @ORM\Id
      */
+    #[ORM\Id]
     protected $id;
 
     /**
      * @var \DateTime
-     * @ORM\Field(type="date")
      */
+    #[ORM\Field(type: "date")]
     protected $createdAt;
 
     /**
      * @var \DateTime
-     * @ORM\Field(type="date")
      */
+    #[ORM\Field(type: "date")]
     protected $updatedAt;
 
     /**

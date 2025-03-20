@@ -63,8 +63,11 @@ services:
     #     class: Redking\ParseBundle\Configuration
     #     public: false
 
-    doctrine.parse.metadata.annotation_reader:
-        alias: annotation_reader
+    # doctrine.parse.metadata.annotation_reader:
+    #     alias: annotation_reader
+
+    doctrine.parse.metadata.attribute_reader:
+        alias: attribute_reader
 
     # Generate proxies classes on cache
     redking_parse.proxy_cache_warmer:
@@ -109,14 +112,6 @@ services:
         arguments:
             - "@?debug.stopwatch"
 
-    # sensio converter parameter
-    redking_parse.converter.doctrine.parse:
-        class: Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\DoctrineParamConverter
-        arguments:
-            - "@doctrine_parse"
-        tags:
-            - {name: request.param_converter, converter: doctrine.parse, priority: 1}
-
     # authenticator
     parse_authenticator:
         class:     "%parse_authenticator.class%"
@@ -136,4 +131,24 @@ services:
             - "@request_stack"
             - "@session.factory"
             - "@security.firewall.map"
+    
+    # Argument resolver
+    doctrine_parse.entity_value_resolver:
+        class: Symfony\Bridge\Doctrine\ArgumentResolver\EntityValueResolver
+        arguments:
+            - "@doctrine_parse"
+            - "@?doctrine_parse.object_value_resolver.expression_language"
+
+    doctrine_parse.object_value_resolver.expression_language:
+        class: Symfony\Component\ExpressionLanguage\ExpressionLanguage
+
+    doctrine_parse.object_value_resolver:
+        class: Redking\ParseBundle\ArgumentResolver\ParseObjectValueResolver
+        arguments:
+            - "@doctrine_parse.entity_value_resolver"
+        tags:
+            - controller.argument_value_resolver:
+                name: Redking\ParseBundle\ArgumentResolver\ParseObjectValueResolver
+                priority: 110
+
 

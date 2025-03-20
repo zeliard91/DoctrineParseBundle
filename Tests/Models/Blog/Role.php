@@ -4,21 +4,15 @@ namespace Redking\ParseBundle\Tests\Models\Blog;
 
 use Redking\ParseBundle\Mapping\Annotations as ORM;
 
-/**
- * @ORM\ParseObject(collection="_Role")
- */
+#[ORM\ParseObject(collection: "_Role")]
 class Role
 {
     use \Redking\ParseBundle\ObjectTrait;
 
-    /**
-     * @ORM\Field(type="string")
-     */
+    #[ORM\Field(type: "string")]
     private $name;
 
-    /**
-     * @ORM\ReferenceMany(targetDocument="Redking\ParseBundle\Tests\Models\Blog\User", implementation="relation")
-     */
+    #[ORM\ReferenceMany(targetDocument: "Redking\ParseBundle\Tests\Models\Blog\User", implementation: "relation")]
     private $users;
 
     public function __construct()
