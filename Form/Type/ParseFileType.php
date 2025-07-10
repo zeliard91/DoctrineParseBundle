@@ -17,6 +17,7 @@ use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\String\Slugger\AsciiSlugger;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class ParseFileType extends FileType
 {
@@ -28,8 +29,9 @@ class ParseFileType extends FileType
     /**
      * @param Registry $registry Doctrine Parse Registry
      */
-    public function __construct(ObjectManager $om)
+    public function __construct(ObjectManager $om, ?TranslatorInterface $translator = null)
     {
+        parent::__construct($translator);
         $this->om = $om;
     }
 

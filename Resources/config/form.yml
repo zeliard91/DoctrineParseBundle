@@ -14,6 +14,7 @@ services:
             - {name: form.type, alias: parse_file}
         arguments:
             - "@redking_parse.manager"
+            - '@?translator'
 
 
     # Form Type Guesser
