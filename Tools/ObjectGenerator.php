@@ -717,6 +717,9 @@ public function <methodName>()
                 $attributes[] = 'repositoryClass="'.$metadata->customRepositoryClassName.'"';
             }
             $lines[] = '#[ORM\ParseObject('.implode(',', $attributes).')]';
+            foreach ($metadata->additionalAttributes as $attribute) {
+                $lines[] = $attribute;
+            }
         }
 
         return implode("\n", $lines);
@@ -1033,6 +1036,11 @@ public function <methodName>()
 
         if ($this->generateAttributes) {
             $lines[] = $this->spaces . $this->convertAnnotationToAttribute('#[ORM\\'.$type.'('.implode(', ', $typeOptions).')]');
+            if (isset($fieldMapping['additional_attributes'])) {
+                foreach ($fieldMapping['additional_attributes'] as $attribute) {
+                    $lines[] = $this->spaces . $attribute;
+                }
+            }
         }
 
         return implode("\n", $lines);
@@ -1097,6 +1105,11 @@ public function <methodName>()
                 unset($fieldMapping['name']);
             }
             $lines[] = $this->spaces . $this->convertAnnotationToAttribute('#[ORM\\'.$type.'('.implode(', ', $this->getFieldOptions($fieldMapping)).')]');
+            if (isset($fieldMapping['additional_attributes'])) {
+                foreach ($fieldMapping['additional_attributes'] as $attribute) {
+                    $lines[] = $this->spaces . $attribute;
+                }
+            }
         }
 
         return implode("\n", $lines);
