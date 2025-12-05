@@ -98,7 +98,7 @@ class UnitOfWork implements PropertyChangedListener
      * Keys are object ids (spl_object_hash). This is used for calculating changesets
      * at commit time.
      *
-     * @var array
+     * @var ParseObject[]
      *
      * @internal Note that PHPs "copy-on-write" behavior helps a lot with memory usage.
      *           A value will only really be copied if the value in the object is modified
@@ -2621,8 +2621,34 @@ class UnitOfWork implements PropertyChangedListener
     public function setOriginalObjectProperty($oid, $property, $value)
     {
         if (isset($this->originalObjectData[$oid])) {
-            $this->originalObjectData[$oid]->set($property, $value);
+            if (is_array($value)) {
+                // Check if an array is associative or indexed
+                if ($this->isAssociativeArray($value)) {
+                    $this->originalObjectData[$oid]->setAssociativeArray($property, $value);
+                } else {
+                    $this->originalObjectData[$oid]->setArray($property, $value);
+                }
+            } else {
+                // For scalar values or objects (ParseObject, ParseGeoPoint, ParseFile)
+                $this->originalObjectData[$oid]->set($property, $value);
+            }
         }
+    }
+
+    /**
+     * Check if an array is associative or indexed
+     *
+     * @param array $array
+     *
+     * @return bool
+     */
+    private function isAssociativeArray($array)
+    {
+        if (empty($array)) {
+            return false;
+        }
+
+        return array_keys($array) !== range(0, count($array) - 1);
     }
 
     /**
