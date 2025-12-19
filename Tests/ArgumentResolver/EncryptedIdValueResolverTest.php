@@ -63,7 +63,7 @@ class EncryptedIdValueResolverTest extends TestCase
         );
 
         $result = $this->resolver->resolve($request, $argument);
-        $result = iterator_to_array($result);
+        $result = is_array($result) ? $result : iterator_to_array($result);
 
         $this->assertCount(1, $result);
         $this->assertSame($mockEntity, $result[0]);
@@ -75,7 +75,7 @@ class EncryptedIdValueResolverTest extends TestCase
         $argument = new ArgumentMetadata('user', 'App\Entity\User', false, false, null);
 
         $result = $this->resolver->resolve($request, $argument);
-        $result = iterator_to_array($result);
+        $result = is_array($result) ? $result : iterator_to_array($result);
 
         $this->assertCount(0, $result);
     }
@@ -96,7 +96,7 @@ class EncryptedIdValueResolverTest extends TestCase
         );
 
         $result = $this->resolver->resolve($request, $argument);
-        $result = iterator_to_array($result);
+        $result = is_array($result) ? $result : iterator_to_array($result);
 
         $this->assertCount(0, $result);
     }
@@ -193,7 +193,7 @@ class EncryptedIdValueResolverTest extends TestCase
         );
 
         $result = $this->resolver->resolve($request, $argument);
-        $result = iterator_to_array($result);
+        $result = is_array($result) ? $result : iterator_to_array($result);
 
         $this->assertCount(1, $result);
         $this->assertSame($mockEntity, $result[0]);
