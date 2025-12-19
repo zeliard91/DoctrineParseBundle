@@ -20,6 +20,7 @@ in this bundle :
 - [**Persistence**](Resources/doc/persistence.md)
 - [**Events**](Resources/doc/events.md)
 - [**QueryBuilder**](Resources/doc/query_builder.md)
+- [**Encrypted Routing**](Resources/doc/encrypted_routing.md)
 - [**Form Types**](Resources/doc/form_types.md)
 - [**Symfony Integration**](Resources/doc/symfony_integration.md)
 - [**3d Party Bundles**](Resources/doc/3rd_party.md)

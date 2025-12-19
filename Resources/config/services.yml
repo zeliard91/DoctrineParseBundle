@@ -166,4 +166,31 @@ services:
 
     Redking\ParseBundle\Security\EncryptionService: '@doctrine.parse.encryption_service'
 
+    # Encrypted routing
+    doctrine.parse.encrypted_url_generator:
+        class: Redking\ParseBundle\Routing\EncryptedUrlGenerator
+        arguments:
+            - "@router"
+            - "@doctrine.parse.encryption_service"
+        public: false
+
+    Redking\ParseBundle\Routing\EncryptedUrlGenerator: '@doctrine.parse.encrypted_url_generator'
+
+    doctrine.parse.encrypted_id_value_resolver:
+        class: Redking\ParseBundle\ArgumentResolver\EncryptedIdValueResolver
+        arguments:
+            - "@redking_parse.manager"
+            - "@doctrine.parse.encryption_service"
+        tags:
+            - controller.argument_value_resolver:
+                name: Redking\ParseBundle\ArgumentResolver\EncryptedIdValueResolver
+                priority: 111
+
+    doctrine.parse.twig.encrypted_url_extension:
+        class: Redking\ParseBundle\Twig\EncryptedUrlExtension
+        arguments:
+            - "@doctrine.parse.encrypted_url_generator"
+        tags:
+            - { name: twig.extension }
+
 
