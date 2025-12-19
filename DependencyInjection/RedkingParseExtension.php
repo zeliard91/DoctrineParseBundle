@@ -157,6 +157,14 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         $omDef->setFactory(['Redking\ParseBundle\ObjectManager', 'create']);
         $omDef->addTag('doctrine_parse.object_manager');
         $omDef->setPublic(true);
+
+        // Initialize EncryptionService for EncryptedStringType
+        if ($container->hasDefinition('doctrine.parse.encryption_service')) {
+            $omDef->addMethodCall('initializeEncryptionType', [
+                new Reference('doctrine.parse.encryption_service')
+            ]);
+        }
+
         $container->setDefinition('redking_parse.manager', $omDef);
 
         $container->setAlias('doctrine.parse.object_manager', 'redking_parse.manager');

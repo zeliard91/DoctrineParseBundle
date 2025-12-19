@@ -132,17 +132,18 @@ class PostRepository extends ObjectRepository
 
 ## Attribute Types
 
-The `field` type can be one the following : 
+The `field` type can be one of the built-in types provided by the bundle.
 
-- string
-- integer
-- float
-- boolean
-- date
-- array (simple collection)
-- hash (key-value array)
-- geopoint ([Parse\ParseGeoPoint](https://github.com/ParsePlatform/parse-php-sdk/blob/master/src/Parse/ParseGeoPoint.php))
-- file (store the content of a file in Parse)
+For a complete list of all available types with detailed examples and usage information, see the [**Field Types documentation**](types.md).
+
+**Quick reference:**
+- `string` - Text values
+- `encrypted_string` - Automatically encrypted strings (emails, SSN, etc.)
+- `integer` / `float` / `boolean` - Numeric and boolean values
+- `date` - DateTime objects
+- `array` / `hash` - Collections and key-value data
+- `geopoint` - Geographic coordinates
+- `file` - File content storage
 
 
 ## Relations between objects

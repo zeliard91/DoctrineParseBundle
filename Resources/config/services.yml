@@ -13,6 +13,10 @@ parameters:
     doctrine_parse.fixtures_dirs: []
     doctrine_parse.session_storage.class: 'Redking\ParseBundle\Bridge\Parse\Storage\ParseSessionStorage'
     doctrine.parse.doctrine_cache_warmer.class: 'Redking\ParseBundle\CacheWarmer\DoctrineCacheWarmer'
+    # Encryption parameters
+    doctrine.parse.encryption_key: '%env(default:kernel.secret:string:APP_ENCRYPTION_KEY)%'
+    doctrine.parse.hmac_key: '%env(default:kernel.secret:string:APP_HMAC_KEY)%'
+    doctrine.parse.encryption_encoding: 'base64'
     # Doctrine cache implementations
     doctrine.parse.cache.array.class: Doctrine\Common\Cache\ArrayCache
     doctrine.parse.cache.apc.class: Doctrine\Common\Cache\ApcCache
@@ -150,5 +154,16 @@ services:
             - controller.argument_value_resolver:
                 name: Redking\ParseBundle\ArgumentResolver\ParseObjectValueResolver
                 priority: 110
+
+    # Encryption service
+    doctrine.parse.encryption_service:
+        class: Redking\ParseBundle\Security\EncryptionService
+        arguments:
+            - "%doctrine.parse.encryption_key%"
+            - "%doctrine.parse.hmac_key%"
+            - "%doctrine.parse.encryption_encoding%"
+        public: false
+
+    Redking\ParseBundle\Security\EncryptionService: '@doctrine.parse.encryption_service'
 
 

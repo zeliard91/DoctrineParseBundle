@@ -11,6 +11,8 @@ use Parse\ParseStorageInterface;
 use Redking\ParseBundle\Mapping\ClassMetadata;
 use Redking\ParseBundle\Mapping\ClassMetadataFactory;
 use Redking\ParseBundle\Proxy\ProxyFactory;
+use Redking\ParseBundle\Security\EncryptionService;
+use Redking\ParseBundle\Types\EncryptedStringType;
 
 class ObjectManager implements BaseObjectManager
 {
@@ -95,6 +97,19 @@ class ObjectManager implements BaseObjectManager
     public static function create(Configuration $config = null, EventManager $eventManager = null, ParseStorageInterface $parseStorage = null): self
     {
         return new static($config, $eventManager, $parseStorage);
+    }
+
+    /**
+     * Initialize EncryptionService for EncryptedStringType
+     *
+     * This method is called by the DI container to inject the encryption service
+     * into the EncryptedStringType class.
+     *
+     * @param EncryptionService $encryptionService
+     */
+    public function initializeEncryptionType(EncryptionService $encryptionService): void
+    {
+        EncryptedStringType::setEncryptionService($encryptionService);
     }
 
     /**

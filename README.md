@@ -16,6 +16,7 @@ in this bundle :
 - [**Installation**](Resources/doc/installation.md)
 - [**Configuration**](Resources/doc/configuration.md)
 - [**Mapping**](Resources/doc/mapping.md)
+- [**Field Types**](Resources/doc/types.md)
 - [**Persistence**](Resources/doc/persistence.md)
 - [**Events**](Resources/doc/events.md)
 - [**QueryBuilder**](Resources/doc/query_builder.md)
