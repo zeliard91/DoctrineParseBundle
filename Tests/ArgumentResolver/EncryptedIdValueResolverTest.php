@@ -3,7 +3,6 @@
 namespace Redking\ParseBundle\Tests\ArgumentResolver;
 
 use PHPUnit\Framework\TestCase;
-use Redking\ParseBundle\ArgumentResolver\EncryptedIdValueResolver;
 use Redking\ParseBundle\Attribute\EncryptedId;
 use Redking\ParseBundle\ObjectManager;
 use Redking\ParseBundle\ObjectRepository;
@@ -16,7 +15,7 @@ class EncryptedIdValueResolverTest extends TestCase
 {
     private EncryptionService $encryptionService;
     private ObjectManager $om;
-    private EncryptedIdValueResolver $resolver;
+    private $resolver;
 
     public function setUp(): void
     {
@@ -27,7 +26,21 @@ class EncryptedIdValueResolverTest extends TestCase
         );
 
         $this->om = $this->createMock(ObjectManager::class);
-        $this->resolver = new EncryptedIdValueResolver($this->om, $this->encryptionService);
+
+        // Use the appropriate resolver based on Symfony version
+        if (interface_exists('Symfony\Component\HttpKernel\Controller\ValueResolverInterface')) {
+            // Symfony 6.2+
+            $this->resolver = new \Redking\ParseBundle\ArgumentResolver\EncryptedIdValueResolver(
+                $this->om,
+                $this->encryptionService
+            );
+        } else {
+            // Symfony 5.4
+            $this->resolver = new \Redking\ParseBundle\ArgumentResolver\LegacyEncryptedIdValueResolver(
+                $this->om,
+                $this->encryptionService
+            );
+        }
     }
 
     public function testResolveWithEncryptedId(): void
