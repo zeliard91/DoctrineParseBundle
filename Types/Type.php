@@ -40,6 +40,7 @@ abstract class Type
     const INTEGER = 'integer';
     const FLOAT = 'float';
     const STRING = 'string';
+    const ENCRYPTED_STRING = 'encrypted_string';
     const DATE = 'date';
     const TARRAY = 'array';
     const FILE = 'file';
@@ -74,6 +75,7 @@ abstract class Type
         self::INTEGER => 'Redking\ParseBundle\Types\IntType',
         self::FLOAT => 'Redking\ParseBundle\Types\FloatType',
         self::STRING => 'Redking\ParseBundle\Types\StringType',
+        self::ENCRYPTED_STRING => 'Redking\ParseBundle\Types\EncryptedStringType',
         self::DATE => 'Redking\ParseBundle\Types\DateType',
         self::TARRAY => 'Redking\ParseBundle\Types\ArrayType',
         self::FILE => 'Redking\ParseBundle\Types\FileType',

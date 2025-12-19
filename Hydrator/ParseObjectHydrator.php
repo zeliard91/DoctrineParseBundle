@@ -66,12 +66,17 @@ class ParseObjectHydrator
             if ($data->has($mapping['name']) && !isset($mapping['reference'])) {
                 if ($mapping['type'] === Type::GEOPOINT && null !== $data->get($mapping['name'])) {
                     $this->class->reflFields[$key]->setValue($object, clone $data->get($mapping['name']));
+                } elseif ($mapping['type'] === Type::ENCRYPTED_STRING) {
+                    // Decrypt encrypted string field
+                    $type = \Redking\ParseBundle\Types\Type::getType(Type::ENCRYPTED_STRING);
+                    $decrypted = $type->convertToPHPValue($data->get($mapping['name']));
+                    $this->class->reflFields[$key]->setValue($object, $decrypted);
                 } else {
                     $this->class->reflFields[$key]->setValue($object, $data->get($mapping['name']));
                 }
             }
             // reset value if doctrine refresh
-            elseif (isset($hints['doctrine.refresh']) 
+            elseif (isset($hints['doctrine.refresh'])
                 && !in_array($key, ['id', 'createdAt', 'updatedAt'])
                 && !isset($mapping['reference'])
                 && null !== $this->class->reflFields[$key]->getValue($object)) {

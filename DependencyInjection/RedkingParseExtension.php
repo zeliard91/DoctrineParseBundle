@@ -157,12 +157,21 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         $omDef->setFactory(['Redking\ParseBundle\ObjectManager', 'create']);
         $omDef->addTag('doctrine_parse.object_manager');
         $omDef->setPublic(true);
+
+        // Initialize EncryptionService for EncryptedStringType
+        if ($container->hasDefinition('doctrine.parse.encryption_service')) {
+            $omDef->addMethodCall('initializeEncryptionType', [
+                new Reference('doctrine.parse.encryption_service')
+            ]);
+        }
+
         $container->setDefinition('redking_parse.manager', $omDef);
 
         $container->setAlias('doctrine.parse.object_manager', 'redking_parse.manager');
         $container->getAlias('doctrine.parse.object_manager')->setPublic(true);
 
         $this->loadEntityValueResolverServices($container, $config);
+        $this->loadEncryptedIdValueResolver($container);
     }
 
     /**
@@ -419,5 +428,42 @@ class RedkingParseExtension extends AbstractDoctrineExtension
             null,
             $controllerResolverDefaults['disabled'] ?? false,
         ]));
+    }
+
+    /**
+     * Load the appropriate EncryptedIdValueResolver based on Symfony version
+     */
+    private function loadEncryptedIdValueResolver(ContainerBuilder $container): void
+    {
+        // Check if ValueResolverInterface exists (Symfony 6.2+)
+        if (interface_exists('Symfony\Component\HttpKernel\Controller\ValueResolverInterface')) {
+            // Use modern ValueResolverInterface (Symfony 6.2+)
+            $resolverDef = new Definition(
+                'Redking\ParseBundle\ArgumentResolver\EncryptedIdValueResolver',
+                [
+                    new Reference('redking_parse.manager'),
+                    new Reference('doctrine.parse.encryption_service')
+                ]
+            );
+            $resolverDef->addTag('controller.argument_value_resolver', [
+                'name' => 'Redking\ParseBundle\ArgumentResolver\EncryptedIdValueResolver',
+                'priority' => 111
+            ]);
+        } else {
+            // Use legacy ArgumentValueResolverInterface (Symfony 5.4)
+            $resolverDef = new Definition(
+                'Redking\ParseBundle\ArgumentResolver\LegacyEncryptedIdValueResolver',
+                [
+                    new Reference('redking_parse.manager'),
+                    new Reference('doctrine.parse.encryption_service')
+                ]
+            );
+            $resolverDef->addTag('controller.argument_value_resolver', [
+                'priority' => 111
+            ]);
+        }
+
+        $resolverDef->setPublic(false);
+        $container->setDefinition('doctrine.parse.encrypted_id_value_resolver', $resolverDef);
     }
 }

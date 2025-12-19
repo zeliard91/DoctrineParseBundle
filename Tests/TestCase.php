@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase as BaseTestCase;
 use Redking\ParseBundle\Configuration;
 use Redking\ParseBundle\Mapping\Driver\AttributeDriver;
 use Redking\ParseBundle\ObjectManager;
+use Redking\ParseBundle\Security\EncryptionService;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -53,6 +54,13 @@ abstract class TestCase extends BaseTestCase
         $eventManager = new EventManager();
         $storage = new ParseMemoryStorage();
         $om = new ObjectManager($config, $eventManager, $storage);
+
+        // Initialize EncryptionService for tests
+        $encryptionService = new EncryptionService(
+            'test_encryption_key_32_bytes_for_tests!',
+            'test_hmac_key_32_bytes_for_tests!!'
+        );
+        $om->initializeEncryptionType($encryptionService);
 
         return $om;
     }
