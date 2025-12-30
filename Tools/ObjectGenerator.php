@@ -78,6 +78,9 @@ class ObjectGenerator
     /** Whether or not to override parent class __toString */
     private $overrideToString = false;
 
+    /** Additionnal traits */
+    private $additionnalTraits = [];
+
     protected $typeAlias = array(
         Type::BOOLEAN => 'bool',
         Type::DATE => '\DateTime',
@@ -86,6 +89,7 @@ class ObjectGenerator
         Type::FILE => '\Parse\ParseFile',
         Type::TOBJECT => 'array',
         Type::HASH => 'array',
+        Type::ENCRYPTED_STRING => 'string',
     );
 
     private static $classTemplate =
@@ -408,6 +412,16 @@ public function <methodName>()
         $this->overrideToString = $overrideToString;
     }
 
+    public function setAdditionnalTraits(array $additionnalTraits)
+    {
+        $this->additionnalTraits = $additionnalTraits;
+    }
+
+    public function getAdditionnalTraits(): array
+    {
+        return $this->additionnalTraits;
+    }
+
     /**
      * @param string $type
      *
@@ -485,6 +499,12 @@ public function <methodName>()
             $traits[] = $this->spaces.'use \Redking\ParseBundle\ACLTrait;'."\n";
         } elseif ($this->regenerateObjectIfExists && !in_array('Redking\\ParseBundle\\ACLTrait', $existing_traits)) {
             $traits[] = $this->spaces.'use \Redking\ParseBundle\ACLTrait;'."\n";
+        }
+
+        foreach ($this->getAdditionnalTraits() as $additionnalTrait) {
+            if (!in_array($additionnalTrait, $existing_traits)) {
+                $traits[] = $this->spaces . 'use ' . $additionnalTrait . ";\n";
+            }
         }
 
         return implode("\n\n", $traits);
