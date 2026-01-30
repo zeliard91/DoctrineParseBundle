@@ -92,6 +92,10 @@ class AttributeDriver implements MappingDriver
             throw MappingException::classIsNotAValidDocument($className);
         }
 
+        if ($objectAttribute instanceof ORM\MappedSuperclass) {
+            $metadata->isMappedSuperclass = true;
+        }
+
         if (isset($objectAttribute->collection)) {
             $metadata->setCollection($objectAttribute->collection);
         }
