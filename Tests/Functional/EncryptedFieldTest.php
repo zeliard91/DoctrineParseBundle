@@ -171,4 +171,21 @@ class EncryptedFieldTest extends \Redking\ParseBundle\Tests\TestCase
 
         $this->assertEquals('Données sensibles avec accents: éèêë àâä 中文 العربية', $retrieved->getSecretNote());
     }
+
+    public function testCheckNoChange()
+    {
+        $doc = new SecureDocument();
+        $doc->setTitle('My Test');
+        $doc->setSsn('Super secret');
+
+        $this->om->persist($doc);
+        $this->om->flush();
+        $this->om->detach($doc);
+
+        $retrieved = $this->om->getRepository(SecureDocument::class)->find($doc->getId());
+
+        $this->om->getUnitOfWork()->computeChangeSets();
+        $changeSets = $this->om->getUnitOfWork()->getObjectChangeSet($retrieved);
+        $this->assertEmpty($changeSets, 'Check no UnitOfWork changes for freshly retrieved object with encryted field');
+    }
 }

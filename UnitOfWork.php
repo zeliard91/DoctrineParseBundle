@@ -1590,10 +1590,12 @@ class UnitOfWork implements PropertyChangedListener
                     $actualData->set($class->getNameOfField($name), (string)$value);
                 }
                 // Encrypt string if needed
-                elseif ($class->getTypeOfField($name) === Type::ENCRYPTED_STRING) {
+                elseif ($class->getTypeOfField($name) === Type::ENCRYPTED_STRING && null !== $value) {
                     $type = \Redking\ParseBundle\Types\Type::getType(Type::ENCRYPTED_STRING);
-                    $encrypted = $type->convertToDatabaseValue($value);
-                    $actualData->set($class->getNameOfField($name), $encrypted);
+                    if ($value !== $type->convertToPHPValue($actualData->get($class->getNameOfField($name)))) {
+                        $encrypted = $type->convertToDatabaseValue($value);
+                        $actualData->set($class->getNameOfField($name), $encrypted);
+                    }
                 }
                 // Force integer if needed
                 elseif ($class->getTypeOfField($name) === Type::INTEGER && null !== $value) {
