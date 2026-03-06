@@ -23,6 +23,7 @@ final class ReferenceOne extends AbstractField
     public $discriminatorMap;
     public $defaultDiscriminatorValue;
     public $orphanRemoval;
+    public $fetch = null;
     public $inversedBy;
     public $mappedBy;
     public $repositoryMethod;
@@ -47,6 +48,7 @@ final class ReferenceOne extends AbstractField
         ?array $criteria = [],
         ?int $limit = null,
         ?int $skip = null,
+        ?string $fetch = null,
     ) {
         parent::__construct($name, ClassMetadata::ONE, $nullable);
 
@@ -63,5 +65,8 @@ final class ReferenceOne extends AbstractField
         $this->criteria = $criteria;
         $this->limit = $limit;
         $this->skip = $skip;
+        if ($fetch !== null) {
+            $this->fetch = constant('Redking\ParseBundle\Mapping\ClassMetadata::FETCH_' . strtoupper($fetch));
+        }
     }
 }

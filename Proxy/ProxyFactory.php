@@ -181,6 +181,56 @@ class ProxyFactory extends AbstractProxyFactory
     }
 
     /**
+     * Creates a lazy proxy for an inverse ReferenceOne (mappedBy) association.
+     * The actual query is deferred until the first property access on the proxy.
+     *
+     * @param string              $targetClass The target document class name.
+     * @param string              $mappedBy    The field name on the target that owns the relation.
+     * @param object              $owner       The owning-side object instance.
+     * @param \ReflectionProperty $ownerField  The reflection property on the owner to null out if not found.
+     */
+    public function getLazyReferenceOneProxy(
+        string $targetClass,
+        string $mappedBy,
+        object $owner,
+        \ReflectionProperty $ownerField
+    ): object {
+        $classMetadata = $this->om->getClassMetadata($targetClass);
+        $fqcn = ClassUtils::generateProxyClassName($targetClass, $this->proxyNs);
+
+        // Ensure the proxy class is loaded
+        if (!class_exists($fqcn, false)) {
+            $this->getProxy($targetClass, [$classMetadata->identifier => '__lazy_init__']);
+        }
+
+        $objectPersister = $this->uow->getObjectPersister($targetClass);
+
+        $initializer = function (BaseProxy $proxy) use (
+            $objectPersister, $classMetadata, $mappedBy, $owner, $ownerField
+        ) {
+            $proxy->__setInitializer(null);
+            $proxy->__setCloner(null);
+            if ($proxy->__isInitialized()) {
+                return;
+            }
+            $proxy->__setInitialized(true);
+
+            $loadedObject = $objectPersister->loadReference($mappedBy, $owner);
+
+            if (null !== $loadedObject) {
+                foreach ($classMetadata->reflFields as $refProp) {
+                    $refProp->setAccessible(true);
+                    $refProp->setValue($proxy, $refProp->getValue($loadedObject));
+                }
+            } else {
+                $ownerField->setValue($owner, null);
+            }
+        };
+
+        return new $fqcn($initializer, function (BaseProxy $proxy) {});
+    }
+
+    /**
      * Creates a closure capable of finalizing state a cloned proxy.
      *
      * @param \Doctrine\Persistence\Mapping\ClassMetadata $classMetadata

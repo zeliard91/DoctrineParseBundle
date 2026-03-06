@@ -91,13 +91,26 @@ class ParseObjectHydrator
                 
                 // load referenceOne
                 case ($assoc['type'] === ClassMetadata::ONE):
-                    if ( ! $assoc['isOwningSide']) {
+                    if (!$assoc['isOwningSide']) {
+                        if ($assoc['fetch'] === ClassMetadata::FETCH_LAZY) {
+                            // Create a lazy proxy: the query runs only on first property access
+                            $reflField = $this->class->reflFields[$field];
+                            $proxy = $this->om->getProxyFactory()->getLazyReferenceOneProxy(
+                                $assoc['targetDocument'],
+                                $assoc['mappedBy'],
+                                $object,
+                                $reflField
+                            );
+                            $reflField->setValue($object, $proxy);
+                        } else {
+                            // FETCH_EAGER: existing behaviour
+                            $targetObject = $this->om->getUnitOfWork()
+                                ->getObjectPersister($assoc['targetDocument'])
+                                ->loadReference($assoc['mappedBy'], $object);
 
-                        // Try to load the owning side
-                        $targetObject = $this->om->getUnitOfWork()->getObjectPersister($assoc['targetDocument'])->loadReference($assoc['mappedBy'], $object);
-
-                        if (null !== $targetObject) {
-                            $this->class->reflFields[$field]->setValue($object, $targetObject);
+                            if (null !== $targetObject) {
+                                $this->class->reflFields[$field]->setValue($object, $targetObject);
+                            }
                         }
                     }
 

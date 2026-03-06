@@ -623,9 +623,14 @@ class ClassMetadata implements BaseClassMetadata
                 $mapping['orphanRemoval'] = false;
             }
 
-            // Fetch mode. Default fetch mode to LAZY, if not set.
-            if ( ! isset($mapping['fetch'])) {
-                $mapping['fetch'] = self::FETCH_LAZY;
+            // Fetch mode. Default fetch mode to LAZY, except for inverse ReferenceOne (EAGER for BC).
+            if (!isset($mapping['fetch'])) {
+                if ($mapping['type'] === self::ONE
+                    && isset($mapping['isInverseSide']) && $mapping['isInverseSide']) {
+                    $mapping['fetch'] = self::FETCH_EAGER;
+                } else {
+                    $mapping['fetch'] = self::FETCH_LAZY;
+                }
             }
         }
 
