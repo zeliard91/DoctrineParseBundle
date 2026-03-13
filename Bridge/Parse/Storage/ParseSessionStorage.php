@@ -76,7 +76,7 @@ class ParseSessionStorage implements ParseStorageInterface
             return $this->session;
         }
         try {
-            if ($this->requestStack->getCurrentRequest()?->attributes->get('_stateless') === true) {
+            if (null === $this->requestStack->getCurrentRequest() || $this->requestStack->getCurrentRequest()->attributes->get('_stateless') === true) {
                 $this->session = new Session(new MockArraySessionStorage());
             } else {
                 $this->session = $this->requestStack->getSession();
