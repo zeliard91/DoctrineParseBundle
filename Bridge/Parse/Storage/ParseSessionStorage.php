@@ -5,8 +5,10 @@ namespace Redking\ParseBundle\Bridge\Parse\Storage;
 use Parse\ParseStorageInterface;
 use Symfony\Component\HttpFoundation\Exception\SessionNotFoundException;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\SessionFactoryInterface;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 use Symfony\Component\Security\Http\FirewallMapInterface;
 
 class ParseSessionStorage implements ParseStorageInterface
@@ -70,8 +72,17 @@ class ParseSessionStorage implements ParseStorageInterface
      */
     public function getSession(): SessionInterface
     {
+        if (null !== $this->session) {
+            return $this->session;
+        }
         try {
-            return null !== $this->session ? $this->session : $this->requestStack->getSession();
+            if ($this->requestStack->getCurrentRequest()?->attributes->get('_stateless') === true) {
+                $this->session = new Session(new MockArraySessionStorage());
+            } else {
+                $this->session = $this->requestStack->getSession();
+            }
+
+            return $this->session;
         } catch (SessionNotFoundException $e) {
             $this->session = $this->sessionStorageFactory->createSession();
 
