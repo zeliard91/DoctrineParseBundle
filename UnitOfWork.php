@@ -1445,6 +1445,9 @@ class UnitOfWork implements PropertyChangedListener
 
         // Look for changes in associations of the entity
         foreach ($class->associationMappings as $field => $assoc) {
+            if (!$assoc['isOwningSide']) {
+                continue; // Inverse side associations are read-only; skip cascade/state checks
+            }
             if (($val = $class->reflFields[$field]->getValue($object)) !== null) {
                 $this->computeAssociationChanges($assoc, $val, $class->getName());
                 if (!isset($this->objectChangeSets[$oid]) &&
@@ -2131,6 +2134,9 @@ class UnitOfWork implements PropertyChangedListener
 
         // Look for changes in associations of the entity
         foreach ($class->associationMappings as $field => $assoc) {
+            if (!$assoc['isOwningSide']) {
+                continue; // Inverse side associations are read-only; skip cascade/state checks
+            }
             if (($val = $class->reflFields[$field]->getValue($object)) !== null) {
                 $this->computeAssociationChanges($assoc, $val, $class->getName());
                 if ($assoc['isOwningSide'] &&
