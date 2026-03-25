@@ -73,7 +73,7 @@ class TestGeneration
     
     public function __toString()
     {
-        return $this->name."";
+        return str_replace(["\r\n","\n","\r"], " ", $this->name."");
     }
     
     public function getId(): null|string 
