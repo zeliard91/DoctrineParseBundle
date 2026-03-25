@@ -10,20 +10,20 @@ It has been made by adapting code from Doctrine ORM and MongoDB bundles so that 
 Documentation
 -------------
 
-The source of the documentation is stored in the `Resources/doc/` folder
-in this bundle : 
+The source of the documentation is stored in the `docs/` folder
+in this bundle :
 
-- [**Installation**](Resources/doc/installation.md)
-- [**Configuration**](Resources/doc/configuration.md)
-- [**Mapping**](Resources/doc/mapping.md)
-- [**Field Types**](Resources/doc/types.md)
-- [**Persistence**](Resources/doc/persistence.md)
-- [**Events**](Resources/doc/events.md)
-- [**QueryBuilder**](Resources/doc/query_builder.md)
-- [**Encrypted Routing**](Resources/doc/encrypted_routing.md)
-- [**Form Types**](Resources/doc/form_types.md)
-- [**Symfony Integration**](Resources/doc/symfony_integration.md)
-- [**3d Party Bundles**](Resources/doc/3rd_party.md)
+- [**Installation**](docs/installation.md)
+- [**Configuration**](docs/configuration.md)
+- [**Mapping**](docs/mapping.md)
+- [**Field Types**](docs/types.md)
+- [**Persistence**](docs/persistence.md)
+- [**Events**](docs/events.md)
+- [**QueryBuilder**](docs/query_builder.md)
+- [**Encrypted Routing**](docs/encrypted_routing.md)
+- [**Form Types**](docs/form_types.md)
+- [**Symfony Integration**](docs/symfony_integration.md)
+- [**3d Party Bundles**](docs/3rd_party.md)
 
 
 License
