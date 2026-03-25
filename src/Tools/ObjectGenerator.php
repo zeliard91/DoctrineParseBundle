@@ -161,7 +161,7 @@ public function <methodName>()
     private static $toStringMethodTemplate =
     'public function __toString()
 {
-<spaces>return <toStringCall>."";
+<spaces>return str_replace(["\r\n","\n","\r"], " ", <toStringCall>."");
 }
 ';
 
