@@ -1446,7 +1446,27 @@ class UnitOfWork implements PropertyChangedListener
         // Look for changes in associations of the entity
         foreach ($class->associationMappings as $field => $assoc) {
             if (!$assoc['isOwningSide']) {
-                continue; // Inverse side associations are read-only; skip cascade/state checks
+                // Inverse side is read-only for collection updates, but new objects
+                // without an identifier still need to be cascade-persisted if configured.
+                if ($assoc['isCascadePersist']) {
+                    $val = $class->reflFields[$field]->getValue($object);
+                    if ($val !== null) {
+                        $items = ($assoc['type'] === ClassMetadata::ONE)
+                            ? [$val]
+                            : ($val instanceof PersistentCollection ? $val->unwrap() : (array) $val);
+                        $targetClass = $this->om->getClassMetadata($assoc['targetDocument']);
+                        foreach ($items as $item) {
+                            $itemOid = spl_object_hash($item);
+                            if ($targetClass->getIdentifierObject($item) === null
+                                && !isset($this->objectInsertions[$itemOid])
+                            ) {
+                                $this->persistNew($targetClass, $item);
+                                $this->computeChangeSet($targetClass, $item);
+                            }
+                        }
+                    }
+                }
+                continue; // Inverse side: skip collection update tracking
             }
             if (($val = $class->reflFields[$field]->getValue($object)) !== null) {
                 $this->computeAssociationChanges($assoc, $val, $class->getName());
@@ -2135,7 +2155,27 @@ class UnitOfWork implements PropertyChangedListener
         // Look for changes in associations of the entity
         foreach ($class->associationMappings as $field => $assoc) {
             if (!$assoc['isOwningSide']) {
-                continue; // Inverse side associations are read-only; skip cascade/state checks
+                // Inverse side is read-only for collection updates, but new objects
+                // without an identifier still need to be cascade-persisted if configured.
+                if ($assoc['isCascadePersist']) {
+                    $val = $class->reflFields[$field]->getValue($object);
+                    if ($val !== null) {
+                        $items = ($assoc['type'] === ClassMetadata::ONE)
+                            ? [$val]
+                            : ($val instanceof PersistentCollection ? $val->unwrap() : (array) $val);
+                        $targetClass = $this->om->getClassMetadata($assoc['targetDocument']);
+                        foreach ($items as $item) {
+                            $itemOid = spl_object_hash($item);
+                            if ($targetClass->getIdentifierObject($item) === null
+                                && !isset($this->objectInsertions[$itemOid])
+                            ) {
+                                $this->persistNew($targetClass, $item);
+                                $this->computeChangeSet($targetClass, $item);
+                            }
+                        }
+                    }
+                }
+                continue; // Inverse side: skip collection update tracking
             }
             if (($val = $class->reflFields[$field]->getValue($object)) !== null) {
                 $this->computeAssociationChanges($assoc, $val, $class->getName());

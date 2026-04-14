@@ -18,7 +18,7 @@ class User
     #[ORM\Field(type: "date")]
     private $birthday;
 
-    #[ORM\ReferenceMany(targetDocument: "Redking\ParseBundle\Tests\Models\Blog\Post", mappedBy: "user")]
+    #[ORM\ReferenceMany(targetDocument: "Redking\ParseBundle\Tests\Models\Blog\Post", mappedBy: "user", cascade: "all")]
     private $posts;
 
     #[ORM\ReferenceMany(targetDocument: "Redking\ParseBundle\Tests\Models\Blog\Picture", cascade: "all", orphanRemoval: true, inversedBy: "users")]

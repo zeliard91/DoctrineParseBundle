@@ -154,4 +154,6 @@ As with Doctrine ORM, you can have bi-directionnal relations by defining the opt
 
 Cascading is also supported with the option `cascade=(all|remove|persist|merge|refresh|detach)`
 
+> **Note on `cascade: persist` on the inverse side (`mappedBy`):** only new objects (without an identifier) added to the collection will be automatically persisted on `flush()`. Changes to existing objects are not propagated from the inverse side — the owning side (`inversedBy`) is authoritative for updates.
+
 If you define the option `orphanRemoval` with `true`, the orphans of a relation can be removed.

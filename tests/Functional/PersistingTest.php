@@ -401,4 +401,51 @@ class PersistingTest extends \Redking\ParseBundle\Tests\TestCase
         $this->assertNotNull($picture);
         $this->assertNull($picture->getMedia());
     }
+
+    /**
+     * Regression test: adding a new entity to an inverse-side collection (cascade:all)
+     * of an already-managed parent must persist the new entity on flush(), without
+     * requiring an explicit $om->persist($child) call.
+     *
+     * Before the fix, computeChangeSets() skipped all inverse-side associations
+     * unconditionally, so the new child was never cascade-persisted and its ID
+     * remained null after flush().
+     */
+    public function testFlushCascadePersistOnInverseSideCollection(): void
+    {
+        // 1. Create and save a User (parent), then clear the UoW so it is re-loaded.
+        $user = new User();
+        $user->setPassword('p4ss');
+        $user->setName('InverseCascadeUser');
+        $this->om->persist($user);
+        $this->om->flush();
+        $this->om->clear();
+        $userId = $user->getId();
+        $this->assertNotNull($userId);
+
+        // 2. Reload the User — it is now a managed entity in the identity map.
+        $loaded = $this->om->getRepository(User::class)->find($userId);
+        $this->assertNotNull($loaded);
+
+        // 3. Add a new Post via the inverse-side helper without explicit persist().
+        //    addPost() calls $post->setUser($loaded) (owning side) then appends to
+        //    the inverse-side collection.
+        $post = new Post();
+        $post->setText('Post added via inverse-side cascade');
+        $loaded->addPost($post);
+
+        // 4. Flush — the Post must be inserted even though persist() was never called.
+        $this->om->flush();
+
+        $this->assertNotNull(
+            $post->getId(),
+            'New entity added to an inverse-side cascade:all collection must be saved to DB on flush()'
+        );
+
+        // 5. Verify the record was actually written to Parse.
+        $this->om->clear();
+        $saved = $this->om->getRepository(Post::class)->find($post->getId());
+        $this->assertNotNull($saved);
+        $this->assertEquals('Post added via inverse-side cascade', $saved->getText());
+    }
 }
