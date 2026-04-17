@@ -17,8 +17,11 @@ class WrappedParseException extends HttpException
 
         if ($previous instanceof ParseAggregateException) {
             foreach ($previous->getErrors() as $error) {
-                $message .= ' [' . $error['code'] . '] ' . $error['object']->getClassname() . 
-                    '(' . $error['object']->get('objectId') . ') : ' . $error['error'] . ' , ';
+                $message .= ' [' . ($error['code'] ?? -1) . '] ';
+                if (isset($error['object'])) {
+                    $message .= $error['object']->getClassname() . '(' . $error['object']->get('objectId') . ') : ';
+                }
+                $message .= ($error['error'] ?? 'unknown error') . ' , ';
             }
         }
 

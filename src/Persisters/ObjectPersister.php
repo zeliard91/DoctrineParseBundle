@@ -397,6 +397,15 @@ class ObjectPersister
         try {
             ParseObject::destroyAll($parseObjects, $this->om->isMasterRequest());
             $this->logQuery(['type' => 'remove', 'ids' => $objectIds]);
+        } catch (\Parse\ParseAggregateException $e) {
+            $this->queuedDelete = [];
+            // Code 101 = "Object not found": the object was already deleted,
+            // the end result is the same — treat it as a successful deletion.
+            $realErrors = array_filter($e->getErrors(), fn(array $error) => ($error['code'] ?? 0) !== 101);
+            if (!empty($realErrors)) {
+                throw new WrappedParseException($e);
+            }
+            $this->logQuery(['type' => 'remove', 'ids' => $objectIds]);
         } catch (\Parse\ParseException $e) {
             $this->queuedDelete = [];
             throw new WrappedParseException($e);
