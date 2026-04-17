@@ -1181,6 +1181,12 @@ class UnitOfWork implements PropertyChangedListener
             if (!in_array($oid, $deletedOids)) {
                 continue;
             }
+            // Guard: the OID (spl_object_id) can be reused by a new object of a different class
+            // after the original object was garbage-collected. Skip if this object is not of the
+            // expected class to avoid calling reflFields from a different ClassMetadata.
+            if ($this->om->getClassMetadata(get_class($object))->name !== $className) {
+                continue;
+            }
             unset(
                 $this->objectDeletions[$oid],
                 $this->objectIdentifiers[$oid],

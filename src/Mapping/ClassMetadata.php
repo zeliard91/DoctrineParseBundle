@@ -432,14 +432,12 @@ class ClassMetadata implements BaseClassMetadata
         $this->reflClass = new \ReflectionClass($this->name);
         $this->instantiator = $this->instantiator ?: new Instantiator();
 
+        $reflService = new RuntimeReflectionService();
         foreach ($this->fieldMappings as $field => $mapping) {
-            if (isset($mapping['declared']) && !trait_exists($mapping['declared'])) {
-                $reflField = new \ReflectionProperty($mapping['declared'], $field);
-            } else {
-                $reflField = $this->reflClass->getProperty($field);
-            }
-            $reflField->setAccessible(true);
-            $this->reflFields[$field] = $reflField;
+            $declaringClass = isset($mapping['declared']) && !trait_exists($mapping['declared'])
+                ? $mapping['declared']
+                : $this->name;
+            $this->reflFields[$field] = $reflService->getAccessibleProperty($declaringClass, $field);
         }
     }
 

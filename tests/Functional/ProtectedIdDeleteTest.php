@@ -83,6 +83,36 @@ class ProtectedIdDeleteTest extends \Redking\ParseBundle\Tests\TestCase
     }
 
     /**
+     * Reproduces the double-call scenario that caused "Cannot access protected property" in production.
+     *
+     * When ClassMetadata is loaded from Redis cache (AbstractClassMetadataFactory::getMetadataFor):
+     *   1. igbinary_unserialize() triggers __wakeup() → reflFields = RuntimeReflectionProperty (correct)
+     *   2. AbstractClassMetadataFactory then calls wakeupReflection() → overwrites reflFields
+     *
+     * Before the fix, wakeupReflection() used plain ReflectionProperty which could fail
+     * with "Cannot access protected property" in PHP 8.3 when setValue() is called on
+     * a protected property. After the fix, both paths use RuntimeReflectionProperty.
+     */
+    public function testWakeupReflectionAfterUnserializeDoesNotThrow(): void
+    {
+        $meta = $this->om->getClassMetadata(ProtectedIdModel::class);
+
+        // Step 1: Simulate Redis cache hit — unserialize triggers __wakeup()
+        $deserialized = unserialize(serialize($meta));
+
+        // Step 2: Simulate AbstractClassMetadataFactory calling wakeupReflection() after cache load
+        // This used to overwrite RuntimeReflectionProperty with plain ReflectionProperty
+        $deserialized->wakeupReflection();
+
+        $obj = new ProtectedIdModel();
+
+        // Must not throw "Cannot access protected property ProtectedIdModel::$id"
+        $deserialized->reflFields[$deserialized->identifier]->setValue($obj, null);
+
+        $this->assertNull($obj->getId());
+    }
+
+    /**
      * Registers a preRemove listener that removes screenshots before deleting
      * the parent object.
      */
