@@ -2,6 +2,7 @@
 
 namespace Redking\ParseBundle\Tests\Models\Blog;
 
+use Parse\ParseGeoPoint;
 use Redking\ParseBundle\Mapping\Annotations as ORM;
 
 #[ORM\ParseObject(collection: "_User")]
@@ -11,6 +12,9 @@ class User
 
     #[ORM\Field(type: "string", name: "username")]
     private $name;
+
+    #[ORM\Field(type: "geopoint")]
+    private ?ParseGeoPoint $location = null;
 
     #[ORM\Field(type: "string")]
     private $password;
@@ -47,6 +51,18 @@ class User
     public function getId()
     {
         return $this->id;
+    }
+
+    public function getLocation(): ?ParseGeoPoint
+    {
+        return $this->location;
+    }
+
+    public function setLocation(?ParseGeoPoint $location): self
+    {
+        $this->location = $location;
+
+        return $this;
     }
 
     public function getName()

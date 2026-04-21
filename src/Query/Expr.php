@@ -2,6 +2,7 @@
 
 namespace Redking\ParseBundle\Query;
 
+use Parse\ParseGeoPoint;
 use Redking\ParseBundle\Query;
 use Redking\ParseBundle\UnitOfWork;
 
@@ -275,5 +276,25 @@ class Expr
     {
         $this->query['$aggregate'] = $pipeline;
         return $this;
+    }
+
+    public function near(ParseGeoPoint $value)
+    {
+        return $this->operator('near', $value);
+    }
+
+    public function withinMiles(ParseGeoPoint $value, int $maxDistance)
+    {
+        return $this->operator('withinMiles', $value, $maxDistance);
+    }
+
+    public function withinKilometers(ParseGeoPoint $value, int $maxDistance)
+    {
+        return $this->operator('withinKilometers', $value, $maxDistance);
+    }
+
+    public function withinGeoBox(ParseGeoPoint $southWest, ParseGeoPoint $northEast)
+    {
+        return $this->operator('withinGeoBox', $southWest, $northEast);
     }
 }

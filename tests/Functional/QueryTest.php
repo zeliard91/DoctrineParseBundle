@@ -262,4 +262,158 @@ class QueryTest extends \Redking\ParseBundle\Tests\TestCase
 
     }
 
+    public function testNear()
+    {
+        // Paris
+        $userParis = new User();
+        $userParis->setPassword('p4ss');
+        $userParis->setName('Paris');
+        $userParis->setLocation(new ParseGeoPoint(48.8566, 2.3522));
+        $this->om->persist($userParis);
+
+        // Lyon
+        $userLyon = new User();
+        $userLyon->setPassword('p4ss');
+        $userLyon->setName('Lyon');
+        $userLyon->setLocation(new ParseGeoPoint(45.7640, 4.8357));
+        $this->om->persist($userLyon);
+
+        // New York
+        $userNY = new User();
+        $userNY->setPassword('p4ss');
+        $userNY->setName('NewYork');
+        $userNY->setLocation(new ParseGeoPoint(40.7128, -74.0060));
+        $this->om->persist($userNY);
+
+        $this->om->flush();
+
+        // Near Paris — results ordered by distance
+        $results = $this->getUserQB()
+            ->field('location')->near(new ParseGeoPoint(48.8566, 2.3522))
+            ->getQuery()
+            ->execute()
+        ;
+
+        $this->assertCount(3, $results);
+        $this->assertEquals('Paris', $results[0]->getName());
+    }
+
+    public function testWithinKilometers()
+    {
+        // Paris
+        $userParis = new User();
+        $userParis->setPassword('p4ss');
+        $userParis->setName('Paris');
+        $userParis->setLocation(new ParseGeoPoint(48.8566, 2.3522));
+        $this->om->persist($userParis);
+
+        // Lyon (~391 km from Paris)
+        $userLyon = new User();
+        $userLyon->setPassword('p4ss');
+        $userLyon->setName('Lyon');
+        $userLyon->setLocation(new ParseGeoPoint(45.7640, 4.8357));
+        $this->om->persist($userLyon);
+
+        // New York (~5837 km from Paris)
+        $userNY = new User();
+        $userNY->setPassword('p4ss');
+        $userNY->setName('NewYork');
+        $userNY->setLocation(new ParseGeoPoint(40.7128, -74.0060));
+        $this->om->persist($userNY);
+
+        $this->om->flush();
+
+        $results = $this->getUserQB()
+            ->field('location')->withinKilometers(new ParseGeoPoint(48.8566, 2.3522), 500)
+            ->getQuery()
+            ->execute()
+        ;
+
+        $this->assertCount(2, $results);
+        $names = array_map(fn($u) => $u->getName(), $results->toArray());
+        $this->assertContains('Paris', $names);
+        $this->assertContains('Lyon', $names);
+        $this->assertNotContains('NewYork', $names);
+    }
+
+    public function testWithinMiles()
+    {
+        // Paris
+        $userParis = new User();
+        $userParis->setPassword('p4ss');
+        $userParis->setName('Paris');
+        $userParis->setLocation(new ParseGeoPoint(48.8566, 2.3522));
+        $this->om->persist($userParis);
+
+        // Lyon (~243 miles from Paris)
+        $userLyon = new User();
+        $userLyon->setPassword('p4ss');
+        $userLyon->setName('Lyon');
+        $userLyon->setLocation(new ParseGeoPoint(45.7640, 4.8357));
+        $this->om->persist($userLyon);
+
+        // New York (~3627 miles from Paris)
+        $userNY = new User();
+        $userNY->setPassword('p4ss');
+        $userNY->setName('NewYork');
+        $userNY->setLocation(new ParseGeoPoint(40.7128, -74.0060));
+        $this->om->persist($userNY);
+
+        $this->om->flush();
+
+        $results = $this->getUserQB()
+            ->field('location')->withinMiles(new ParseGeoPoint(48.8566, 2.3522), 300)
+            ->getQuery()
+            ->execute()
+        ;
+
+        $this->assertCount(2, $results);
+        $names = array_map(fn($u) => $u->getName(), $results->toArray());
+        $this->assertContains('Paris', $names);
+        $this->assertContains('Lyon', $names);
+        $this->assertNotContains('NewYork', $names);
+    }
+
+    public function testWithinGeoBox()
+    {
+        // Paris — inside box
+        $userParis = new User();
+        $userParis->setPassword('p4ss');
+        $userParis->setName('Paris');
+        $userParis->setLocation(new ParseGeoPoint(48.8566, 2.3522));
+        $this->om->persist($userParis);
+
+        // Lyon — inside box
+        $userLyon = new User();
+        $userLyon->setPassword('p4ss');
+        $userLyon->setName('Lyon');
+        $userLyon->setLocation(new ParseGeoPoint(45.7640, 4.8357));
+        $this->om->persist($userLyon);
+
+        // New York — outside box
+        $userNY = new User();
+        $userNY->setPassword('p4ss');
+        $userNY->setName('NewYork');
+        $userNY->setLocation(new ParseGeoPoint(40.7128, -74.0060));
+        $this->om->persist($userNY);
+
+        $this->om->flush();
+
+        // Bounding box covering France roughly
+        $southWest = new ParseGeoPoint(43.0, -5.0);
+        $northEast = new ParseGeoPoint(51.0, 8.0);
+
+        $results = $this->getUserQB()
+            ->field('location')->withinGeoBox($southWest, $northEast)
+            ->getQuery()
+            ->execute()
+        ;
+
+        $this->assertCount(2, $results);
+        $names = array_map(fn($u) => $u->getName(), $results->toArray());
+        $this->assertContains('Paris', $names);
+        $this->assertContains('Lyon', $names);
+        $this->assertNotContains('NewYork', $names);
+    }
+
 }

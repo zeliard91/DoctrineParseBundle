@@ -3,6 +3,7 @@
 namespace Redking\ParseBundle;
 
 use Doctrine\Common\Collections\Criteria;
+use Parse\ParseGeoPoint;
 use Parse\ParseServerInfo;
 use Redking\ParseBundle\Query\Expr;
 
@@ -532,5 +533,33 @@ class QueryBuilder
     public function getLimit(): ?int
     {
         return $this->query['limit'] ?? null;
+    }
+
+    public function near(ParseGeoPoint $value)
+    {
+        $this->expr->near($value);
+
+        return $this;
+    }
+
+    public function withinMiles(ParseGeoPoint $value, int $maxDistance)
+    {
+        $this->expr->withinMiles($value, $maxDistance);
+
+        return $this;
+    }
+
+    public function withinKilometers(ParseGeoPoint $value, int $maxDistance)
+    {
+        $this->expr->withinKilometers($value, $maxDistance);
+
+        return $this;
+    }
+
+    public function withinGeoBox(ParseGeoPoint $southWest, ParseGeoPoint $northEast)
+    {
+        $this->expr->withinGeoBox($southWest, $northEast);
+
+        return $this;
     }
 }
