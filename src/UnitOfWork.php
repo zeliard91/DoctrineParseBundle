@@ -244,6 +244,16 @@ class UnitOfWork implements PropertyChangedListener
     private $orphanRemovals = array();
 
     /**
+     * Re-entrancy depth of {@see commit()}. Listeners that trigger a nested
+     * $om->flush() (for instance from postUpdate) increase this counter while
+     * the outer commit is still running. We rely on it to avoid re-dispatching
+     * onFlush during the nested commit — otherwise listeners that iterate the
+     * scheduled-update set (such as Gedmo Loggable) re-process the outer
+     * commit's still-pending objects and produce duplicate log entries.
+     */
+    private int $commitDepth = 0;
+
+    /**
      * The ListenersInvoker used for dispatching events.
      *
      * @var \Redking\ParsBundle\Event\ListenersInvoker
@@ -917,6 +927,16 @@ class UnitOfWork implements PropertyChangedListener
      * @throws \Exception
      */
     public function commit($object = null)
+    {
+        $this->commitDepth++;
+        try {
+            $this->doCommit($object);
+        } finally {
+            $this->commitDepth--;
+        }
+    }
+
+    private function doCommit($object = null)
     {
         // Raise preFlush
         if ($this->evm->hasListeners(Events::preFlush)) {
@@ -1738,6 +1758,14 @@ class UnitOfWork implements PropertyChangedListener
 
     private function dispatchOnFlushEvent()
     {
+        // Nested commits (typically triggered from a postUpdate listener that
+        // calls $om->flush($otherObject)) must not re-dispatch onFlush:
+        // listeners that iterate the scheduled-update set would otherwise see
+        // the OUTER commit's still-pending objects and re-process them, which
+        // produces duplicated log entries / phantom updates.
+        if ($this->commitDepth > 1) {
+            return;
+        }
         if ($this->evm->hasListeners(Events::onFlush)) {
             $this->evm->dispatchEvent(Events::onFlush, new OnFlushEventArgs($this->om));
         }
@@ -1745,6 +1773,9 @@ class UnitOfWork implements PropertyChangedListener
 
     private function dispatchPostFlushEvent()
     {
+        if ($this->commitDepth > 1) {
+            return;
+        }
         if ($this->evm->hasListeners(Events::postFlush)) {
             $this->evm->dispatchEvent(Events::postFlush, new PostFlushEventArgs($this->om));
         }
