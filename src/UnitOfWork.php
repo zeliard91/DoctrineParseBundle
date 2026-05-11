@@ -989,6 +989,16 @@ class UnitOfWork implements PropertyChangedListener
 
         $this->dispatchPostFlushEvent();
 
+        // All writes (regular + extra updates) are now persisted. Take a fresh
+        // snapshot of every collection that was processed during this commit so
+        // that a subsequent computeChangeSet / recomputeSingleObjectChangeSet
+        // does not detect them as dirty again and re-trigger phantom updates.
+        foreach ($this->visitedCollections as $coll) {
+            if ($coll instanceof PersistentCollection && $coll->isDirty()) {
+                $coll->takeSnapshot();
+            }
+        }
+
         // Clear up
         $this->objectInsertions =
         $this->objectUpdates =
