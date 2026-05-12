@@ -60,6 +60,57 @@ class NestedFlushOnFlushTest extends \Redking\ParseBundle\Tests\TestCase
     }
 
     /**
+     * A nested commit (triggered from a postUpdate listener via
+     * $om->flush($otherObject)) MUST NOT wipe the outer commit's in-flight UoW
+     * state — in particular objectChangeSets of objects whose postUpdate
+     * dispatch is still in progress. This is what allows listeners running
+     * after the nested flush (e.g. Gedmo Loggable's postUpdate hook that
+     * re-reads the final changeset) to see the up-to-date data.
+     *
+     * Without this guard, the nested commit's "Clear up" block at the end of
+     * commit() would reset $objectChangeSets, leaving subsequent postUpdate
+     * listeners with an empty changeSet.
+     */
+    public function testNestedCommitPreservesOuterCommitChangeSet(): void
+    {
+        $listener = new NestedFlushPostUpdateCapturingListener();
+        $this->om->getEventManager()->addEventListener(
+            Events::postUpdate,
+            $listener
+        );
+
+        $user = new User();
+        $user->setName('Eve');
+        $user->setPassword('p4ss');
+        $this->om->persist($user);
+        $this->om->flush();
+        $this->om->clear();
+
+        /** @var User $user */
+        $user = $this->om->getRepository(User::class)->findOneBy(['name' => 'Eve']);
+        $user->setName('Bob');
+
+        $this->om->flush();
+
+        self::assertNotNull(
+            $listener->capturedChangeSet,
+            'postUpdate listener must have captured the changeSet after nested flush'
+        );
+        // The User entity's `name` property maps to the Parse field `username`,
+        // and getObjectChangeSet returns the changeset keyed by storage field name.
+        self::assertArrayHasKey(
+            'username',
+            $listener->capturedChangeSet,
+            'The outer commit\'s changeSet must still be available after a nested flush triggered from postUpdate'
+        );
+        self::assertSame(
+            ['Eve', 'Bob'],
+            $listener->capturedChangeSet['username'],
+            'The captured changeSet must reflect the outer commit\'s update'
+        );
+    }
+
+    /**
      * Guards against a regression where the commit-depth counter would not be
      * reset between top-level flushes: each subsequent flush() in the same
      * request must still dispatch onFlush.
@@ -133,5 +184,40 @@ class NestedFlushListener
     public function resetNestedFlushGuard(): void
     {
         $this->nestedFlushDone = false;
+    }
+}
+
+/**
+ * postUpdate listener that triggers a nested flush AND then re-reads the
+ * outer commit's changeSet, to verify the nested commit didn't wipe it.
+ */
+class NestedFlushPostUpdateCapturingListener
+{
+    public ?array $capturedChangeSet = null;
+    private bool $nestedFlushDone = false;
+
+    public function postUpdate(LifecycleEventArgs $args): void
+    {
+        if ($this->nestedFlushDone) {
+            return;
+        }
+        $object = $args->getObject();
+        if (!$object instanceof User || $object->getName() !== 'Bob') {
+            return;
+        }
+        $this->nestedFlushDone = true;
+
+        $om = $args->getObjectManager();
+
+        // Trigger a nested flush via a different object
+        $picture = new Picture();
+        $picture->setFile('nested-from-capturing-listener.jpg');
+        $om->persist($picture);
+        $om->flush($picture);
+
+        // After the nested flush returns, the outer commit's changeSet for
+        // $object must still be intact (the nested commit's cleanup must not
+        // have wiped it).
+        $this->capturedChangeSet = $om->getUnitOfWork()->getObjectChangeSet($object);
     }
 }

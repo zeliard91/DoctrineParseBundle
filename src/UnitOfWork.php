@@ -1019,18 +1019,30 @@ class UnitOfWork implements PropertyChangedListener
             }
         }
 
-        // Clear up
-        $this->objectInsertions =
-        $this->objectUpdates =
-        $this->objectDeletions =
-        $this->extraUpdates =
-        $this->objectChangeSets =
-        $this->collectionChangeSets =
-        $this->collectionUpdates =
-        $this->collectionDeletions =
-        $this->visitedCollections =
-        $this->scheduledForDirtyCheck =
-        $this->orphanRemovals = array();
+        // Clear up — only at the outermost commit level.
+        // A nested commit (e.g. $om->flush($otherObject) called from a postUpdate
+        // listener) MUST NOT wipe the outer commit's in-flight UoW state, in
+        // particular objectChangeSets of objects whose postUpdate dispatch is
+        // still in progress in the outer commit. Listeners running after the
+        // nested flush (e.g. Gedmo Loggable's postUpdate hook that re-reads the
+        // final changeset to enrich its LogEntry) rely on it being intact.
+        // executeInserts / executeUpdates / executeDeletions already unset
+        // their own per-object entries from $objectInsertions / $objectUpdates /
+        // $objectDeletions, so leaving the arrays untouched here in nested
+        // commits is safe — the outer commit will perform the final cleanup.
+        if ($this->commitDepth <= 1) {
+            $this->objectInsertions =
+            $this->objectUpdates =
+            $this->objectDeletions =
+            $this->extraUpdates =
+            $this->objectChangeSets =
+            $this->collectionChangeSets =
+            $this->collectionUpdates =
+            $this->collectionDeletions =
+            $this->visitedCollections =
+            $this->scheduledForDirtyCheck =
+            $this->orphanRemovals = array();
+        }
     }
 
     /**
