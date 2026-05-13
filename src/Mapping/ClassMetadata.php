@@ -408,6 +408,29 @@ class ClassMetadata implements BaseClassMetadata
     }
 
     /**
+     * Gets the value of a field on the given object.
+     *
+     * Mirrors {@see \Doctrine\ORM\Mapping\ClassMetadata::getFieldValue()} and
+     * {@see \Doctrine\ODM\MongoDB\Mapping\ClassMetadata::getFieldValue()} so that
+     * generic code targeting the persistence interface (e.g. Gedmo listeners)
+     * can use a single accessor across ORM/ODM/Parse.
+     */
+    public function getFieldValue(object $object, string $field): mixed
+    {
+        return $this->reflFields[$field]->getValue($object);
+    }
+
+    /**
+     * Sets the value of a field on the given object.
+     *
+     * @see self::getFieldValue() for rationale.
+     */
+    public function setFieldValue(object $object, string $field, mixed $value): void
+    {
+        $this->reflFields[$field]->setValue($object, $value);
+    }
+
+    /**
      * Initializes a new ClassMetadata instance that will hold the object-relational mapping
      * metadata of the class with the given name.
      *
