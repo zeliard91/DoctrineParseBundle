@@ -13,7 +13,7 @@ class Registry extends ManagerRegistry
     {
         $this->container = $container;
 
-        parent::__construct('Parse', [], ['default' => $manager_name], 'default', 'default', 'Redking\ParseBundle\Proxy\Proxy');
+        parent::__construct('Parse', [], ['default' => $manager_name], 'default', 'default', \Doctrine\Persistence\Proxy::class);
     }
     /**
      * Resolves a registered namespace alias to the full namespace.

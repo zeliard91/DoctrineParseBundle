@@ -2,7 +2,6 @@
 
 namespace Redking\ParseBundle;
 
-use Doctrine\Common\Proxy\AbstractProxyFactory;
 use Redking\ParseBundle\DependencyInjection\Compiler\CacheCompatibilityPass;
 use Redking\ParseBundle\DependencyInjection\Compiler\CreateHydratorDirectoryPass;
 use Redking\ParseBundle\DependencyInjection\Compiler\CreateProxyDirectoryPass;

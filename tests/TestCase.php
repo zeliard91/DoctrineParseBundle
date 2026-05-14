@@ -41,6 +41,9 @@ abstract class TestCase extends BaseTestCase
         $config->setAutoGenerateProxyClasses(Configuration::AUTOGENERATE_EVAL);
         $config->setProxyDir(\sys_get_temp_dir().'/Proxies');
         $config->setProxyNamespace('ParseProxies');
+        if (PHP_VERSION_ID >= 80400 && getenv('DOCTRINE_PARSE_USE_LAZY_GHOST') === '1') {
+            $config->setUseLazyGhostObject(true);
+        }
         $config->setConnectionParameters([
             'server_url' => getenv('DOCTRINE_PARSE_SERVER_URL'),
             'app_id' => getenv('DOCTRINE_PARSE_APP_ID'),

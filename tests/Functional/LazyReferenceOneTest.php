@@ -2,7 +2,6 @@
 
 namespace Redking\ParseBundle\Tests\Functional;
 
-use Doctrine\Common\Proxy\Proxy;
 use Redking\ParseBundle\Tests\Models\Blog\Article;
 use Redking\ParseBundle\Tests\Models\Blog\BankOperation;
 use Redking\ParseBundle\Tests\Models\Blog\Invoice;
@@ -40,9 +39,9 @@ class LazyReferenceOneTest extends \Redking\ParseBundle\Tests\TestCase
 
         $proxy = $loaded->getBankOperation();
 
-        // The field must hold a proxy, not null and not a fully loaded object
-        $this->assertInstanceOf(Proxy::class, $proxy, 'bankOperation must be a lazy proxy');
-        $this->assertFalse($proxy->__isInitialized(), 'The proxy must not be initialized at hydration time');
+        // The field must hold a lazy ghost, not null and not a fully loaded object
+        $this->assertInstanceOf(BankOperation::class, $proxy, 'bankOperation must be a BankOperation instance');
+        $this->assertTrue($this->om->isUninitializedObject($proxy), 'The lazy ghost must not be initialized at hydration time');
     }
 
     /**
@@ -66,13 +65,13 @@ class LazyReferenceOneTest extends \Redking\ParseBundle\Tests\TestCase
         $loaded = $this->om->getRepository(Invoice::class)->findOneByReference('INV-002');
         $proxy = $loaded->getBankOperation();
 
-        $this->assertInstanceOf(Proxy::class, $proxy);
-        $this->assertFalse($proxy->__isInitialized(), 'Not yet initialized before the first access');
+        $this->assertInstanceOf(BankOperation::class, $proxy);
+        $this->assertTrue($this->om->isUninitializedObject($proxy), 'Not yet initialized before the first access');
 
         // First access: triggers the query
         $amount = $proxy->getAmount();
 
-        $this->assertTrue($proxy->__isInitialized(), 'Proxy initialized after the first access');
+        $this->assertFalse($this->om->isUninitializedObject($proxy), 'Proxy initialized after the first access');
         $this->assertEquals(150.00, $amount, 'Loaded data is correct');
     }
 
@@ -91,10 +90,10 @@ class LazyReferenceOneTest extends \Redking\ParseBundle\Tests\TestCase
         $loaded = $this->om->getRepository(Invoice::class)->findOneByReference('INV-003');
         $this->assertNotNull($loaded);
 
-        // At hydration, a proxy is still injected
+        // At hydration, a lazy ghost is still injected
         $proxy = $loaded->getBankOperation();
-        $this->assertInstanceOf(Proxy::class, $proxy, 'A proxy is injected even when no relation exists');
-        $this->assertFalse($proxy->__isInitialized());
+        $this->assertInstanceOf(BankOperation::class, $proxy, 'A lazy ghost is injected even when no relation exists');
+        $this->assertTrue($this->om->isUninitializedObject($proxy));
 
         // Accessing the proxy: no relation found -> the field is set to null
         $proxy->getAmount();
@@ -161,8 +160,8 @@ class LazyReferenceOneTest extends \Redking\ParseBundle\Tests\TestCase
 
         $proxy = $loadedTag->getArticle();
 
-        $this->assertInstanceOf(Proxy::class, $proxy, 'article must be a lazy proxy');
-        $this->assertFalse($proxy->__isInitialized(), 'The proxy must not be initialized at hydration time');
+        $this->assertInstanceOf(Article::class, $proxy, 'article must be an Article instance');
+        $this->assertTrue($this->om->isUninitializedObject($proxy), 'The lazy ghost must not be initialized at hydration time');
     }
 
     /**
@@ -186,13 +185,13 @@ class LazyReferenceOneTest extends \Redking\ParseBundle\Tests\TestCase
         $loadedTag = $this->om->getRepository(Tag::class)->findOneByName('symfony');
         $proxy = $loadedTag->getArticle();
 
-        $this->assertInstanceOf(Proxy::class, $proxy);
-        $this->assertFalse($proxy->__isInitialized());
+        $this->assertInstanceOf(Article::class, $proxy);
+        $this->assertTrue($this->om->isUninitializedObject($proxy));
 
         // First access: triggers the query via field('tags')->references(tag)
         $title = $proxy->getTitle();
 
-        $this->assertTrue($proxy->__isInitialized());
+        $this->assertFalse($this->om->isUninitializedObject($proxy));
         $this->assertEquals('Symfony in practice', $title);
     }
 
@@ -211,8 +210,8 @@ class LazyReferenceOneTest extends \Redking\ParseBundle\Tests\TestCase
         $this->assertNotNull($loadedTag);
 
         $proxy = $loadedTag->getArticle();
-        $this->assertInstanceOf(Proxy::class, $proxy);
-        $this->assertFalse($proxy->__isInitialized());
+        $this->assertInstanceOf(Article::class, $proxy);
+        $this->assertTrue($this->om->isUninitializedObject($proxy));
 
         // Access: no Article references this tag -> null
         $proxy->getTitle();
