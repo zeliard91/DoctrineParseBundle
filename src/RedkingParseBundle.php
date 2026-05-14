@@ -6,6 +6,7 @@ use Doctrine\Common\Proxy\AbstractProxyFactory;
 use Redking\ParseBundle\DependencyInjection\Compiler\CacheCompatibilityPass;
 use Redking\ParseBundle\DependencyInjection\Compiler\CreateHydratorDirectoryPass;
 use Redking\ParseBundle\DependencyInjection\Compiler\CreateProxyDirectoryPass;
+use Redking\ParseBundle\DependencyInjection\Compiler\EventSubscriberCompatibilityPass;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -22,6 +23,7 @@ class RedkingParseBundle extends Bundle
     public function build(ContainerBuilder $container)
     {
         $container->addCompilerPass(new CacheCompatibilityPass());
+        $container->addCompilerPass(new EventSubscriberCompatibilityPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION);
         $container->addCompilerPass(new RegisterEventListenersAndSubscribersPass('doctrine_parse.connections', 'redking_parse.event_manager', 'doctrine_parse'), PassConfig::TYPE_BEFORE_OPTIMIZATION);
         $container->addCompilerPass(new CreateProxyDirectoryPass(), PassConfig::TYPE_BEFORE_REMOVING);
         $container->addCompilerPass(new CreateHydratorDirectoryPass(), PassConfig::TYPE_BEFORE_REMOVING);
