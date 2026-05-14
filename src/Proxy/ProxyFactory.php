@@ -272,8 +272,54 @@ final class ProxyFactory
         $proxyShortName = substr($proxyClassName, strrpos($proxyClassName, '\\') + 1);
 
         $ghostBody = ProxyHelper::generateLazyGhost(new ReflectionClass($className));
+        $ghostBody = self::injectDoctrinePersistenceProxy($ghostBody);
 
         return sprintf("namespace %s;\n\nclass %s%s", $proxyNamespace, $proxyShortName, $ghostBody);
+    }
+
+    /**
+     * Adapts the var-exporter ghost body so the generated class also implements
+     * \Doctrine\Persistence\Proxy. The Symfony Bridge ManagerRegistry uses this
+     * interface as the marker to strip the proxy prefix in getManagerForClass().
+     *
+     * Also exposes setLazyObjectAsInitialized() as the public __setInitialized()
+     * method expected by Doctrine\Persistence\Reflection\RuntimeReflectionProperty,
+     * which otherwise silently no-ops when writing to a Proxy whose
+     * __isInitialized() returns false.
+     */
+    private static function injectDoctrinePersistenceProxy(string $ghostBody): string
+    {
+        $withInterface = str_replace(
+            'implements \Symfony\Component\VarExporter\LazyObjectInterface',
+            'implements \Symfony\Component\VarExporter\LazyObjectInterface, \Doctrine\Persistence\Proxy',
+            $ghostBody,
+        );
+
+        $withTraitAlias = str_replace(
+            'use \Symfony\Component\VarExporter\LazyGhostTrait;',
+            "use \Symfony\Component\VarExporter\LazyGhostTrait {\n"
+                . "        setLazyObjectAsInitialized as public __setInitialized;\n"
+                . '    }',
+            $withInterface,
+        );
+
+        $stubs = <<<'PHP'
+
+    public function __load(): void
+    {
+        $this->initializeLazyObject();
+    }
+
+    public function __isInitialized(): bool
+    {
+        return isset($this->lazyObjectState) && $this->isLazyObjectInitialized();
+    }
+
+PHP;
+
+        // Insert the stubs just before the closing brace of the class body
+        // (which is followed by a blank line and the opcache.preload hints).
+        return str_replace("}\n\n// Help opcache.preload", $stubs . "}\n\n// Help opcache.preload", $withTraitAlias);
     }
 
     /**
