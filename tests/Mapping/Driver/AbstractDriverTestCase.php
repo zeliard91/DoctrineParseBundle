@@ -11,7 +11,7 @@ require_once 'fixtures/User.php';
 // require_once 'fixtures/EmbeddedDocument.php';
 // require_once 'fixtures/QueryResultDocument.php';
 
-abstract class AbstractDriverTest extends BaseTestCase
+abstract class AbstractDriverTestCase extends BaseTestCase
 {
     protected $driver;
 

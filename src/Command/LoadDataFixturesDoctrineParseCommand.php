@@ -52,10 +52,7 @@ class LoadDataFixturesDoctrineParseCommand extends DoctrineParseCommand
         $this->loader = $loader;
     }
 
-    /**
-     * @return boolean
-     */
-    public function isEnabled()
+    public function isEnabled(): bool
     {
         return parent::isEnabled() && class_exists(Loader::class);
     }
