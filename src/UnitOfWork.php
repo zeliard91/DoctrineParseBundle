@@ -17,7 +17,6 @@ use Redking\ParseBundle\Exception\RedkingParseException;
 use Redking\ParseBundle\Hydrator\ParseObjectHydrator;
 use Redking\ParseBundle\Mapping\ClassMetadata;
 use Redking\ParseBundle\Persisters\ObjectPersister;
-use Redking\ParseBundle\Proxy\Proxy;
 use Redking\ParseBundle\Types\Type;
 use Parse\ParseACL;
 use Parse\ParseFile;
@@ -531,8 +530,19 @@ class UnitOfWork implements PropertyChangedListener
             $object = $this->identityMap[$class->rootEntityName][$idHash];
             $oid = spl_object_hash($object);
 
-            if ($object instanceof Proxy && !$object->__isInitialized()) {
-                $object->__setInitialized(true);
+            if ($this->om->isUninitializedObject($object)) {
+                // Mark the lazy ghost as initialized without firing its initializer:
+                // we already have fresh $data and the hydrator below will populate every
+                // reflected property. On PHP 8.4 the native API exposes a dedicated method;
+                // for symfony/var-exporter ghosts the per-property writes done by the
+                // hydrator are enough to flip the LazyObjectState.
+                if (PHP_VERSION_ID >= 80400) {
+                    $reflClass = $class->getReflectionClass();
+                    if (method_exists($reflClass, 'markLazyObjectAsInitialized')
+                        && $reflClass->isUninitializedLazyObject($object)) {
+                        $reflClass->markLazyObjectAsInitialized($object);
+                    }
+                }
                 $overrideLocalValues = true;
             } else {
                 $overrideLocalValues = isset($hints['doctrine.refresh']);
@@ -1275,7 +1285,7 @@ class UnitOfWork implements PropertyChangedListener
         $this->computeScheduleInsertsChangeSets();
 
         // Ignore uninitialized proxy objects
-        if ($object instanceof Proxy && ! $object->__isInitialized__) {
+        if ($this->om->isUninitializedObject($object)) {
             return;
         }
 
@@ -1327,7 +1337,7 @@ class UnitOfWork implements PropertyChangedListener
 
             foreach ($objectTorProcess as $object) {
                 // Ignore uninitialized proxy objects
-                if ($object instanceof Proxy && !$object->__isInitialized__) {
+                if ($this->om->isUninitializedObject($object)) {
                     continue;
                 }
 
@@ -1703,7 +1713,7 @@ class UnitOfWork implements PropertyChangedListener
      */
     private function computeAssociationChanges($assoc, $value, string $objectClass = null)
     {
-        if ($value instanceof Proxy && !$value->__isInitialized__) {
+        if ($this->om->isUninitializedObject($value)) {
             return;
         }
 
@@ -1907,8 +1917,8 @@ class UnitOfWork implements PropertyChangedListener
             if (!$mapping['isCascadeRemove']) {
                 continue;
             }
-            if ($object instanceof Proxy && !$object->__isInitialized__) {
-                $object->__load();
+            if ($this->om->isUninitializedObject($object)) {
+                $this->om->initializeObject($object);
             }
 
             $relatedObjects = $class->reflFields[$mapping['fieldName']]->getValue($object);
@@ -2181,7 +2191,7 @@ class UnitOfWork implements PropertyChangedListener
     public function recomputeSingleObjectChangeSet(ClassMetadata $class, $object, $fromPostUpdate = false)
     {
         // Ignore uninitialized proxy objects
-        if ($object instanceof Proxy && ! $object->__isInitialized__) {
+        if ($this->om->isUninitializedObject($object)) {
             return;
         }
 

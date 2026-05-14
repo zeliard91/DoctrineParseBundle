@@ -82,7 +82,8 @@ class ObjectManager implements BaseObjectManager
             $this,
             $config->getProxyDir(),
             $config->getProxyNamespace(),
-            $config->getAutoGenerateProxyClasses()
+            $config->getAutoGenerateProxyClasses(),
+            $config->isLazyGhostObjectEnabled()
         );
 
         $this->schemaManager = new SchemaManager($this, $this->metadataFactory);
@@ -270,10 +271,28 @@ class ObjectManager implements BaseObjectManager
     }
 
     /**
+     * Forces initialization of a lazy ghost.
+     *
      * {@inheritdoc}
      */
     public function initializeObject($obj): void
     {
+        if (! is_object($obj)) {
+            return;
+        }
+
+        if (PHP_VERSION_ID >= 80400) {
+            $r = new \ReflectionClass($obj);
+            if (method_exists($r, 'isUninitializedLazyObject') && $r->isUninitializedLazyObject($obj)) {
+                $r->initializeLazyObject($obj);
+
+                return;
+            }
+        }
+
+        if ($obj instanceof \Symfony\Component\VarExporter\LazyObjectInterface) {
+            $obj->initializeLazyObject();
+        }
     }
 
     /**
@@ -343,6 +362,19 @@ class ObjectManager implements BaseObjectManager
 
     public function isUninitializedObject($value): bool
     {
-        return $value instanceof Proxy\Proxy && !$value->__isInitialized();
+        if (! is_object($value)) {
+            return false;
+        }
+
+        if (PHP_VERSION_ID >= 80400) {
+            $r = new \ReflectionClass($value);
+            if (method_exists($r, 'isUninitializedLazyObject') && $r->isUninitializedLazyObject($value)) {
+                return true;
+            }
+        }
+
+        return $value instanceof \Symfony\Component\VarExporter\LazyObjectInterface
+            && ! $value->isLazyObjectInitialized();
     }
+
 }

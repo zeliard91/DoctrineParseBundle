@@ -53,14 +53,7 @@ class ObjectManagerHelper extends Helper
         return $this->om;
     }
 
-    /**
-     * Get the canonical name of this helper.
-     *
-     * @see \Symfony\Component\Console\Helper\HelperInterface::getName()
-     *
-     * @return string
-     */
-    public function getName()
+    public function getName(): string
     {
         return 'ObjectManager';
     }

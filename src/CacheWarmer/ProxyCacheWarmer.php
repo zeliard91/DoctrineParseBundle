@@ -58,6 +58,12 @@ class ProxyCacheWarmer implements CacheWarmerInterface
      */
     public function warmUp($cacheDir, $buildDir = null)
     {
+        // Native lazy ghost objects need no code generation.
+        if ($this->container->hasParameter('doctrine_parse.use_lazy_ghost_object')
+            && $this->container->getParameter('doctrine_parse.use_lazy_ghost_object')) {
+            return [];
+        }
+
         // we need the directory no matter the proxy cache generation strategy.
         $proxyCacheDir = (string) $this->container->getParameter('doctrine_parse.proxy_dir');
         if (! file_exists($proxyCacheDir)) {

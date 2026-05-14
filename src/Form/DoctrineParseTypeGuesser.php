@@ -13,7 +13,6 @@ namespace Redking\ParseBundle\Form;
 
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Persistence\Mapping\MappingException;
-use Doctrine\Common\Util\ClassUtils;
 use Redking\ParseBundle\Types\Type;
 use Redking\ParseBundle\Mapping\ClassMetadata;
 use Redking\ParseBundle\Mapping\MappingException as LegacyMappingException;
@@ -137,7 +136,7 @@ class DoctrineParseTypeGuesser implements FormTypeGuesserInterface
     protected function getMetadata($class)
     {
         // normalize class name
-        $class = ClassUtils::getRealClass(ltrim($class, '\\'));
+        $class = ltrim($class, '\\');
 
         if (array_key_exists($class, $this->cache)) {
             return $this->cache[$class];

@@ -1,220 +1,108 @@
 <?php
-/*
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * This software consists of voluntary contributions made by many individuals
- * and is licensed under the MIT license. For more information, see
- * <http://www.doctrine-project.org>.
- */
+
+declare(strict_types=1);
 
 namespace Redking\ParseBundle\Proxy;
 
 use Doctrine\Persistence\Mapping\ClassMetadata;
-use Doctrine\Common\Proxy\AbstractProxyFactory;
-use Doctrine\Common\Proxy\ProxyDefinition;
-use Doctrine\Common\Util\ClassUtils;
-use Doctrine\Common\Proxy\Proxy as BaseProxy;
-use Doctrine\Common\Proxy\ProxyGenerator;
-// use Doctrine\ORM\ORMInvalidArgumentException;
+use Redking\ParseBundle\Configuration;
 use Redking\ParseBundle\Exception\ParseObjectNotFoundException;
 use Redking\ParseBundle\ObjectManager;
 use Redking\ParseBundle\Persisters\ObjectPersister;
+use Redking\ParseBundle\UnitOfWork;
+use ReflectionClass;
+use Symfony\Component\VarExporter\ProxyHelper;
 
+use function chmod;
+use function class_exists;
+use function dirname;
+use function file_exists;
+use function file_put_contents;
+use function is_dir;
+use function mkdir;
+use function property_exists;
+use function rename;
+use function sprintf;
+use function str_replace;
+use function tempnam;
 
 /**
- * This factory is used to create proxy objects for entities at runtime.
+ * Creates lazy ghost proxies for managed objects.
  *
- * @author Roman Borschel <roman@code-factory.org>
- * @author Giorgio Sironi <piccoloprincipeazzurro@gmail.com>
- * @author Marco Pivetta  <ocramius@gmail.com>
- *
- * @since 2.0
+ * Two backends are supported:
+ *  - symfony/var-exporter ghost classes generated via {@see ProxyHelper::generateLazyGhost()}
+ *    (default for PHP 8.1+).
+ *  - PHP 8.4 native lazy ghosts via {@see ReflectionClass::newLazyGhost()} when
+ *    {@see Configuration::isLazyGhostObjectEnabled()} is true.
  */
-class ProxyFactory extends AbstractProxyFactory
+final class ProxyFactory
 {
-    /**
-     * @var \Redking\ParseBundle\ObjectManager The ObjectManager this factory is bound to.
-     */
-    private $om;
+    private const MARKER = '__CG__';
 
-    /**
-     * @var \Doctrine\ORM\UnitOfWork The UnitOfWork this factory uses to retrieve persisters
-     */
-    private $uow;
+    private UnitOfWork $uow;
 
-    /**
-     * @var string
-     */
-    private $proxyNs;
+    /** @var array<class-string, class-string> */
+    private array $proxyClassNames = [];
 
-    /**
-     * Initializes a new instance of the <tt>ProxyFactory</tt> class that is
-     * connected to the given <tt>ObjectManager</tt>.
-     *
-     * @param \Redking\ParseBundle\ObjectManager $om           The ObjectManager the new factory works for.
-     * @param string                             $proxyDir     The directory to use for the proxy classes. It must exist.
-     * @param string                             $proxyNs      The namespace to use for the proxy classes.
-     * @param bool                               $autoGenerate Whether to automatically generate proxy classes.
-     */
-    public function __construct(ObjectManager $om, $proxyDir, $proxyNs, $autoGenerate = false)
-    {
-        $proxyGenerator = new ProxyGenerator($proxyDir, $proxyNs);
-
-        $proxyGenerator->setPlaceholder('baseProxyInterface', 'Redking\ParseBundle\Proxy\Proxy');
-        parent::__construct($proxyGenerator, $om->getMetadataFactory(), $autoGenerate);
-
-        $this->om = $om;
+    public function __construct(
+        private ObjectManager $om,
+        private ?string $proxyDir,
+        private string $proxyNs,
+        private int $autoGenerate = Configuration::AUTOGENERATE_FILE_NOT_EXISTS,
+        private bool $useLazyGhostObject = false,
+    ) {
         $this->uow = $om->getUnitOfWork();
-        $this->proxyNs = $proxyNs;
     }
 
     /**
-     * {@inheritdoc}
+     * Returns a lazy ghost for the given class, with the identifier eagerly set.
+     *
+     * @param array<string, mixed> $identifier
      */
-    protected function skipClass(ClassMetadata $metadata): bool
+    public function getProxy(string $className, array $identifier): object
     {
-        /* @var $metadata \Doctrine\ORM\Mapping\ClassMetadataInfo */
-        return $metadata->isMappedSuperclass || $metadata->getReflectionClass()->isAbstract();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function createProxyDefinition($className): ProxyDefinition
-    {
-        $classMetadata = $this->om->getClassMetadata($className);
+        $classMetadata   = $this->om->getClassMetadata($className);
         $objectPersister = $this->uow->getObjectPersister($className);
 
-        return new ProxyDefinition(
-            ClassUtils::generateProxyClassName($className, $this->proxyNs),
-            $classMetadata->getIdentifierFieldNames(),
-            $classMetadata->getReflectionProperties(),
-            $this->createInitializer($classMetadata, $objectPersister),
-            $this->createCloner($classMetadata, $objectPersister)
-        );
-    }
+        $initializer = $this->createInitializer($classMetadata, $objectPersister);
 
-    /**
-     * Creates a closure capable of initializing a proxy.
-     *
-     * @param \Doctrine\Persistence\Mapping\ClassMetadata $classMetadata
-     * @param \Redking\ParseBundle\Persisters\ObjectPersister    $objectPersister
-     *
-     * @return \Closure
-     *
-     * @throws \Redking\ParseBundle\Exception\ParseObjectNotFoundException
-     */
-    private function createInitializer(ClassMetadata $classMetadata, ObjectPersister $objectPersister)
-    {
-        if ($classMetadata->getReflectionClass()->hasMethod('__wakeup')) {
-            return function (BaseProxy $proxy) use ($objectPersister, $classMetadata) {
-                $initializer = $proxy->__getInitializer();
-                $cloner = $proxy->__getCloner();
+        $idField     = $classMetadata->identifier;
+        $idReflField = $classMetadata->reflFields[$idField] ?? null;
 
-                $proxy->__setInitializer(null);
-                $proxy->__setCloner(null);
-
-                if ($proxy->__isInitialized()) {
-                    return;
-                }
-
-                $properties = $proxy->__getLazyProperties();
-
-                foreach ($properties as $propertyName => $property) {
-                    if (!isset($proxy->$propertyName)) {
-                        $proxy->$propertyName = $properties[$propertyName];
-                    }
-                }
-
-                $proxy->__setInitialized(true);
-                $proxy->__wakeup();
-
-                if (null === $objectPersister->load($classMetadata->getIdentifierValues($proxy), $proxy, null, ['doctrine.refresh' => true])) {
-                    $proxy->__setInitializer($initializer);
-                    $proxy->__setCloner($cloner);
-                    $proxy->__setInitialized(false);
-
-                    throw ParseObjectNotFoundException::objectNotFound(get_class($proxy), $classMetadata->getIdentifierValues($proxy));
-                }
-            };
+        // Mark the identifier property as already-initialized so reading it does
+        // not trigger the initializer (and writing it below does not either).
+        $skippedProperties = [];
+        if ($idReflField !== null) {
+            $skippedProperties[self::propertyArrayKey($idReflField)] = true;
         }
 
-        return function (BaseProxy $proxy) use ($objectPersister, $classMetadata) {
-            $initializer = $proxy->__getInitializer();
-            $cloner = $proxy->__getCloner();
+        $proxy = $this->createLazyGhost($classMetadata, $initializer, $skippedProperties);
 
-            $proxy->__setInitializer(null);
-            $proxy->__setCloner(null);
-
-            if ($proxy->__isInitialized()) {
-                return;
+        if ($idReflField !== null && isset($identifier[$idField])) {
+            if ($this->useLazyGhostObject && method_exists($idReflField, 'setRawValueWithoutLazyInitialization')) {
+                $idReflField->setRawValueWithoutLazyInitialization($proxy, $identifier[$idField]);
+            } else {
+                $idReflField->setValue($proxy, $identifier[$idField]);
             }
+        }
 
-            $properties = $proxy->__getLazyProperties();
-
-            foreach ($properties as $propertyName => $property) {
-                if (!isset($proxy->$propertyName)) {
-                    $proxy->$propertyName = $properties[$propertyName];
-                }
-            }
-
-            $proxy->__setInitialized(true);
-
-            if (null === $objectPersister->load($classMetadata->getIdentifierValues($proxy), $proxy, null, ['doctrine.refresh' => true])) {
-                $proxy->__setInitializer($initializer);
-                $proxy->__setCloner($cloner);
-                $proxy->__setInitialized(false);
-
-                throw ParseObjectNotFoundException::objectNotFound(get_class($proxy), $classMetadata->getIdentifierValues($proxy));
-            }
-        };
+        return $proxy;
     }
 
     /**
      * Creates a lazy proxy for an inverse ReferenceOne (mappedBy) association.
-     * The actual query is deferred until the first property access on the proxy.
-     *
-     * @param string              $targetClass The target document class name.
-     * @param string              $mappedBy    The field name on the target that owns the relation.
-     * @param object              $owner       The owning-side object instance.
-     * @param \ReflectionProperty $ownerField  The reflection property on the owner to null out if not found.
+     * The query is deferred until the first property access on the proxy.
      */
     public function getLazyReferenceOneProxy(
         string $targetClass,
         string $mappedBy,
         object $owner,
-        \ReflectionProperty $ownerField
+        \ReflectionProperty $ownerField,
     ): object {
-        $classMetadata = $this->om->getClassMetadata($targetClass);
-        $fqcn = ClassUtils::generateProxyClassName($targetClass, $this->proxyNs);
-
-        // Ensure the proxy class is loaded
-        if (!class_exists($fqcn, false)) {
-            $this->getProxy($targetClass, [$classMetadata->identifier => '__lazy_init__']);
-        }
-
+        $classMetadata   = $this->om->getClassMetadata($targetClass);
         $objectPersister = $this->uow->getObjectPersister($targetClass);
 
-        $initializer = function (BaseProxy $proxy) use (
-            $objectPersister, $classMetadata, $mappedBy, $owner, $ownerField
-        ) {
-            $proxy->__setInitializer(null);
-            $proxy->__setCloner(null);
-            if ($proxy->__isInitialized()) {
-                return;
-            }
-            $proxy->__setInitialized(true);
-
+        $initializer = static function (object $proxy) use ($objectPersister, $classMetadata, $mappedBy, $owner, $ownerField): void {
             $loadedObject = $objectPersister->loadReference($mappedBy, $owner);
 
             if (null !== $loadedObject) {
@@ -227,42 +115,216 @@ class ProxyFactory extends AbstractProxyFactory
             }
         };
 
-        return new $fqcn($initializer, function (BaseProxy $proxy) {});
+        return $this->createLazyGhost($classMetadata, $initializer, []);
     }
 
     /**
-     * Creates a closure capable of finalizing state a cloned proxy.
+     * Generates proxy class files on disk for the given metadata set.
      *
-     * @param \Doctrine\Persistence\Mapping\ClassMetadata $classMetadata
-     * @param \Redking\ParseBundle\Persisters\ObjectPersister    $objectPersister
+     * Returns the number of generated files (0 when native lazy objects are
+     * enabled, since no codegen is needed).
      *
-     * @return \Closure
-     *
-     * @throws \Redking\ParseBundle\Exception\ParseObjectNotFoundException
+     * @param ClassMetadata[] $classes
      */
-    private function createCloner(ClassMetadata $classMetadata, ObjectPersister $objectPersister)
+    public function generateProxyClasses(array $classes): int
     {
-        return function (BaseProxy $proxy) use ($objectPersister, $classMetadata) {
-            if ($proxy->__isInitialized()) {
-                return;
+        if ($this->useLazyGhostObject) {
+            return 0;
+        }
+
+        if (null === $this->proxyDir) {
+            return 0;
+        }
+
+        $generated = 0;
+        foreach ($classes as $class) {
+            if ($this->skipClass($class)) {
+                continue;
             }
 
-            $proxy->__setInitialized(true);
-            $proxy->__setInitializer(null);
-            $original = $objectPersister->load($classMetadata->getIdentifierValues($proxy));
+            $proxyFile = $this->proxyDir . '/' . self::generateProxyFileName($class->getName()) . '.php';
 
-            if (null === $original) {
-                throw ParseObjectNotFoundException::objectNotFound(get_class($proxy), $classMetadata->getIdentifierValues($proxy));
-            }
+            $this->generateProxyFile($class->getName(), $proxyFile);
+            $generated++;
+        }
 
-            foreach ($classMetadata->getReflectionClass()->getProperties() as $reflectionProperty) {
-                $propertyName = $reflectionProperty->getName();
+        return $generated;
+    }
 
-                if ($classMetadata->hasField($propertyName) || $classMetadata->hasAssociation($propertyName)) {
-                    $reflectionProperty->setAccessible(true);
-                    $reflectionProperty->setValue($proxy, $reflectionProperty->getValue($original));
-                }
+    /**
+     * Creates the initializer closure used for identifier-based proxies.
+     */
+    private function createInitializer(ClassMetadata $classMetadata, ObjectPersister $objectPersister): \Closure
+    {
+        return static function (object $proxy) use ($objectPersister, $classMetadata): void {
+            $identifier = $classMetadata->getIdentifierValues($proxy);
+
+            $loaded = $objectPersister->load($identifier, $proxy, null, ['doctrine.refresh' => true]);
+
+            if (null === $loaded) {
+                throw ParseObjectNotFoundException::objectNotFound($classMetadata->getName(), $identifier);
             }
         };
+    }
+
+    /**
+     * @param array<string, true> $skippedProperties Lazy properties to mark as already-initialized
+     *                                                so they can be read/written without triggering
+     *                                                the initializer. Keys use the array-cast format
+     *                                                "\0<DeclaringClass>\0<PropertyName>".
+     */
+    private function createLazyGhost(ClassMetadata $classMetadata, \Closure $initializer, array $skippedProperties): object
+    {
+        $className = $classMetadata->getName();
+
+        if ($this->useLazyGhostObject) {
+            $proxy = (new ReflectionClass($className))->newLazyGhost($initializer);
+
+            // PHP 8.4 native: mark the skipped properties via ReflectionProperty::skipLazyInitialization.
+            // Skipped properties are indexed using PHP's array-cast format, but native lazy objects
+            // need the property's actual declaring class to instantiate ReflectionProperty.
+            if ($skippedProperties !== [] && method_exists(\ReflectionProperty::class, 'skipLazyInitialization')) {
+                foreach ($classMetadata->reflFields as $refProp) {
+                    if (! $refProp instanceof \ReflectionProperty) {
+                        continue;
+                    }
+                    if (isset($skippedProperties[self::propertyArrayKey($refProp)])) {
+                        $refProp->skipLazyInitialization($proxy);
+                    }
+                }
+            }
+
+            return $proxy;
+        }
+
+        $proxyClass = $this->getProxyClass($className);
+
+        return $proxyClass::createLazyGhost($initializer, $skippedProperties);
+    }
+
+    /**
+     * @return class-string
+     */
+    private function getProxyClass(string $className): string
+    {
+        if (isset($this->proxyClassNames[$className])) {
+            return $this->proxyClassNames[$className];
+        }
+
+        $proxyClassName = self::generateProxyClassName($className, $this->proxyNs);
+
+        if (class_exists($proxyClassName, false)) {
+            return $this->proxyClassNames[$className] = $proxyClassName;
+        }
+
+        if (null !== $this->proxyDir && $this->autoGenerate !== Configuration::AUTOGENERATE_EVAL) {
+            $proxyFile = $this->proxyDir . '/' . self::generateProxyFileName($className) . '.php';
+
+            switch ($this->autoGenerate) {
+                case Configuration::AUTOGENERATE_NEVER:
+                    require $proxyFile;
+                    break;
+
+                case Configuration::AUTOGENERATE_FILE_NOT_EXISTS:
+                    if (! file_exists($proxyFile)) {
+                        $this->generateProxyFile($className, $proxyFile);
+                    }
+                    require $proxyFile;
+                    break;
+
+                case Configuration::AUTOGENERATE_ALWAYS:
+                    $this->generateProxyFile($className, $proxyFile);
+                    require $proxyFile;
+                    break;
+            }
+        } else {
+            eval($this->generateProxyCode($className));
+        }
+
+        return $this->proxyClassNames[$className] = $proxyClassName;
+    }
+
+    private function generateProxyFile(string $className, string $proxyFile): void
+    {
+        $code = "<?php\n\n" . $this->generateProxyCode($className);
+
+        $dir = dirname($proxyFile);
+        if (! is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+
+        $tmpFile = tempnam($dir, 'proxy_');
+        if (false === $tmpFile) {
+            file_put_contents($proxyFile, $code);
+
+            return;
+        }
+
+        file_put_contents($tmpFile, $code);
+        @chmod($tmpFile, 0664);
+        rename($tmpFile, $proxyFile);
+    }
+
+    private function generateProxyCode(string $className): string
+    {
+        $proxyClassName = self::generateProxyClassName($className, $this->proxyNs);
+        $proxyNamespace = substr($proxyClassName, 0, strrpos($proxyClassName, '\\'));
+        $proxyShortName = substr($proxyClassName, strrpos($proxyClassName, '\\') + 1);
+
+        $ghostBody = ProxyHelper::generateLazyGhost(new ReflectionClass($className));
+
+        return sprintf("namespace %s;\n\nclass %s%s", $proxyNamespace, $proxyShortName, $ghostBody);
+    }
+
+    /**
+     * Builds the fully-qualified proxy class name in the form
+     * "{proxyNs}\\__CG__\\{OriginalFqcn}", which matches the default
+     * {@see \Doctrine\Persistence\Mapping\ProxyClassNameResolver} pattern.
+     */
+    private static function generateProxyClassName(string $className, string $proxyNs): string
+    {
+        return rtrim($proxyNs, '\\') . '\\' . self::MARKER . '\\' . ltrim($className, '\\');
+    }
+
+    private static function generateProxyFileName(string $className): string
+    {
+        return self::MARKER . str_replace('\\', '_', $className);
+    }
+
+    /**
+     * Builds the PHP array-cast key for a reflection property.
+     * Public properties use the bare name; protected use "\0*\0name";
+     * private use "\0DeclaringClass\0name".
+     */
+    private static function propertyArrayKey(\ReflectionProperty $property): string
+    {
+        if ($property->isPrivate()) {
+            return "\0" . $property->getDeclaringClass()->getName() . "\0" . $property->getName();
+        }
+
+        if ($property->isProtected()) {
+            return "\0*\0" . $property->getName();
+        }
+
+        return $property->getName();
+    }
+
+    private function skipClass(ClassMetadata $metadata): bool
+    {
+        $reflection = $metadata->getReflectionClass();
+
+        if ($reflection->isAbstract() || $reflection->isFinal() || $reflection->isInternal()) {
+            return true;
+        }
+
+        if (\property_exists($metadata, 'isMappedSuperclass') && $metadata->isMappedSuperclass) {
+            return true;
+        }
+
+        if (\property_exists($metadata, 'isEmbeddedDocument') && $metadata->isEmbeddedDocument) {
+            return true;
+        }
+
+        return false;
     }
 }

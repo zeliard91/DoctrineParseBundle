@@ -4,7 +4,7 @@ namespace Redking\ParseBundle\Tests\Mapping\Driver;
 
 use Redking\ParseBundle\Mapping\Driver\YamlDriver;
 
-class YamlDriverTest extends AbstractDriverTest
+class YamlDriverTest extends AbstractDriverTestCase
 {
     public function setUp(): void
     {
