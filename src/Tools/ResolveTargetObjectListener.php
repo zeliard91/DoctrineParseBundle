@@ -19,11 +19,11 @@
 
 namespace Redking\ParseBundle\Tools;
 
+use Redking\ParseBundle\Attribute\AsParseListener;
 use Redking\ParseBundle\Event\LoadClassMetadataEventArgs;
 use Redking\ParseBundle\Event\OnClassMetadataNotFoundEventArgs;
-use Redking\ParseBundle\Mapping\ClassMetadata;
-use Doctrine\Common\EventSubscriber;
 use Redking\ParseBundle\Events;
+use Redking\ParseBundle\Mapping\ClassMetadata;
 
 /**
  * ResolveTargetObjectListener
@@ -34,23 +34,14 @@ use Redking\ParseBundle\Events;
  * @author Benjamin Eberlei <kontakt@beberlei.de>
  * @since 2.2
  */
-class ResolveTargetObjectListener implements EventSubscriber
+#[AsParseListener(event: Events::loadClassMetadata)]
+#[AsParseListener(event: Events::onClassMetadataNotFound)]
+class ResolveTargetObjectListener
 {
     /**
      * @var array[] indexed by original object name
      */
     private $resolveTargetObjects = array();
-
-    /**
-     * {@inheritDoc}
-     */
-    public function getSubscribedEvents(): array
-    {
-        return array(
-            Events::loadClassMetadata,
-            Events::onClassMetadataNotFound
-        );
-    }
 
     /**
      * Adds a target-object class name to resolve to a new class name.

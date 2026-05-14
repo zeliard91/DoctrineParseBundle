@@ -4,7 +4,10 @@ namespace Redking\ParseBundle\DependencyInjection;
 
 use Doctrine\Common\Cache\MemcacheCache;
 use Doctrine\Common\Cache\RedisCache;
+use Doctrine\Common\EventSubscriber;
+use Redking\ParseBundle\Attribute\AsParseListener;
 use Redking\ParseBundle\Attribute\MapParseObject;
+use Redking\ParseBundle\Events;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader;
@@ -172,6 +175,23 @@ class RedkingParseExtension extends AbstractDoctrineExtension
 
         $this->loadEntityValueResolverServices($container, $config);
         $this->loadEncryptedIdValueResolver($container);
+
+        $container->registerForAutoconfiguration(EventSubscriber::class)
+            ->addTag('doctrine_parse.event_subscriber');
+
+        $container->registerAttributeForAutoconfiguration(
+            AsParseListener::class,
+            static function (ChildDefinition $definition, AsParseListener $attribute): void {
+                $tag = ['event' => $attribute->event];
+                if (null !== $attribute->connection) {
+                    $tag['connection'] = $attribute->connection;
+                }
+                if (null !== $attribute->priority) {
+                    $tag['priority'] = $attribute->priority;
+                }
+                $definition->addTag('doctrine_parse.event_listener', $tag);
+            }
+        );
     }
 
     /**
@@ -302,7 +322,8 @@ class RedkingParseExtension extends AbstractDoctrineExtension
                     $name, $implementation, array(),
                 ));
             }
-            $def->addTag('doctrine_parse.event_subscriber');
+            $def->addTag('doctrine_parse.event_listener', ['event' => Events::loadClassMetadata]);
+            $def->addTag('doctrine_parse.event_listener', ['event' => Events::onClassMetadataNotFound]);
         }
     }
 
