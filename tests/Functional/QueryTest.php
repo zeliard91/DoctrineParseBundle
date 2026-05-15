@@ -2,6 +2,7 @@
 
 namespace Redking\ParseBundle\Tests\Functional;
 
+use Parse\ParseObject;
 use Parse\ParseQuery;
 use Parse\ParseGeoPoint;
 use Redking\ParseBundle\Tests\Models\Blog\User;
@@ -372,6 +373,117 @@ class QueryTest extends \Redking\ParseBundle\Tests\TestCase
         $this->assertContains('Paris', $names);
         $this->assertContains('Lyon', $names);
         $this->assertNotContains('NewYork', $names);
+    }
+
+    public function testHydrateFalseReturnsParseObjects()
+    {
+        $user = new User();
+        $user->setPassword('p4ss');
+        $user->setName('Foo');
+        $this->om->persist($user);
+        $user = new User();
+        $user->setPassword('p4ss');
+        $user->setName('Bar');
+        $this->om->persist($user);
+
+        $this->om->flush();
+        $this->om->clear();
+
+        $results = $this->getUserQB()
+            ->field('name')->equals('Foo')
+            ->hydrate(false)
+            ->getQuery()
+            ->execute()
+        ;
+
+        $this->assertIsArray($results);
+        $this->assertCount(1, $results);
+        $this->assertInstanceOf(ParseObject::class, $results[0]);
+        $this->assertEquals('Foo', $results[0]->get('username'));
+    }
+
+    public function testHydrateFalseSingleResultReturnsParseObject()
+    {
+        $user = new User();
+        $user->setPassword('p4ss');
+        $user->setName('Foo');
+        $this->om->persist($user);
+
+        $this->om->flush();
+        $this->om->clear();
+
+        $result = $this->getUserQB()
+            ->field('name')->equals('Foo')
+            ->hydrate(false)
+            ->getQuery()
+            ->getSingleResult()
+        ;
+
+        $this->assertInstanceOf(ParseObject::class, $result);
+        $this->assertEquals('Foo', $result->get('username'));
+    }
+
+    public function testSelectLimitsReturnedFields()
+    {
+        $user = new User();
+        $user->setPassword('p4ss');
+        $user->setName('Foo');
+        $this->om->persist($user);
+
+        $this->om->flush();
+        $this->om->clear();
+
+        $query = $this->getUserQB()
+            ->field('name')->equals('Foo')
+            ->select('name')
+            ->hydrate(false)
+            ->getQuery()
+        ;
+
+        $result = $query->getSingleResult();
+
+        $this->assertInstanceOf(ParseObject::class, $result);
+        $this->assertEquals('Foo', $result->get('username'));
+        $this->assertFalse($result->has('password'));
+
+        $options = $query->getParseQuery()->_getOptions();
+        $this->assertArrayHasKey('keys', $options);
+        $this->assertEquals('username', $options['keys']);
+    }
+
+    public function testSelectAndHydrateAppearInProfilerToArray()
+    {
+        $query = $this->getUserQB()
+            ->field('name')->equals('Foo')
+            ->select('name')
+            ->hydrate(false)
+            ->getQuery()
+        ;
+
+        $loggable = $query->toArray();
+
+        $this->assertEquals('_User', $loggable['className']);
+        $this->assertArrayHasKey('keys', $loggable);
+        $this->assertEquals('username', $loggable['keys']);
+        $this->assertArrayHasKey('hydrate', $loggable);
+        $this->assertFalse($loggable['hydrate']);
+    }
+
+    public function testCountQueryAppearsAsCountTypeInProfiler()
+    {
+        $query = $this->getUserQB()
+            ->field('name')->regex('foo', 'i')
+            ->count()
+            ->getQuery()
+        ;
+
+        $loggable = $query->toArray();
+
+        $this->assertEquals('_User', $loggable['className']);
+        $this->assertArrayHasKey('type', $loggable);
+        $this->assertEquals('count', $loggable['type']);
+        $this->assertArrayHasKey('where', $loggable);
+        $this->assertArrayNotHasKey('limit', $loggable);
     }
 
     public function testWithinGeoBox()

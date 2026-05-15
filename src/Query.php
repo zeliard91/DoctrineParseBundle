@@ -104,6 +104,10 @@ class Query
         $this->query = $query;
         $this->type = $query['type'];
         $this->_parseQuery = new ParseQuery($this->_class->getCollection());
+
+        if (array_key_exists('hydrate', $query)) {
+            $this->hydrate = (bool) $query['hydrate'];
+        }
     }
 
     /**
@@ -177,6 +181,10 @@ class Query
     {
         $loggable_query = [];
         $loggable_query['className'] = $this->_class->getCollection();
+        if ($this->type === self::TYPE_COUNT) {
+            $loggable_query['type'] = 'count';
+        }
+
         $query = $this->getParseQuery()->_getOptions();
 
         if (isset($query['where'])) {
@@ -191,6 +199,10 @@ class Query
         }
 
         $loggable_query += $query;
+
+        if ($this->hydrate === false) {
+            $loggable_query['hydrate'] = false;
+        }
 
         return $loggable_query;
     }
@@ -324,8 +336,8 @@ class Query
 
         if (isset($this->query['limit']) && null !== $this->query['limit'] && $this->query['limit'] > 0) {
             $this->_parseQuery->limit($this->query['limit']);
-        } else {
-            // Force a high limit : the API has "100" as default
+        } elseif ($this->type === self::TYPE_FIND) {
+            // Force a high limit on find queries : the API has "100" as default
             $this->_parseQuery->limit(999999999999);
         }
 
@@ -361,6 +373,12 @@ class Query
             }
         }
 
+        if (isset($this->query['select']) && is_array($this->query['select'])) {
+            foreach ($this->query['select'] as $attribute) {
+                $field = $this->_class->getNameOfField($attribute) ?? $attribute;
+                $this->_parseQuery->select($field);
+            }
+        }
     }
 
     /**

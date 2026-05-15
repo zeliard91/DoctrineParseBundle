@@ -81,6 +81,47 @@ $posts_and_users =  $om->getRepository(Post::class)
 ```
 
 
+## Select specific fields
+
+You can limit which fields the server returns by using the `select` method. This is useful for reducing payload size when you only need a subset of the columns.
+
+``` php
+
+$posts =  $om->getRepository(Post::class)
+    ->createQueryBuilder()
+    ->select('title', 'createdAt')
+    ->getQuery()
+    ->execute()
+;
+```
+
+Field names refer to your entity properties; they are translated to Parse column names automatically (this sets the `keys` query option on the Parse query).
+
+When combined with `includeKey()`, the related pointer column must also be in the `select()` list, otherwise Parse will not return it.
+
+
+## Disable hydration
+
+By default, results are hydrated into entity instances managed by the `ObjectManager`. For read-only operations (exports, bulk reads, partial selections), you can skip hydration and receive raw `Parse\ParseObject` instances directly with `hydrate(false)`:
+
+``` php
+
+$rawObjects =  $om->getRepository(Post::class)
+    ->createQueryBuilder()
+    ->field('enabled')->equals(true)
+    ->hydrate(false)
+    ->getQuery()
+    ->execute()
+;
+
+foreach ($rawObjects as $parseObject) {
+    echo $parseObject->get('title');
+}
+```
+
+When hydration is disabled, `execute()` returns a plain `array` (not an `ArrayCollection`) and `getSingleResult()` returns a `Parse\ParseObject` (or `null`). Raw `ParseObject` instances are **not** tracked by the `UnitOfWork`: modifications to them will not be persisted by `flush()`. Use this for read-only flows.
+
+
 ## Use a subquery
 
 You can use a subquery against a field like this : 

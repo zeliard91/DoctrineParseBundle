@@ -282,6 +282,43 @@ class QueryBuilder
     }
 
     /**
+     * Set whether to hydrate Parse results into mapped entities.
+     *
+     * When set to false, Query::execute() returns an array of raw
+     * Parse\ParseObject instances and Query::getSingleResult() returns a
+     * single ParseObject (or null). Raw results are not tracked by the
+     * UnitOfWork and changes to them will not be persisted by flush().
+     *
+     * @return self
+     */
+    public function hydrate(bool $bool = true)
+    {
+        $this->query['hydrate'] = $bool;
+
+        return $this;
+    }
+
+    /**
+     * Restrict the Parse fields returned by the query (sets the `keys` option).
+     *
+     * Field names refer to entity properties; they are translated to Parse
+     * column names at apply-time, consistent with sort() and includeKey().
+     *
+     * @return self
+     */
+    public function select(string ...$fields)
+    {
+        if (!isset($this->query['select'])) {
+            $this->query['select'] = [];
+        }
+        foreach ($fields as $field) {
+            $this->query['select'][] = $field;
+        }
+
+        return $this;
+    }
+
+    /**
      * Add constraint for parse relation.
      *
      * @param string $field
