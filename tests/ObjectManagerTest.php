@@ -14,34 +14,34 @@ class ObjectManagerTest extends TestCase
         $this->assertInstanceOf('\Redking\ParseBundle\UnitOfWork', $this->om->getUnitOfWork());
     }
 
-    public function dataMethodsAffectedByNoObjectArguments()
+    public static function dataMethodsAffectedByNoObjectArguments(): array
     {
-        return array(
-            array('persist'),
-            array('remove'),
-            array('merge'),
-            array('refresh'),
-            array('detach')
-        );
+        return [
+            ['persist'],
+            ['remove'],
+            ['merge'],
+            ['refresh'],
+            ['detach'],
+        ];
     }
+
     /**
      * @dataProvider dataMethodsAffectedByNoObjectArguments
-     * @expectedException \InvalidArgumentException
-     * @param string $methodName
      */
-    public function testThrowsExceptionOnNonObjectValues($methodName)
+    public function testThrowsExceptionOnNonObjectValues(string $methodName)
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->om->$methodName(null);
     }
-    public function dataAffectedByErrorIfClosedException()
+
+    public static function dataAffectedByErrorIfClosedException(): array
     {
-        return array(
-            array('flush'),
-            array('persist'),
-            array('remove'),
-            array('merge'),
-            array('refresh'),
-        );
+        return [
+            ['flush'],
+            ['persist'],
+            ['remove'],
+            ['merge'],
+            ['refresh'],
+        ];
     }
 }

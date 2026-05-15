@@ -2,7 +2,6 @@
 
 namespace Redking\ParseBundle;
 
-use Redking\ParseBundle\DependencyInjection\Compiler\CacheCompatibilityPass;
 use Redking\ParseBundle\DependencyInjection\Compiler\CreateHydratorDirectoryPass;
 use Redking\ParseBundle\DependencyInjection\Compiler\CreateProxyDirectoryPass;
 use Redking\ParseBundle\DependencyInjection\Compiler\EventSubscriberCompatibilityPass;
@@ -21,7 +20,6 @@ class RedkingParseBundle extends Bundle
      */
     public function build(ContainerBuilder $container)
     {
-        $container->addCompilerPass(new CacheCompatibilityPass());
         $container->addCompilerPass(new EventSubscriberCompatibilityPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION);
         $container->addCompilerPass(new RegisterEventListenersAndSubscribersPass('doctrine_parse.connections', 'redking_parse.event_manager', 'doctrine_parse'), PassConfig::TYPE_BEFORE_OPTIMIZATION);
         $container->addCompilerPass(new CreateProxyDirectoryPass(), PassConfig::TYPE_BEFORE_REMOVING);

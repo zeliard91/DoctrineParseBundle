@@ -2,8 +2,6 @@
 
 namespace Redking\ParseBundle;
 
-use Doctrine\Common\Cache\Cache;
-use Doctrine\Common\Cache\Psr6\DoctrineProvider;
 use Doctrine\Persistence\Mapping\Driver\MappingDriver;
 use InvalidArgumentException;
 use Psr\Cache\CacheItemPoolInterface;
@@ -365,26 +363,6 @@ class Configuration
         $this->_attributes['alwaysMaster'] = $alwaysMaster;
     }
 
-    /**
-     * Gets the cache driver implementation that is used for metadata caching.
-     *
-     * @return \Doctrine\Common\Cache\Cache
-     */
-    public function getMetadataCacheImpl()
-    {
-        return isset($this->_attributes['metadataCacheImpl']) ? $this->_attributes['metadataCacheImpl'] : null;
-    }
-
-    /**
-     * Sets the cache driver implementation that is used for metadata caching.
-     *
-     * @param \Doctrine\Common\Cache\Cache $cacheImpl
-     */
-    public function setMetadataCacheImpl(Cache $cacheImpl)
-    {
-        $this->_attributes['metadataCacheImpl'] = $cacheImpl;
-    }
-
     public function getMetadataCache(): ?CacheItemPoolInterface
     {
         return $this->metadataCache;
@@ -392,7 +370,6 @@ class Configuration
 
     public function setMetadataCache(CacheItemPoolInterface $cache): void
     {
-        $this->metadataCache                   = $cache;
-        $this->_attributes['metadataCacheImpl'] = DoctrineProvider::wrap($cache);
+        $this->metadataCache = $cache;
     }
 }

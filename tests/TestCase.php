@@ -50,7 +50,6 @@ abstract class TestCase extends BaseTestCase
             'master_key' => getenv('DOCTRINE_PARSE_MASTER_KEY'),
             'rest_key' => getenv('DOCTRINE_PARSE_REST_KEY'),
             'mount_path' => getenv('DOCTRINE_PARSE_MOUNT_PATH'),
-            'metadata_cache_driver' => ['type' => 'redis', 'host' => 'localhost'],
             ]);
         $config->setMetadataDriverImpl($this->createMetadataDriverImpl());
 
