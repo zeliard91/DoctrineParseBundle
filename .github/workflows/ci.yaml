@@ -54,6 +54,9 @@ jobs:
           - php-version: '8.4'
             symfony-version: '7.4.*'
 
+          - php-version: '8.5'
+            symfony-version: '7.4.*'
+
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v3
@@ -68,7 +71,7 @@ jobs:
         run: vendor/bin/phpunit
 
   test-native-lazy:
-    name: 'Tests - PHP 8.4 Native Lazy Objects, Sf ${{ matrix.symfony-version }}'
+    name: 'Tests - PHP ${{ matrix.php-version }} Native Lazy Objects, Sf ${{ matrix.symfony-version }}'
     runs-on: ubuntu-latest
 
     services:
@@ -90,6 +93,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        php-version:
+          - '8.4'
+          - '8.5'
         symfony-version:
           - '6.4.*'
           - '7.4.*'
@@ -103,7 +109,7 @@ jobs:
       - name: 'Setup Build'
         uses: ./.github/actions/setup-build
         with:
-          php-version: '8.4'
+          php-version: '${{ matrix.php-version }}'
           composer-token: ${{ secrets.GITHUB_TOKEN }}
           symfony-version: '${{ matrix.symfony-version }}'
       - name: 'Run tests'
