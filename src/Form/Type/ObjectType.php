@@ -34,49 +34,13 @@ class ObjectType extends DoctrineType
         $resolver->setAllowedTypes('query_builder', array('null', 'callable', 'Redking\ParseBundle\QueryBuilder'));
     }
 
-    /**
-     * Return the default loader object.
-     *
-     * @param ObjectManager $manager
-     * @param object  $queryBuilder
-     * @param string        $class
-     *
-     * @return ParseQueryBuilderLoader
-     */
     public function getLoader(ObjectManager $manager, object $queryBuilder, string $class): ParseQueryBuilderLoader
     {
-        return new ParseQueryBuilderLoader($queryBuilder, $manager, $class);
+        return new ParseQueryBuilderLoader($queryBuilder);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getName()
-    {
-        return $this->getBlockPrefix();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function getBlockPrefix(): string
     {
         return 'object';
-    }
-
-    /**
-     * We consider two query builders with an equal SQL string and
-     * equal parameters to be equal.
-     *
-     * @param QueryBuilder $queryBuilder
-     *
-     * @return array
-     *
-     */
-    public function getQueryBuilderPartsForCachingHash($queryBuilder): ?array
-    {
-        return array(
-                $queryBuilder->getQuery()->toArray(),
-        );
     }
 }
