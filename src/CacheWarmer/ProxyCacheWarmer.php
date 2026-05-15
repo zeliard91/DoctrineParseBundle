@@ -43,20 +43,16 @@ class ProxyCacheWarmer implements CacheWarmerInterface
 
     /**
      * This cache warmer is not optional, without proxies fatal error occurs!
-     *
-     * @return false
      */
-    public function isOptional()
+    public function isOptional(): bool
     {
         return false;
     }
 
     /**
-     * @param string $cacheDir
-     * @param string|null $buildDir
      * @return string[]
      */
-    public function warmUp($cacheDir, $buildDir = null)
+    public function warmUp(string $cacheDir, ?string $buildDir = null): array
     {
         // Native lazy ghost objects need no code generation.
         if ($this->container->hasParameter('doctrine_parse.use_lazy_ghost_object')

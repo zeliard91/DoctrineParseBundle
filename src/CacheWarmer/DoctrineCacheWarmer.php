@@ -33,10 +33,8 @@ class DoctrineCacheWarmer implements CacheWarmerInterface
 
     /**
      * This cache warmer is not optional, without proxies fatal error occurs!
-     *
-     * @return false
      */
-    public function isOptional()
+    public function isOptional(): bool
     {
         return false;
     }
@@ -44,7 +42,7 @@ class DoctrineCacheWarmer implements CacheWarmerInterface
     /**
      * @return string[]
      */
-    public function warmUp($cacheDir, $buildDir = null)
+    public function warmUp(string $cacheDir, ?string $buildDir = null): array
     {
         // Clear metadata cache
         $registry = $this->container->get('doctrine_parse');
@@ -55,8 +53,10 @@ class DoctrineCacheWarmer implements CacheWarmerInterface
             $cacheDriver = $om->getConfiguration()->getMetadataCache();
 
             if ($cacheDriver) {
-                $result = $cacheDriver->clear();
+                $cacheDriver->clear();
             }
         }
+
+        return [];
     }
 }
