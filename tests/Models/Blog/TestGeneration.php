@@ -81,7 +81,7 @@ class TestGeneration
         return $this->id;
     }
 
-    public function setCreatedAt(\DateTime $createdAt = null): self
+    public function setCreatedAt(null|\DateTime $createdAt = null): self
     {
         $this->createdAt = $createdAt;
     
@@ -93,7 +93,7 @@ class TestGeneration
         return $this->createdAt;
     }
 
-    public function setUpdatedAt(\DateTime $updatedAt = null): self
+    public function setUpdatedAt(null|\DateTime $updatedAt = null): self
     {
         $this->updatedAt = $updatedAt;
     
@@ -105,7 +105,7 @@ class TestGeneration
         return $this->updatedAt;
     }
 
-    public function setName(string|\BackedEnum $name = null): self
+    public function setName(null|string|\BackedEnum $name = null): self
     {
         $this->name = $name;
     
@@ -117,7 +117,7 @@ class TestGeneration
         return $this->name;
     }
 
-    public function setLocation(\Parse\ParseGeoPoint $location = null): self
+    public function setLocation(null|\Parse\ParseGeoPoint $location = null): self
     {
         $this->location = $location;
     
@@ -129,7 +129,7 @@ class TestGeneration
         return $this->location;
     }
 
-    public function setIsActive(bool $isActive = null): self
+    public function setIsActive(null|bool $isActive = null): self
     {
         $this->isActive = $isActive;
     
@@ -141,7 +141,7 @@ class TestGeneration
         return $this->isActive;
     }
 
-    public function setBackup(\Parse\ParseFile $backup = null): self
+    public function setBackup(null|\Parse\ParseFile $backup = null): self
     {
         $this->backup = $backup;
     

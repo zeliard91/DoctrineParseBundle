@@ -176,7 +176,7 @@ class ObjectRepository implements BaseObjectRepository, Selectable
      *
      * @return Collection
      */
-    public function findBy(array $criteria, array $sort = null, $limit = null, $skip = null)
+    public function findBy(array $criteria, ?array $sort = null, $limit = null, $skip = null)
     {
         return $this->getObjectPersister()->loadAll($criteria, $sort, $limit, $skip);
     }
@@ -191,7 +191,7 @@ class ObjectRepository implements BaseObjectRepository, Selectable
      *
      * @return array
      */
-    public function findByWithoutManaging(array $criteria, array $sort = null, $limit = null, $skip = null)
+    public function findByWithoutManaging(array $criteria, ?array $sort = null, $limit = null, $skip = null)
     {
         return $this->getObjectPersister()->loadAll($criteria, $sort, $limit, $skip, ['doctrine.do_not_manage' => 1]);
     }

@@ -922,6 +922,10 @@ public function <methodName>()
             $methodTypeHint = '\\' .ltrim(preg_replace('/(.)\<(.+)\>/', '$1', $methodTypeHint), '\\');
         }
 
+        if ('set' === $type && 'null' === $defaultValue && !empty($methodTypeHint)) {
+            $methodTypeHint = 'null|' . $methodTypeHint;
+        }
+
         $replacements = array(
             '<description>' => ucfirst($type) . ' ' . $fieldName,
             '<methodTypeHint>' => $methodTypeHint,

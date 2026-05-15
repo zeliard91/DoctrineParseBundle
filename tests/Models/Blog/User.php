@@ -271,7 +271,7 @@ class User
      *
      * @param \Redking\ParseBundle\Tests\Models\Blog\Picture $portrait
      */
-    public function setPortrait(\Redking\ParseBundle\Tests\Models\Blog\Picture $portrait = null)
+    public function setPortrait(?\Redking\ParseBundle\Tests\Models\Blog\Picture $portrait = null)
     {
         $this->portrait = $portrait;
 

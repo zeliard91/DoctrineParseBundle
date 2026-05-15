@@ -21,7 +21,7 @@ class ParsePurger implements PurgerInterface
      *
      * @param ObjectManager $om ObjectManager instance used for persistence.
      */
-    public function __construct(ObjectManager $om = null)
+    public function __construct(?ObjectManager $om = null)
     {
         $this->om = $om;
     }

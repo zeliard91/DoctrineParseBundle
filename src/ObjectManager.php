@@ -63,7 +63,7 @@ class ObjectManager implements BaseObjectManager
      */
     private $repositoryFactory;
 
-    public function __construct(Configuration $config = null, EventManager $eventManager = null, ParseStorageInterface $parseStorage = null)
+    public function __construct(?Configuration $config = null, ?EventManager $eventManager = null, ?ParseStorageInterface $parseStorage = null)
     {
         $this->config = $config ?: new Configuration();
         $this->metadataFactory = new ClassMetadataFactory();
@@ -95,7 +95,7 @@ class ObjectManager implements BaseObjectManager
      * Creates a new Document that operates on the given Mongo connection
      * and uses the given Configuration.
      */
-    public static function create(Configuration $config = null, EventManager $eventManager = null, ParseStorageInterface $parseStorage = null): self
+    public static function create(?Configuration $config = null, ?EventManager $eventManager = null, ?ParseStorageInterface $parseStorage = null): self
     {
         return new static($config, $eventManager, $parseStorage);
     }
@@ -119,7 +119,7 @@ class ObjectManager implements BaseObjectManager
      * @param  \Parse\ParseStorageInterface $parseStorage
      * @return void
      */
-    protected function initParseConnection(ParseStorageInterface $parseStorage = null)
+    protected function initParseConnection(?ParseStorageInterface $parseStorage = null)
     {
         if (null !== $parseStorage) {
             ParseClient::setStorage($parseStorage);
@@ -313,7 +313,7 @@ class ObjectManager implements BaseObjectManager
      *
      * @return object
      */
-    public function getReference(string $objectName, $id, ParseObject $data = null)
+    public function getReference(string $objectName, $id, ?ParseObject $data = null)
     {
         $class = $this->metadataFactory->getMetadataFor(ltrim($objectName, '\\'));
 

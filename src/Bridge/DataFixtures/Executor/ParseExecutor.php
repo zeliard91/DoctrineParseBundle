@@ -20,7 +20,7 @@ class ParseExecutor extends AbstractExecutor
      *
      * @param ObjectManager $om ObjectManager instance used for persistence.
      */
-    public function __construct(ObjectManager $om, ParsePurger $purger = null)
+    public function __construct(ObjectManager $om, ?ParsePurger $purger = null)
     {
         $this->om = $om;
         if ($purger !== null) {

@@ -21,7 +21,7 @@ class Logger
      */
     private $prefix;
 
-    public function __construct(LoggerInterface $logger = null, $prefix = 'Parse query: ')
+    public function __construct(?LoggerInterface $logger = null, $prefix = 'Parse query: ')
     {
         $this->logger = $logger;
         $this->prefix = $prefix;

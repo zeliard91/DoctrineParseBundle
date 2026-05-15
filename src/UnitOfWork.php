@@ -587,7 +587,7 @@ class UnitOfWork implements PropertyChangedListener
      * @param array  $id     The identifier values.
      * @param array  $data   The original object data.
      */
-    public function registerManaged($object, $id, ParseObject $data = null)
+    public function registerManaged($object, $id, ?ParseObject $data = null)
     {
         $oid = spl_object_hash($object);
         $class = $this->om->getClassMetadata(get_class($object));
@@ -696,7 +696,7 @@ class UnitOfWork implements PropertyChangedListener
      *
      * @return ParseObject|null
      */
-    public function getOriginalObjectData($object, string $oid = null): ?ParseObject
+    public function getOriginalObjectData($object, ?string $oid = null): ?ParseObject
     {
         if (null === $oid) {
             $oid = spl_object_hash($object);
@@ -1711,7 +1711,7 @@ class UnitOfWork implements PropertyChangedListener
      * @throws RedkingParseException
      * @throws ORMException
      */
-    private function computeAssociationChanges($assoc, $value, string $objectClass = null)
+    private function computeAssociationChanges($assoc, $value, ?string $objectClass = null)
     {
         if ($this->om->isUninitializedObject($value)) {
             return;
@@ -2716,7 +2716,7 @@ class UnitOfWork implements PropertyChangedListener
      * @param  ParseObject $parseObject
      * @return
      */
-    public function applyAcl($object, ParseObject $parseObject = null)
+    public function applyAcl($object, ?ParseObject $parseObject = null)
     {
         if (null === $parseObject) {
             $parseObject = $this->getOriginalObjectData($object);

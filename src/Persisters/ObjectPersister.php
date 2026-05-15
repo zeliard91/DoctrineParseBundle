@@ -67,7 +67,7 @@ class ObjectPersister
      *
      * @todo Check identity map? loadById method? Try to guess whether $criteria is the id?
      */
-    public function load(array $criteria, $object = null, $assoc = null, array $hints = array(), $limit = null, array $orderBy = null)
+    public function load(array $criteria, $object = null, $assoc = null, array $hints = array(), $limit = null, ?array $orderBy = null)
     {
         try {
             return $this->getQuery($criteria, $assoc, $limit, null, $orderBy)->setHints($hints)->getSingleResult();
@@ -87,7 +87,7 @@ class ObjectPersister
      *
      * @return array
      */
-    public function loadAll(array $criteria = array(), array $orderBy = null, $limit = null, $skip = null, array $hints = array())
+    public function loadAll(array $criteria = array(), ?array $orderBy = null, $limit = null, $skip = null, array $hints = array())
     {
         try {
             return $this->getQuery($criteria, null, $limit, $skip, $orderBy)->setHints($hints)->execute();
@@ -101,7 +101,7 @@ class ObjectPersister
      *
      * @return \Redking\ParseBundle\Query
      */
-    protected function getQuery($criteria, $assoc = null, $limit = null, $skip = null, array $orderBy = null, array $includeKeys = null)
+    protected function getQuery($criteria, $assoc = null, $limit = null, $skip = null, ?array $orderBy = null, ?array $includeKeys = null)
     {
         $qb = $this->om->createQueryBuilder($this->class->name)
             ->setCriteria($criteria);

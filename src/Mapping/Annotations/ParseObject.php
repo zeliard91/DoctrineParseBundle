@@ -31,7 +31,7 @@ class ParseObject extends AbstractParseObject
      * @param Index[]                                                               $indexes
      */
     public function __construct(
-        string $collection = null,
+        ?string $collection = null,
         ?string $repositoryClass = null,
         array $indexes = [],
         bool $readOnly = false,

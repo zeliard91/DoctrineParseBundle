@@ -24,7 +24,7 @@ class SimpleDataCollector extends DataCollector
      */
     protected $stopwatch;
 
-    public function __construct(StopWatch $stopwatch = null)
+    public function __construct(?StopWatch $stopwatch = null)
     {
         $this->queries = array();
         $this->queryTimes = array();
@@ -59,7 +59,7 @@ class SimpleDataCollector extends DataCollector
         }
     }
 
-    public function collect(Request $request, Response $response, \Throwable $exception = null): void
+    public function collect(Request $request, Response $response, ?\Throwable $exception = null): void
     {
         $this->data['nb_queries'] = count($this->queries);
         $this->data['queries'] = array_map('json_encode', $this->queries);
