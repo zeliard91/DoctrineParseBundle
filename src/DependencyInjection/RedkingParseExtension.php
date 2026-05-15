@@ -2,8 +2,6 @@
 
 namespace Redking\ParseBundle\DependencyInjection;
 
-use Doctrine\Common\Cache\MemcacheCache;
-use Doctrine\Common\Cache\RedisCache;
 use Doctrine\Common\EventSubscriber;
 use Redking\ParseBundle\Attribute\AsParseListener;
 use Redking\ParseBundle\Attribute\MapParseObject;
@@ -344,16 +342,10 @@ class RedkingParseExtension extends AbstractDoctrineExtension
      * @param string $objectManagerName The object manager name
      * @param array  $cacheDriver       The cache driver mapping
      *
-     * @throws InvalidArgumentException
-     *
-     * @psalm-suppress UndefinedClass this won't be necessary when removing metadata cache configuration
+     * @throws \InvalidArgumentException
      */
     protected function loadCacheDriver($cacheName, $objectManagerName, array $cacheDriver, ContainerBuilder $container): string
     {
-        if (isset($cacheDriver['namespace'])) {
-            return parent::loadCacheDriver($cacheName, $objectManagerName, $cacheDriver, $container);
-        }
-
         $cacheDriverServiceId = $this->getObjectManagerElementName($objectManagerName . '_' . $cacheName);
 
         switch ($cacheDriver['type']) {
@@ -363,10 +355,6 @@ class RedkingParseExtension extends AbstractDoctrineExtension
                 return $cacheDriverServiceId;
 
             case 'memcached':
-                if (! empty($cacheDriver['class']) && $cacheDriver['class'] !== MemcacheCache::class) {
-                    return parent::loadCacheDriver($cacheName, $objectManagerName, $cacheDriver, $container);
-                }
-
                 $memcachedInstanceClass = ! empty($cacheDriver['instance_class']) ? $cacheDriver['instance_class'] : '%' . $this->getObjectManagerElementName('cache.memcached_instance.class') . '%';
                 $memcachedHost          = ! empty($cacheDriver['host']) ? $cacheDriver['host'] : '%' . $this->getObjectManagerElementName('cache.memcached_host') . '%';
                 $memcachedPort          = ! empty($cacheDriver['port']) ? $cacheDriver['port'] : '%' . $this->getObjectManagerElementName('cache.memcached_port') . '%';
@@ -377,15 +365,11 @@ class RedkingParseExtension extends AbstractDoctrineExtension
                 ]);
                 $container->setDefinition($this->getObjectManagerElementName(sprintf('%s_memcached_instance', $objectManagerName)), $memcachedInstance);
 
-                $cacheDef = new Definition(MemcachedAdapter::class, [new Reference($this->getObjectManagerElementName(sprintf('%s_memcached_instance', $objectManagerName)))]);
+                $cacheDef = new Definition($cacheDriver['class'] ?? MemcachedAdapter::class, [new Reference($this->getObjectManagerElementName(sprintf('%s_memcached_instance', $objectManagerName)))]);
 
                 break;
 
             case 'redis':
-                if (! empty($cacheDriver['class']) && $cacheDriver['class'] !== RedisCache::class && $cacheDriver['class'] !== 'Redis') {
-                    return parent::loadCacheDriver($cacheName, $objectManagerName, $cacheDriver, $container);
-                }
-
                 $redisInstanceClass = ! empty($cacheDriver['instance_class']) ? $cacheDriver['instance_class'] : '%' . $this->getObjectManagerElementName('cache.redis_instance.class') . '%';
                 $redisHost          = ! empty($cacheDriver['host']) ? $cacheDriver['host'] : '%' . $this->getObjectManagerElementName('cache.redis_host') . '%';
                 $redisPort          = ! empty($cacheDriver['port']) ? $cacheDriver['port'] : '%' . $this->getObjectManagerElementName('cache.redis_port') . '%';
@@ -396,7 +380,7 @@ class RedkingParseExtension extends AbstractDoctrineExtension
                 ]);
                 $container->setDefinition($this->getObjectManagerElementName(sprintf('%s_redis_instance', $objectManagerName)), $redisInstance);
 
-                $cacheDef = new Definition(RedisAdapter::class, [new Reference($this->getObjectManagerElementName(sprintf('%s_redis_instance', $objectManagerName)))]);
+                $cacheDef = new Definition($cacheDriver['class'] ?? RedisAdapter::class, [new Reference($this->getObjectManagerElementName(sprintf('%s_redis_instance', $objectManagerName)))]);
 
                 break;
 
@@ -411,7 +395,10 @@ class RedkingParseExtension extends AbstractDoctrineExtension
                 break;
 
             default:
-                return parent::loadCacheDriver($cacheName, $objectManagerName, $cacheDriver, $container);
+                throw new \InvalidArgumentException(sprintf(
+                    '"%s" is an unrecognized Doctrine cache driver. Supported drivers: service, memcached, redis, apcu, array.',
+                    $cacheDriver['type']
+                ));
         }
 
         $cacheDef->setPublic(false);
