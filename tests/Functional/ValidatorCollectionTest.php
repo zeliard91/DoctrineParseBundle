@@ -29,11 +29,13 @@ class ValidatorCollectionTest extends \Redking\ParseBundle\Tests\TestCase
 
         $builder = Validation::createValidatorBuilder();
         // Symfony >= 6.4 exposes enableAttributeMapping(); on Symfony 5.4 the
-        // attribute reader is enabled through enableAnnotationMapping().
+        // attribute reader is enabled through enableAnnotationMapping(true),
+        // where the boolean skips the Doctrine annotation reader so the
+        // doctrine/annotations package is not required.
         if (method_exists($builder, 'enableAttributeMapping')) {
             $builder->enableAttributeMapping();
         } else {
-            $builder->enableAnnotationMapping(false);
+            $builder->enableAnnotationMapping(true);
         }
 
         $this->validator = $builder->getValidator();
