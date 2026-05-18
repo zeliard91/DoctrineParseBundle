@@ -7,6 +7,7 @@ use Redking\ParseBundle\Tests\Models\Blog\ValidatedAuthor;
 use Redking\ParseBundle\Tests\Models\Blog\ValidatedBook;
 use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\Validator\ValidatorBuilder;
 
 /**
  * Verifies that Symfony's Assert\Valid constraint on a lazy ReferenceMany
@@ -26,9 +27,16 @@ class ValidatorCollectionTest extends \Redking\ParseBundle\Tests\TestCase
     {
         parent::setUp();
 
-        $this->validator = Validation::createValidatorBuilder()
-            ->enableAttributeMapping()
-            ->getValidator();
+        $builder = Validation::createValidatorBuilder();
+        // Symfony >= 6.4 exposes enableAttributeMapping(); on Symfony 5.4 the
+        // attribute reader is enabled through enableAnnotationMapping().
+        if (method_exists($builder, 'enableAttributeMapping')) {
+            $builder->enableAttributeMapping();
+        } else {
+            $builder->enableAnnotationMapping(false);
+        }
+
+        $this->validator = $builder->getValidator();
     }
 
     public function testValidCascadesIntoLazyCollectionAndDetectsViolation(): void
