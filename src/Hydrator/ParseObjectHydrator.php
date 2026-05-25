@@ -84,6 +84,48 @@ class ParseObjectHydrator
             }
         }
 
+        // Pre-register normal-class instances for every association whose payload
+        // is fully available, BEFORE recursing into nested hydration. Without this,
+        // a Pointer field encountered first during a sibling include's recursive
+        // hydration calls getReference() and locks a generated proxy class into the
+        // identity map; the top-level full payload that arrives next then only
+        // re-hydrates the proxy in place, leaving the user with a __CG__\... proxy
+        // class for the second include even though the data is fully loaded.
+        $uow = $this->om->getUnitOfWork();
+        foreach ($this->class->associationMappings as $assoc) {
+            $targetClass = $this->om->getClassMetadata($assoc['targetDocument']);
+            $rootName    = $targetClass->rootEntityName;
+
+            if ($assoc['type'] === ClassMetadata::ONE) {
+                $ref = $data->get($assoc['name']);
+                if ($ref instanceof ParseObject && $ref->isDataAvailable()) {
+                    $refId = $ref->getObjectId();
+                    if ($refId !== null && $uow->tryGetById($refId, $rootName) === false) {
+                        $uow->registerManaged($targetClass->newInstance(), $refId, $ref);
+                    }
+                }
+                continue;
+            }
+
+            try {
+                $refs = $data->get($assoc['name']);
+            } catch (\Exception $e) {
+                continue;
+            }
+            if (!is_array($refs)) {
+                continue;
+            }
+            foreach ($refs as $ref) {
+                if (!$ref instanceof ParseObject || !$ref->isDataAvailable()) {
+                    continue;
+                }
+                $refId = $ref->getObjectId();
+                if ($refId !== null && $uow->tryGetById($refId, $rootName) === false) {
+                    $uow->registerManaged($targetClass->newInstance(), $refId, $ref);
+                }
+            }
+        }
+
         // load associations
         foreach ($this->class->associationMappings as $field => $assoc) {
             $targetClass = $this->om->getClassMetadata($assoc['targetDocument']);
