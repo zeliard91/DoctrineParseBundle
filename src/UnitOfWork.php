@@ -531,17 +531,31 @@ class UnitOfWork implements PropertyChangedListener
             $oid = spl_object_hash($object);
 
             if ($this->om->isUninitializedObject($object)) {
-                // Mark the lazy ghost as initialized without firing its initializer:
+                // Mark the lazy ghost as initialized BEFORE the hydrator runs:
                 // we already have fresh $data and the hydrator below will populate every
-                // reflected property. On PHP 8.4 the native API exposes a dedicated method;
-                // for symfony/var-exporter ghosts the per-property writes done by the
-                // hydrator are enough to flip the LazyObjectState.
+                // reflected property. Without this, the proxy ends up populated but still
+                // flagged UNINITIALIZED_FULL, so any later property access (or any __set
+                // dispatched from a class method that writes a private parent/trait
+                // property — e.g. ACLTrait::setPublicAcl()) trips the initializer and
+                // emits a redundant Parse query.
+                //
+                // Two backends are handled here:
+                //  - PHP 8.4 native lazy ghosts (ReflectionClass::newLazyGhost), via
+                //    ReflectionClass::markLazyObjectAsInitialized().
+                //  - symfony/var-exporter ghosts (default), via the public
+                //    __setInitialized alias added by
+                //    Proxy/ProxyFactory::injectDoctrinePersistenceProxy(), which is the
+                //    LazyGhostTrait::setLazyObjectAsInitialized() method.
                 if (PHP_VERSION_ID >= 80400) {
                     $reflClass = $class->getReflectionClass();
                     if (method_exists($reflClass, 'markLazyObjectAsInitialized')
                         && $reflClass->isUninitializedLazyObject($object)) {
                         $reflClass->markLazyObjectAsInitialized($object);
                     }
+                }
+                if ($object instanceof \Symfony\Component\VarExporter\LazyObjectInterface
+                    && method_exists($object, '__setInitialized')) {
+                    $object->__setInitialized(true);
                 }
                 $overrideLocalValues = true;
             } else {
