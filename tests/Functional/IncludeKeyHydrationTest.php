@@ -3,6 +3,7 @@
 namespace Redking\ParseBundle\Tests\Functional;
 
 use Redking\ParseBundle\Tests\Models\Blog\ChainNode;
+use Redking\ParseBundle\Tests\Models\Blog\NullAclChainNode;
 use Redking\ParseBundle\Tests\Models\Blog\Post;
 use Redking\ParseBundle\Tests\Models\Blog\User;
 
@@ -23,6 +24,7 @@ class IncludeKeyHydrationTest extends \Redking\ParseBundle\Tests\TestCase
         User::class,
         Post::class,
         ChainNode::class,
+        NullAclChainNode::class,
     ];
 
     /**
@@ -206,5 +208,102 @@ class IncludeKeyHydrationTest extends \Redking\ParseBundle\Tests\TestCase
         );
 
         $this->assertCount(1, $queries, 'No extra query may fire while reading the included graph');
+    }
+
+    /**
+     * Regression: a multi-include query pre-registers entities for nested-Pointer
+     * resolution. Those entities end up in the identity map (state MANAGED) and
+     * are then visited by computeChangeSets() on the next flush(). Their ACL
+     * arrays must be properly initialized so getAcl() does not blow up on
+     * foreach(getRolesAcl()).
+     */
+    public function testFlushAfterIncludeKeyQueryDoesNotBreakAcl(): void
+    {
+        $b = new ChainNode();
+        $b->setLabel('B');
+        $this->om->persist($b);
+
+        $a = new ChainNode();
+        $a->setLabel('A');
+        $a->setFirst($b);
+        $this->om->persist($a);
+
+        $root = new ChainNode();
+        $root->setLabel('root');
+        $root->setFirst($a);
+        $root->setSecond($b);
+        $this->om->persist($root);
+
+        $this->om->flush();
+        $rootId = $root->getId();
+        $this->om->clear();
+
+        $this->om->createQueryBuilder(ChainNode::class)
+            ->field('id')->equals($rootId)
+            ->includeKey('first')
+            ->includeKey('second')
+            ->getQuery()
+            ->getSingleResult();
+
+        $extra = new ChainNode();
+        $extra->setLabel('extra');
+        $this->om->persist($extra);
+
+        $this->om->flush();
+
+        $this->assertNotNull($extra->getId(), 'flush() must succeed without ACL errors');
+    }
+
+    /**
+     * Regression mirroring a user-reported production crash:
+     *
+     *     Warning: foreach() argument must be of type array|object, null given
+     *       at UnitOfWork::getAcl() ... applyAcl() ... computeChangeSet()
+     *
+     * The pre-scan introduced by the multi-include fix turns nested-Pointer
+     * targets into NORMAL managed entities (previously they were proxies that
+     * computeChangeSets() skipped via isUninitializedObject()). Some user-land
+     * entities expose ACL accessors that return null (e.g. when the ACL state
+     * is lazily filled and the trait/property was overridden without an inline
+     * []  default). getAcl() must cope with that — it cannot assume the
+     * collections are always arrays.
+     */
+    public function testFlushAfterIncludeKeyOnEntityWithNullAclAccessors(): void
+    {
+        $b = new NullAclChainNode();
+        $b->setLabel('B');
+        $this->om->persist($b);
+
+        $a = new NullAclChainNode();
+        $a->setLabel('A');
+        $a->setFirst($b);
+        $this->om->persist($a);
+
+        $root = new NullAclChainNode();
+        $root->setLabel('root');
+        $root->setFirst($a);
+        $root->setSecond($b);
+        $this->om->persist($root);
+
+        $this->om->flush();
+        $rootId = $root->getId();
+        $this->om->clear();
+
+        // Triggers pre-scan: A and B are pre-registered as concrete managed
+        // entities. On the next flush, computeChangeSets() will visit them.
+        $this->om->createQueryBuilder(NullAclChainNode::class)
+            ->field('id')->equals($rootId)
+            ->includeKey('first')
+            ->includeKey('second')
+            ->getQuery()
+            ->getSingleResult();
+
+        $extra = new NullAclChainNode();
+        $extra->setLabel('extra');
+        $this->om->persist($extra);
+
+        $this->om->flush();
+
+        $this->assertNotNull($extra->getId(), 'flush() must succeed even when included entities expose null ACL accessors');
     }
 }

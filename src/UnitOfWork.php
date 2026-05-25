@@ -2683,7 +2683,7 @@ class UnitOfWork implements PropertyChangedListener
             $isPublic = true;
         }
 
-        foreach ($object->getRolesAcl() as $key => $roles) {
+        foreach ($object->getRolesAcl() ?? [] as $key => $roles) {
             $isPublic = false;
             if (is_scalar($roles['role'])) {
                 $acl->setRoleReadAccessWithName($roles['role'], $roles['read']);
@@ -2697,7 +2697,7 @@ class UnitOfWork implements PropertyChangedListener
             }
         }
 
-        foreach ($object->getUsersAcl() as $key => $users) {
+        foreach ($object->getUsersAcl() ?? [] as $key => $users) {
             $isPublic = false;
             if (is_scalar($users['user'])) {
                 $acl->setReadAccess($users['user'], $users['read']);
