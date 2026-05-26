@@ -84,47 +84,7 @@ class ParseObjectHydrator
             }
         }
 
-        // Pre-register normal-class instances for every association whose payload
-        // is fully available, BEFORE recursing into nested hydration. Without this,
-        // a Pointer field encountered first during a sibling include's recursive
-        // hydration calls getReference() and locks a generated proxy class into the
-        // identity map; the top-level full payload that arrives next then only
-        // re-hydrates the proxy in place, leaving the user with a __CG__\... proxy
-        // class for the second include even though the data is fully loaded.
-        $uow = $this->om->getUnitOfWork();
-        foreach ($this->class->associationMappings as $assoc) {
-            $targetClass = $this->om->getClassMetadata($assoc['targetDocument']);
-            $rootName    = $targetClass->rootEntityName;
-
-            if ($assoc['type'] === ClassMetadata::ONE) {
-                $ref = $data->get($assoc['name']);
-                if ($ref instanceof ParseObject && $ref->isDataAvailable()) {
-                    $refId = $ref->getObjectId();
-                    if ($refId !== null && $uow->tryGetById($refId, $rootName) === false) {
-                        $uow->registerManaged($targetClass->newInstance(), $refId, $ref);
-                    }
-                }
-                continue;
-            }
-
-            try {
-                $refs = $data->get($assoc['name']);
-            } catch (\Exception $e) {
-                continue;
-            }
-            if (!is_array($refs)) {
-                continue;
-            }
-            foreach ($refs as $ref) {
-                if (!$ref instanceof ParseObject || !$ref->isDataAvailable()) {
-                    continue;
-                }
-                $refId = $ref->getObjectId();
-                if ($refId !== null && $uow->tryGetById($refId, $rootName) === false) {
-                    $uow->registerManaged($targetClass->newInstance(), $refId, $ref);
-                }
-            }
-        }
+        $this->preRegisterFullyLoadedAssociations($data, $hints);
 
         // load associations
         foreach ($this->class->associationMappings as $field => $assoc) {
@@ -189,12 +149,25 @@ class ParseObjectHydrator
                     try {
                         $references = $data->get($assoc['name']);
                         if (is_array($references)) {
+                            // Track whether the whole array is fully included: only
+                            // then can we flag the collection initialized and skip a
+                            // later lazy reload. A reload reads the owner's original
+                            // ParseObject, which is gone once the owner is detached
+                            // (e.g. under 'doctrine.do_not_manage'), so an included
+                            // collection left uninitialized would fatally fail on
+                            // first access.
+                            $fullyIncluded = true;
                             foreach ($references as $reference) {
                                 if ($reference instanceof ParseObject && $reference->isDataAvailable()) {
                                     $pColl->add($this->om->getUnitOfWork()->getOrCreateObject($assoc['targetDocument'], $reference, $hints));
+                                } elseif ($reference instanceof ParseObject) {
+                                    $fullyIncluded = false;
                                 }
                             }
                             $pColl->takeSnapshot();
+                            if ($fullyIncluded) {
+                                $pColl->setInitialized(true);
+                            }
                         }
                     } catch (\Exception $e) {
                         // do nothing as the key has not been fetched
@@ -230,6 +203,69 @@ class ParseObjectHydrator
         }
         if ($this->evm->hasListeners(Events::postLoad)) {
             $this->evm->dispatchEvent(Events::postLoad, new LifecycleEventArgs($object, $this->om));
+        }
+    }
+
+    /**
+     * Pre-register a concrete (non-proxy) instance in the identity map for every
+     * association whose payload is fully available, BEFORE the association-loading
+     * loop below recurses into nested hydration.
+     *
+     * Without this, a Pointer field nested inside a sibling include is resolved
+     * first via getReference() and locks a generated proxy class into the identity
+     * map; the top-level full payload that arrives next then only re-hydrates the
+     * proxy in place, leaving the caller with a __CG__\... proxy class for the
+     * second include even though the data is fully loaded.
+     *
+     * Skipped under 'doctrine.do_not_manage': that hint makes getOrCreateObject()
+     * return early (before hydrate()), so a pre-registered instance would stay
+     * empty yet keep the full ParseObject as its change-detection baseline — the
+     * next flush would then compute a "full -> null" changeset and wipe the row.
+     */
+    private function preRegisterFullyLoadedAssociations(\Parse\ParseObject $data, array $hints): void
+    {
+        if (isset($hints['doctrine.do_not_manage'])) {
+            return;
+        }
+
+        $uow = $this->om->getUnitOfWork();
+        foreach ($this->class->associationMappings as $assoc) {
+            $targetClass = $this->om->getClassMetadata($assoc['targetDocument']);
+            $rootName    = $targetClass->rootEntityName;
+
+            if ($assoc['type'] === ClassMetadata::ONE) {
+                $ref = $data->get($assoc['name']);
+                if ($ref instanceof ParseObject && $ref->isDataAvailable()) {
+                    $this->preRegisterReference($uow, $targetClass, $rootName, $ref);
+                }
+                continue;
+            }
+
+            try {
+                $refs = $data->get($assoc['name']);
+            } catch (\Exception $e) {
+                continue;
+            }
+            if (!is_array($refs)) {
+                continue;
+            }
+            foreach ($refs as $ref) {
+                if ($ref instanceof ParseObject && $ref->isDataAvailable()) {
+                    $this->preRegisterReference($uow, $targetClass, $rootName, $ref);
+                }
+            }
+        }
+    }
+
+    /**
+     * Register a concrete managed instance for a fully-available Pointer payload,
+     * unless that id is already tracked by the UnitOfWork.
+     */
+    private function preRegisterReference($uow, ClassMetadata $targetClass, string $rootName, ParseObject $ref): void
+    {
+        $refId = $ref->getObjectId();
+        if ($refId !== null && $uow->tryGetById($refId, $rootName) === false) {
+            $uow->registerManaged($targetClass->newInstance(), $refId, $ref);
         }
     }
 }
