@@ -172,42 +172,6 @@ abstract class Type
     }
 
     /**
-     * Get a Type instance based on the type of the passed php variable.
-     *
-     * @param mixed $variable
-     *
-     * @return \Doctrine\ODM\MongoDB\Types\Type $type
-     *
-     * @throws \InvalidArgumentException
-     */
-    public static function getTypeFromPHPVariable($variable)
-    {
-        if (is_object($variable)) {
-            if ($variable instanceof \DateTime) {
-                return self::getType('date');
-            }
-        } else {
-            $type = gettype($variable);
-            switch ($type) {
-                case 'integer':
-                    return self::getType('int');
-            }
-        }
-
-        return;
-    }
-
-    public static function convertPHPToDatabaseValue($value)
-    {
-        $type = self::getTypeFromPHPVariable($value);
-        if ($type !== null) {
-            return $type->convertToDatabaseValue($value);
-        }
-
-        return $value;
-    }
-
-    /**
      * Adds a custom type to the type map.
      *
      * @static

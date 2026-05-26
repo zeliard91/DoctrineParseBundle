@@ -612,8 +612,10 @@ class PersistentCollection implements Collection
 
     /**
      * {@inheritdoc}
+     *
+     * @return array{0: Collection, 1: Collection} A tuple of [matching, non-matching] collections.
      */
-    public function partition(\Closure $p): Collection
+    public function partition(\Closure $p): array
     {
         $this->initialize();
 
