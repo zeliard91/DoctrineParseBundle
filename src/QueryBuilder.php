@@ -540,31 +540,100 @@ class QueryBuilder
     }
 
     /**
-     * Replace aggregate previous stage names and id for Parse Server > 6 (should be native mongodb syntax)
+     * Aggregation pipeline stage names supported by Parse Server / MongoDB.
+     *
+     * On Parse Server < 6, the pipeline accepted bare stage names (e.g. "match")
+     * and "objectId" as the id field. On Parse Server >= 6 the native MongoDB
+     * syntax is expected: stage names prefixed with "$" and "_id" as the id field.
+     *
+     * @var string[]
+     */
+    private static $aggregateStageNames = [
+        'project', 'group', 'match', 'lookup', 'unwind', 'sort',
+        'skip', 'limit', 'count', 'facet', 'addFields', 'set', 'unset',
+        'replaceRoot', 'sortByCount', 'sample', 'redact', 'graphLookup',
+        'bucket', 'bucketAuto',
+    ];
+
+    /**
+     * Convert a Parse Server < 6 aggregation pipeline to the native MongoDB
+     * syntax expected by Parse Server >= 6.
+     *
+     * Two distinct rules apply and must not be mixed up:
+     *  - Stage names are prefixed with "$", but ONLY when they appear as pipeline
+     *    stages (top level, list elements, or inside a $lookup sub-pipeline). This
+     *    prevents output fields that happen to share a stage name (e.g. a "count"
+     *    field produced by a $group) from being wrongly renamed to "$count".
+     *  - "objectId" keys are renamed to "_id" everywhere inside a stage body, since
+     *    the Parse object id is stored as "_id" in MongoDB.
      */
     public static function getAggregateForNewParseVersion(array $pipeline): array
     {
-        $replacements = [
-            'project' => '$project',
-            'group' => '$group',
-            'match' => '$match',
-            'lookup' => '$lookup',
-            'unwind' => '$unwind',
-            'sort' => '$sort',
-            'objectId' => '_id'
-        ];
+        return self::transformAggregateStages($pipeline);
+    }
 
-        $newArray = [];
+    /**
+     * Transform a pipeline (an associative array of stage => body, or a list of
+     * single-stage documents). Only keys recognized as stage names are prefixed.
+     */
+    private static function transformAggregateStages(array $pipeline): array
+    {
+        $result = [];
         foreach ($pipeline as $key => $value) {
-            $newKey = $replacements[$key] ?? $key;
-            if (is_array($value)) {
-                $newArray[$newKey] = self::getAggregateForNewParseVersion($value);
+            if (is_int($key)) {
+                // List form: each element is itself a stage document.
+                $result[$key] = is_array($value) ? self::transformAggregateStages($value) : $value;
+            } elseif (in_array($key, self::$aggregateStageNames, true)) {
+                $newKey = '$' . $key;
+                if ('lookup' === $key && is_array($value)) {
+                    $result[$newKey] = self::transformLookupStage($value);
+                } elseif (is_array($value)) {
+                    $result[$newKey] = self::transformAggregateFields($value);
+                } else {
+                    $result[$newKey] = $value;
+                }
             } else {
-                $newArray[$newKey] = $value;
+                // Unknown key at pipeline level: keep it but still apply field rules.
+                $result[$key] = is_array($value) ? self::transformAggregateFields($value) : $value;
             }
         }
 
-        return $newArray;
+        return $result;
+    }
+
+    /**
+     * Transform the body of a stage: rename "objectId" keys to "_id" recursively,
+     * without ever prefixing stage names (output fields are preserved verbatim).
+     */
+    private static function transformAggregateFields(array $body): array
+    {
+        $result = [];
+        foreach ($body as $key => $value) {
+            $newKey = 'objectId' === $key ? '_id' : $key;
+            $result[$newKey] = is_array($value) ? self::transformAggregateFields($value) : $value;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Transform a $lookup stage: its "pipeline" key holds a nested pipeline whose
+     * stage names must be prefixed, while the other keys (from, localField,
+     * foreignField, as, let, ...) follow the field rules.
+     */
+    private static function transformLookupStage(array $lookup): array
+    {
+        $result = [];
+        foreach ($lookup as $key => $value) {
+            if ('pipeline' === $key && is_array($value)) {
+                $result[$key] = self::transformAggregateStages($value);
+            } else {
+                $newKey = 'objectId' === $key ? '_id' : $key;
+                $result[$newKey] = is_array($value) ? self::transformAggregateFields($value) : $value;
+            }
+        }
+
+        return $result;
     }
 
     public function getLimit(): ?int
