@@ -70,4 +70,84 @@ class QueryBuilderAggregateTest extends TestCase
     {
         $this->assertSame([], QueryBuilder::getAggregateForNewParseVersion([]));
     }
+
+    public function testSkipAndLimitStagesArePrefixed(): void
+    {
+        $out = QueryBuilder::getAggregateForNewParseVersion([
+            'sort' => ['createdAt' => -1],
+            'skip' => 20,
+            'limit' => 10,
+        ]);
+
+        $this->assertSame(
+            ['$sort' => ['createdAt' => -1], '$skip' => 20, '$limit' => 10],
+            $out
+        );
+    }
+
+    public function testCountStageIsPrefixed(): void
+    {
+        $out = QueryBuilder::getAggregateForNewParseVersion([
+            'count' => 'total',
+        ]);
+
+        $this->assertSame(['$count' => 'total'], $out);
+    }
+
+    /**
+     * A field named like a stage and produced as a $group output (e.g. "count")
+     * must NOT be turned into a stage operator ("$count").
+     */
+    public function testStageNamedOutputFieldInGroupIsPreserved(): void
+    {
+        $out = QueryBuilder::getAggregateForNewParseVersion([
+            'group' => [
+                'objectId' => '$category',
+                'count' => ['$sum' => 1],
+                'limit' => ['$max' => '$value'],
+            ],
+        ]);
+
+        $this->assertSame(
+            ['$group' => [
+                '_id' => '$category',
+                'count' => ['$sum' => 1],
+                'limit' => ['$max' => '$value'],
+            ]],
+            $out
+        );
+    }
+
+    /**
+     * objectId used as a value reference (e.g. "$factures.objectId") is a scalar,
+     * not a key, and must be left untouched by the key-renaming rules.
+     */
+    public function testObjectIdAsValueReferenceIsPreserved(): void
+    {
+        $out = QueryBuilder::getAggregateForNewParseVersion([
+            'unwind' => '$factures',
+            'group' => ['objectId' => '$factures.objectId'],
+        ]);
+
+        $this->assertSame(
+            ['$unwind' => '$factures', '$group' => ['_id' => '$factures.objectId']],
+            $out
+        );
+    }
+
+    public function testListFormPipelineIsTransformed(): void
+    {
+        $out = QueryBuilder::getAggregateForNewParseVersion([
+            ['match' => ['status' => 'active']],
+            ['group' => ['objectId' => '$type', 'count' => ['$sum' => 1]]],
+        ]);
+
+        $this->assertSame(
+            [
+                ['$match' => ['status' => 'active']],
+                ['$group' => ['_id' => '$type', 'count' => ['$sum' => 1]]],
+            ],
+            $out
+        );
+    }
 }
