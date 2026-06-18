@@ -326,6 +326,11 @@ class Query
                 if ($attribute === 'objectId') {
                     $field = 'objectId';
                 }
+                if (null === $field) {
+                    // Forwarding a null field to Parse would build the order "-" and trigger
+                    // the cryptic "Invalid field name: ." (code 105). Fail explicitly instead.
+                    throw RedkingParseException::nonMappedFieldInSort($this->_class->name, $attribute);
+                }
                 if ($order === 'asc') {
                     $this->_parseQuery->addAscending($field);
                 } else {

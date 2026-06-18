@@ -5,6 +5,7 @@ namespace Redking\ParseBundle\Tests\Functional;
 use Parse\ParseObject;
 use Parse\ParseQuery;
 use Parse\ParseGeoPoint;
+use Redking\ParseBundle\Exception\RedkingParseException;
 use Redking\ParseBundle\Tests\Models\Blog\User;
 use Redking\ParseBundle\Tests\Models\Blog\Post;
 use Redking\ParseBundle\Tests\Models\Blog\Picture;
@@ -261,6 +262,20 @@ class QueryTest extends \Redking\ParseBundle\Tests\TestCase
         ;
         $this->assertCount(2, $results);
 
+    }
+
+    public function testSortByNonMappedFieldThrows()
+    {
+        // Sorting on an unmapped field would otherwise reach Parse as the order "-"
+        // and fail with the cryptic "Invalid field name: ." (code 105).
+        $this->expectException(RedkingParseException::class);
+        $this->expectExceptionMessage('Cannot sort by non mapped field');
+
+        $this->getUserQB()
+            ->sort('doesNotExist', 'desc')
+            ->getQuery()
+            ->execute()
+        ;
     }
 
     public function testNear()

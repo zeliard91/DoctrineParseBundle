@@ -171,6 +171,17 @@ class RedkingParseException extends \Exception
     }
 
     /**
+     * @param string $objectName
+     * @param string $fieldName
+     *
+     * @return RedkingParseException
+     */
+    public static function nonMappedFieldInSort($objectName, $fieldName)
+    {
+        return new self(sprintf('Cannot sort by non mapped field %s::%s', $objectName, $fieldName));
+    }
+
+    /**
      * Helper method to show an object as string.
      *
      * @param object $obj
