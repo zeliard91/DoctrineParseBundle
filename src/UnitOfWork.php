@@ -650,7 +650,6 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /**
-     * INTERNAL:
      * Records the field values an object has just been hydrated with.
      *
      * Collections are skipped: PersistentCollection::isDirty() already reports their
@@ -658,7 +657,7 @@ class UnitOfWork implements PropertyChangedListener
      *
      * @param object $object
      */
-    public function takeHydrationSnapshot($object): void
+    private function takeHydrationSnapshot($object): void
     {
         $class = $this->om->getClassMetadata(get_class($object));
         $snapshot = [];
