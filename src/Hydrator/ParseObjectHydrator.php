@@ -49,6 +49,13 @@ class ParseObjectHydrator
      */
     public function hydrate($object, \Parse\ParseObject $data, array $hints)
     {
+        // Fields carrying a change made since the object was loaded: they must not be
+        // reverted by this payload. Removed from the hints right away so that the
+        // nested hydrations below never protect a field of another class by name.
+        $protectedFields = $hints['doctrine.protected_fields'] ?? [];
+        unset($hints['doctrine.protected_fields']);
+        $protected = [] === $protectedFields ? [] : array_fill_keys($protectedFields, true);
+
         $metadata = $this->om->getClassMetadata(get_class($object));
         // Invoke preLoad lifecycle events and listeners
         if ( ! empty($metadata->lifecycleCallbacks[Events::preLoad])) {
@@ -63,6 +70,9 @@ class ParseObjectHydrator
         $this->class->reflFields['createdAt']->setValue($object, $data->getCreatedAt());
         $this->class->reflFields['updatedAt']->setValue($object, $data->getUpdatedAt());
         foreach ($this->class->fieldMappings as $key => $mapping) {
+            if (isset($protected[$key])) {
+                continue;
+            }
             if ($data->has($mapping['name']) && !isset($mapping['reference'])) {
                 if ($mapping['type'] === Type::GEOPOINT && null !== $data->get($mapping['name'])) {
                     $this->class->reflFields[$key]->setValue($object, clone $data->get($mapping['name']));
@@ -88,6 +98,9 @@ class ParseObjectHydrator
 
         // load associations
         foreach ($this->class->associationMappings as $field => $assoc) {
+            if (isset($protected[$field])) {
+                continue;
+            }
             $targetClass = $this->om->getClassMetadata($assoc['targetDocument']);
             switch (true) {
                 
@@ -178,7 +191,7 @@ class ParseObjectHydrator
         }
 
         // Load ACLs
-        if (method_exists($object, 'getPublicAcl')) {
+        if (!isset($protected['_ACL']) && method_exists($object, 'getPublicAcl')) {
             $acl = $data->getAcl();
             if (null !== $acl) {
                 $object->setPublicAcl($acl->getPublicReadAccess(), $acl->getPublicWriteAccess());
@@ -265,7 +278,7 @@ class ParseObjectHydrator
     {
         $refId = $ref->getObjectId();
         if ($refId !== null && $uow->tryGetById($refId, $rootName) === false) {
-            $uow->registerManaged($targetClass->newInstance(), $refId, $ref);
+            $uow->registerManagedPlaceholder($targetClass->newInstance(), $refId, $ref);
         }
     }
 }

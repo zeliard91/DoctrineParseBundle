@@ -260,6 +260,34 @@ class UnitOfWork implements PropertyChangedListener
     private $listenersInvoker;
 
     /**
+     * Oids of the empty placeholders the hydrator registers for the fully included
+     * associations of a payload. They are managed and are not proxies, yet they hold
+     * no value at all, so nothing about them can be a local change and they must be
+     * hydrated like a brand new object.
+     *
+     * @var array<string, true>
+     */
+    private array $awaitingHydration = [];
+
+    /**
+     * Field values of each managed object as they were hydrated, so that a change made
+     * afterwards can be spotted without rebuilding and diffing a ParseObject. Only the
+     * cheap-to-compare fields are kept: collections are covered by their dirty flag and
+     * references are kept by instance, which costs nothing since the object holds them
+     * anyway.
+     *
+     * @var array<string, array<string, mixed>>
+     */
+    private array $hydrationSnapshots = [];
+
+    /**
+     * Tracked field names per class, resolved once.
+     *
+     * @var array<string, string[]>
+     */
+    private array $trackedFields = [];
+
+    /**
      * ParseObject cloner.
      *
      * @var \DeepCopy\DeepCopy
@@ -564,9 +592,44 @@ class UnitOfWork implements PropertyChangedListener
             if ($overrideLocalValues) {
                 $this->originalObjectData[$oid] = $data;
                 $this->clearObjectChangeSet($oid);
+                // The baseline is replaced, so any snapshot of the previous one is stale.
+                unset($this->hydrationSnapshots[$oid]);
             }
 
-            $hydrator->hydrate($object, $data, $hints);
+            // A placeholder has never been hydrated : it must take the whole payload.
+            $isPlaceholder = isset($this->awaitingHydration[$oid]);
+            unset($this->awaitingHydration[$oid]);
+
+            // Hydrating everything would revert whatever was changed on this object
+            // since it was loaded — a listener resetting a pointer, then a second
+            // lookup of the same commit putting the old pointer back. Only the
+            // fields carrying a local change are kept, the rest is still refreshed
+            // so that an includeKey() payload keeps completing a managed object.
+            $hydrateHints = $hints;
+            $protected = [];
+            if (!$overrideLocalValues && !$isPlaceholder) {
+                $protected = $this->getLocallyChangedFields($object);
+                if ([] !== $protected) {
+                    $hydrateHints['doctrine.protected_fields'] = $protected;
+                }
+            }
+
+            $hydrator->hydrate($object, $data, $hydrateHints);
+
+            // Only a full hydration makes the object match the payload, so only then
+            // does it become the new baseline; after a partial one the baseline must
+            // stay what the object was loaded with, or the protected fields would be
+            // seen as unchanged by the next lookup and get reverted after all.
+            //
+            // Taken here rather than before hydrating, because the hydrator swaps the
+            // ACL instance: a snapshot taken earlier would be stale right away and every
+            // later lookup would believe the ACL changed.
+            //
+            // Nothing is snapshotted on a first hydration, so a query whose objects are
+            // never looked up again pays nothing at all.
+            if ([] === $protected) {
+                $this->takeHydrationSnapshot($object);
+            }
         } else {
             if ($object == null) {
                 $object = $class->newInstance();
@@ -584,6 +647,248 @@ class UnitOfWork implements PropertyChangedListener
         }
 
         return $object;
+    }
+
+    /**
+     * INTERNAL:
+     * Records the field values an object has just been hydrated with.
+     *
+     * Collections are skipped: PersistentCollection::isDirty() already reports their
+     * changes, and holding their contents here would keep them alive for nothing.
+     *
+     * @param object $object
+     */
+    public function takeHydrationSnapshot($object): void
+    {
+        $class = $this->om->getClassMetadata(get_class($object));
+        $snapshot = [];
+
+        foreach ($this->trackedFields($class) as $field) {
+            $value = $class->reflFields[$field]->getValue($object);
+            // Null is the default of a missing entry, and most fields of a generated
+            // model are nullable and empty: not storing them keeps the snapshot small.
+            if (null !== $value) {
+                $snapshot[$field] = $value;
+            }
+        }
+
+        $acl = $this->encodedAclOf($object);
+        if (null !== $acl) {
+            $snapshot['_ACL'] = $acl;
+        }
+
+        $this->hydrationSnapshots[spl_object_hash($object)] = $snapshot;
+    }
+
+    /**
+     * INTERNAL:
+     * Registers an empty instance standing in for a fully included association.
+     *
+     * Kept apart from registerManaged() so that getOrCreateObject() can tell such a
+     * placeholder from a managed object whose properties were changed on purpose.
+     *
+     * @param object $object
+     * @param string $id
+     */
+    public function registerManagedPlaceholder($object, $id, ParseObject $data)
+    {
+        $this->registerManaged($object, $id, $data);
+        $this->awaitingHydration[spl_object_hash($object)] = true;
+    }
+
+    /**
+     * Names of the fields of a managed object that differ from the state it was loaded
+     * with, and must therefore survive a re-hydration.
+     *
+     * A change can be at three different stages, hence three sources: already computed
+     * into a change set by a listener, applied to a collection, or simply set on the
+     * object and not looked at yet.
+     *
+     * @param object $object
+     *
+     * @return string[]
+     */
+    private function getLocallyChangedFields($object): array
+    {
+        $oid = spl_object_hash($object);
+        $class = $this->om->getClassMetadata(get_class($object));
+
+        $fields = $this->changedFieldsFromChangeSets($class, $oid)
+            + $this->dirtyCollectionFields($class, $object);
+
+        if (isset($this->hydrationSnapshots[$oid])) {
+            $fields += $this->changedFieldsAgainstSnapshot($class, $object, $this->hydrationSnapshots[$oid]);
+        } elseif (isset($this->originalObjectData[$oid])) {
+            $fields += $this->changedFieldsAgainstBaseline($class, $object, $this->originalObjectData[$oid]);
+        }
+
+        return array_keys($fields);
+    }
+
+    /**
+     * Changes a listener already folded into a change set, keyed by field name.
+     *
+     * @return array<string, true>
+     */
+    private function changedFieldsFromChangeSets(ClassMetadata $class, string $oid): array
+    {
+        $fields = [];
+
+        foreach ([$this->objectChangeSets[$oid] ?? [], $this->collectionChangeSets[$oid] ?? []] as $changeSet) {
+            // Collections are kept here: a change set entry for one means it really changed.
+            $fields += $this->fieldNamesOf($class, array_keys($changeSet), false);
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Collections mutated in memory, which report it themselves.
+     *
+     * @param object $object
+     *
+     * @return array<string, true>
+     */
+    private function dirtyCollectionFields(ClassMetadata $class, $object): array
+    {
+        $fields = [];
+
+        foreach ($class->associationMappings as $field => $assoc) {
+            if ($assoc['type'] !== ClassMetadata::MANY) {
+                continue;
+            }
+            $value = $class->reflFields[$field]->getValue($object);
+            if ($value instanceof PersistentCollection && $value->isDirty()) {
+                $fields[$field] = true;
+            }
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Values set on the object without going through the unit of work yet, compared
+     * against the snapshot taken when it was hydrated: a plain read per field, with no
+     * ParseObject to build and no type conversion to run.
+     *
+     * @param object               $object
+     * @param array<string, mixed> $snapshot
+     *
+     * @return array<string, true>
+     */
+    private function changedFieldsAgainstSnapshot(ClassMetadata $class, $object, array $snapshot): array
+    {
+        $fields = [];
+
+        foreach ($this->trackedFields($class) as $field) {
+            if ($class->reflFields[$field]->getValue($object) !== ($snapshot[$field] ?? null)) {
+                $fields[$field] = true;
+            }
+        }
+
+        if ($this->encodedAclOf($object) != ($snapshot['_ACL'] ?? null)) {
+            $fields['_ACL'] = true;
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Same question, without a snapshot to compare against: the payload the object was
+     * loaded with is used instead. Costs a ParseObject and a full change set, which is
+     * why the caller snapshots the object right after when it turns out to be untouched.
+     *
+     * @param object $object
+     *
+     * @return array<string, true>
+     */
+    private function changedFieldsAgainstBaseline(ClassMetadata $class, $object, ParseObject $baseline): array
+    {
+        $actualData = $this->getObjectPersister(get_class($object))->instanciateParseObject();
+        $this->applyChangesToParseObject($class, $actualData, $object);
+        $changeSet = $this->getChangesetFromParseObjects($class, $actualData, $baseline);
+
+        // Collections are not written to a blank ParseObject, so they would always look
+        // changed here; dirtyCollectionFields() is what covers them.
+        return $this->fieldNamesOf($class, array_keys($changeSet), true);
+    }
+
+    /**
+     * Translate Parse property names into field names, dropping what cannot be protected.
+     *
+     * @param string[] $propNames
+     *
+     * @return array<string, true>
+     */
+    private function fieldNamesOf(ClassMetadata $class, array $propNames, bool $skipCollections): array
+    {
+        $fields = [];
+
+        foreach ($propNames as $propName) {
+            if ($propName === '_ACL') {
+                $fields['_ACL'] = true;
+                continue;
+            }
+
+            $fieldName = $class->getFieldNameOfName($propName);
+            if (null === $fieldName) {
+                continue;
+            }
+            if ($skipCollections && ($class->associationMappings[$fieldName]['type'] ?? null) === ClassMetadata::MANY) {
+                continue;
+            }
+
+            $fields[$fieldName] = true;
+        }
+
+        return $fields;
+    }
+
+    /**
+     * The fields a snapshot holds, and therefore the only ones it can be compared on.
+     *
+     * Single source of truth for both ends: a field snapshotted but not compared would
+     * hide a change, and one compared but not snapshotted would look changed for ever.
+     * Identifiers and timestamps are server owned, collections report their own state.
+     *
+     * @return string[]
+     */
+    private function trackedFields(ClassMetadata $class): array
+    {
+        if (isset($this->trackedFields[$class->name])) {
+            return $this->trackedFields[$class->name];
+        }
+
+        $fields = [];
+        foreach ($class->fieldMappings as $field => $mapping) {
+            if (in_array($field, ['id', 'createdAt', 'updatedAt'], true)) {
+                continue;
+            }
+            if (($class->associationMappings[$field]['type'] ?? null) === ClassMetadata::MANY) {
+                continue;
+            }
+            $fields[] = $field;
+        }
+
+        return $this->trackedFields[$class->name] = $fields;
+    }
+
+    /**
+     * The ACL as comparable content rather than as an instance: setPublicAcl() swaps the
+     * instance while addRoleAcl() and addUserAcl() mutate it in place, so only the
+     * content tells an actual change from a rebuilt but identical ACL.
+     *
+     * @param object $object
+     */
+    private function encodedAclOf($object): ?array
+    {
+        if (!method_exists($object, 'getPublicAcl')) {
+            return null;
+        }
+
+        $acl = $object->getPublicAcl();
+
+        return null === $acl ? null : $acl->_encode();
     }
 
     /**
@@ -1141,6 +1446,7 @@ class UnitOfWork implements PropertyChangedListener
                 $this->objectIdentifiers[$oid] = $id;
                 $this->objectStates[$oid] = self::STATE_MANAGED;
                 $this->originalObjectData[$oid] = $results['parseObject'];
+                unset($this->hydrationSnapshots[$oid]);
 
                 if (isset($this->identityMap[$class->rootEntityName][$oid])) {
                     unset($this->identityMap[$class->rootEntityName][$oid]);
@@ -1193,6 +1499,11 @@ class UnitOfWork implements PropertyChangedListener
             if (isset($updatedAts[$oid])) {
                 $object->setUpdatedAt($updatedAts[$oid]);
             }
+            // The object is committed, so the snapshot taken when it was loaded is stale.
+            // Dropping it is O(1); rebuilding it here would walk every field of every
+            // written object, which is measurable on an import. The next lookup that
+            // actually needs a baseline rebuilds it from the committed payload.
+            unset($this->hydrationSnapshots[$oid]);
             unset($this->objectUpdates[$oid]);
             if (isset($this->collectionChangeSets[$oid])) {
                 unset($this->collectionChangeSets[$oid]);
@@ -2459,6 +2770,8 @@ class UnitOfWork implements PropertyChangedListener
     public function clear($objectName = null)
     {
         if ($objectName === null) {
+            $this->hydrationSnapshots =
+            $this->awaitingHydration =
             $this->identityMap =
             $this->objectIdentifiers =
             $this->originalObjectData =
@@ -2525,7 +2838,8 @@ class UnitOfWork implements PropertyChangedListener
                 unset($this->objectInsertions[$oid], $this->objectUpdates[$oid],
                     $this->objectDeletions[$oid], $this->objectIdentifiers[$oid],
                     $this->objectStates[$oid], $this->originalObjectData[$oid],
-                    $this->objectUpserts[$oid], $this->hasScheduledCollections[$oid]);
+                    $this->objectUpserts[$oid], $this->hasScheduledCollections[$oid],
+                    $this->hydrationSnapshots[$oid], $this->awaitingHydration[$oid]);
                 break;
             case self::STATE_NEW:
             case self::STATE_DETACHED:
