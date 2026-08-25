@@ -2,6 +2,7 @@
 
 namespace Redking\ParseBundle\Tests\Functional;
 
+use Parse\ParseACL;
 use Parse\ParseGeoPoint;
 use Redking\ParseBundle\Tests\Models\Blog\Address;
 use Redking\ParseBundle\Tests\Models\Blog\Article;
@@ -727,6 +728,68 @@ class ManagedObjectRehydrationTest extends \Redking\ParseBundle\Tests\TestCase
     }
 
     /**
+     * An ACL that grants nothing to the public is the normal shape of an object stored
+     * with a user or role only ACL, and of any _User row: the hydrator rebuilds the
+     * public part with setPublicAcl(false, false), which leaves the ParseACL with no
+     * permission at all. ParseACL::_encode() answers an empty stdClass in that case, so
+     * the snapshot taken on the second lookup used to fail with a TypeError before it
+     * could compare anything.
+     */
+    public function testLookupOfAnObjectWithAnEmptyPublicAclDoesNotFail(): void
+    {
+        [$id, $user] = $this->newPictureOwnedByAUser();
+
+        $picture = $this->om->getRepository(Picture::class)->find($id);
+        $this->assertEmptyPublicAcl($picture);
+
+        // Second lookup of the same, unmodified, managed object: this is where the
+        // hydration snapshot is taken.
+        $this->om->createQueryBuilder(Picture::class)->field('id')->equals($id)->getQuery()->getSingleResult();
+
+        $this->assertFalse($picture->getPublicAclReadAccess(), 'public read is still denied');
+        $this->assertFalse($picture->getPublicAclWriteAccess(), 'public write is still denied');
+        $this->assertTrue($picture->getUserAclReadAccess($user), 'the user keeps its read access');
+        $this->assertTrue($picture->getUserAclWriteAccess($user), 'the user keeps its write access');
+    }
+
+    /**
+     * Once the snapshot holds that empty ACL, comparing against it must not report a
+     * change either: the object would look permanently modified and its _ACL would be
+     * protected from every later re-hydration.
+     */
+    public function testAnEmptyPublicAclIsNotSeenAsAChangeByALaterLookup(): void
+    {
+        [$id, $user] = $this->newPictureOwnedByAUser();
+        $userId = $user->getId();
+
+        $picture = $this->om->getRepository(Picture::class)->find($id);
+
+        // First lookup takes the snapshot, ...
+        $this->om->createQueryBuilder(Picture::class)->field('id')->equals($id)->getQuery()->getSingleResult();
+
+        // ... the second one compares the object against it.
+        $picture->setFile('modified.jpg');
+        $this->om->createQueryBuilder(Picture::class)->field('id')->equals($id)->getQuery()->getSingleResult();
+
+        $this->assertSame('modified.jpg', $picture->getFile(), 'the local change must survive');
+        $this->assertEmptyPublicAcl($picture);
+
+        $this->om->flush();
+
+        $this->assertEquals(
+            [$userId => ['read' => true, 'write' => true]],
+            $this->uow->getOriginalObjectData($picture)->getAcl()->_encode(),
+            'the ACL must have been written back untouched'
+        );
+
+        $this->om->clear();
+
+        $reloaded = $this->om->getRepository(Picture::class)->find($id);
+        $this->assertSame('modified.jpg', $reloaded->getFile());
+        $this->assertEmptyPublicAcl($reloaded);
+    }
+
+    /**
      * A lookup fired from inside a commit is the exact production shape: a listener
      * changes an object in preFlush, then queries the same class again.
      */
@@ -794,6 +857,42 @@ class ManagedObjectRehydrationTest extends \Redking\ParseBundle\Tests\TestCase
 
     // --- helpers --------------------------------------------------------------
 
+
+    /**
+     * A picture whose stored ACL names only its owner: no "*" entry at all, so the
+     * hydrator leaves the public ACL empty.
+     *
+     * @return array{0: string, 1: User} picture id and its owner
+     */
+    private function newPictureOwnedByAUser(): array
+    {
+        $user = new User();
+        $user->setName('acl owner');
+        $user->setPassword('p');
+        $this->om->persist($user);
+        $this->om->flush();
+
+        $picture = new Picture();
+        $picture->setFile('empty-acl.jpg');
+        $picture->setPublicAcl(false, false);
+        $picture->addUserAcl($user, true, true);
+        $this->om->persist($picture);
+        $this->om->flush();
+
+        $id = $picture->getId();
+        $this->om->clear();
+
+        return [$id, $this->om->getRepository(User::class)->find($user->getId())];
+    }
+
+    private function assertEmptyPublicAcl(object $object): void
+    {
+        $acl = $object->getPublicAcl();
+
+        $this->assertInstanceOf(ParseACL::class, $acl, 'the hydrator always builds a public ACL');
+        $this->assertFalse($acl->getPublicReadAccess());
+        $this->assertFalse($acl->getPublicWriteAccess());
+    }
 
     private function newPost(string $text): Post
     {

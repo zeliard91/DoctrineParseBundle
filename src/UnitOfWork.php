@@ -886,8 +886,16 @@ class UnitOfWork implements PropertyChangedListener
         }
 
         $acl = $object->getPublicAcl();
+        if (null === $acl) {
+            return null;
+        }
 
-        return null === $acl ? null : $acl->_encode();
+        // ParseACL::_encode() answers an empty stdClass, not an empty array, when the ACL
+        // grants nothing: the shape of any object hydrated from a row whose ACL has no
+        // public entry, be it a _User row or a role only ACL.
+        $encoded = $acl->_encode();
+
+        return is_array($encoded) ? $encoded : [];
     }
 
     /**
