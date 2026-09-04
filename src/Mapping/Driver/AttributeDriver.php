@@ -76,8 +76,13 @@ class AttributeDriver implements MappingDriver
         $classAttributes = $this->getClassAttributes($reflClass);
 
         $objectAttribute = null;
+        $classIndexes = [];
         foreach ($classAttributes as $attribute) {
             $classAttributes[$attribute::class] = $attribute;
+
+            if ($attribute instanceof ORM\AbstractIndex) {
+                $classIndexes[] = $attribute;
+            }
 
             if ($attribute instanceof ORM\AbstractParseObject) {
                 if ($objectAttribute !== null) {
@@ -104,6 +109,11 @@ class AttributeDriver implements MappingDriver
             $metadata->setCustomRepositoryClass($objectAttribute->repositoryClass);
         }
 
+        foreach (array_merge($objectAttribute->indexes ?? [], $classIndexes) as $index) {
+            assert($index instanceof ORM\AbstractIndex);
+            $this->addIndex($metadata, $index, $index->keys);
+        }
+
         foreach ($reflClass->getProperties() as $property) {
             if (
                 ($metadata->isMappedSuperclass && ! $property->isPrivate())
@@ -121,13 +131,39 @@ class AttributeDriver implements MappingDriver
                 if ($propertyAttribute instanceof ORM\AbstractField) {
                     $fieldAttribute = $propertyAttribute;
                 }
+
+                if ($propertyAttribute instanceof ORM\AbstractIndex) {
+                    $indexes[] = $propertyAttribute;
+                }
             }
 
             if ($fieldAttribute) {
                 $mapping = array_replace($mapping, (array) $fieldAttribute);
                 $metadata->mapField($mapping);
             }
+
+            if ($indexes === []) {
+                continue;
+            }
+
+            if ($fieldAttribute === null) {
+                throw MappingException::indexOnUnmappedField($className, $property->getName());
+            }
+
+            foreach ($indexes as $index) {
+                /* The index is declared with the PHP field name: resolving it to the Parse
+                 * column name is the job of the IndexMapper.
+                 */
+                $keys = $index->keys !== [] ? $index->keys : [$property->getName() => $index->order ?? 'asc'];
+                $this->addIndex($metadata, $index, $keys);
+            }
         }
+    }
+
+    /** @param array<string|int, string|int> $keys */
+    private function addIndex(ClassMetadata $metadata, ORM\AbstractIndex $index, array $keys): void
+    {
+        $metadata->addIndex($keys, $index->name !== null ? ['name' => $index->name] : []);
     }
 
     /** @return Reader|AttributeReader */

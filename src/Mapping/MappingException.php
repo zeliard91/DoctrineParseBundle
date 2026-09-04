@@ -324,4 +324,173 @@ class MappingException extends BaseMappingException
             (new ReflectionObject($mappedAs))->getShortName(),
         ));
     }
+
+    /**
+     * @param string $className
+     *
+     * @return MappingException
+     */
+    public static function indexKeysRequired($className)
+    {
+        return new self(sprintf('An index declared on "%s" has no key.', $className));
+    }
+
+    /**
+     * @param string     $className
+     * @param string     $fieldName
+     * @param mixed      $order
+     *
+     * @return MappingException
+     */
+    public static function invalidIndexOrder($className, $fieldName, $order)
+    {
+        return new self(sprintf(
+            'Invalid index order "%s" for field "%s" of "%s". Expected one of asc, desc, 1, -1, text, 2d, 2dsphere, hashed.',
+            is_scalar($order) ? (string) $order : gettype($order),
+            $fieldName,
+            $className
+        ));
+    }
+
+    /**
+     * @param string $className
+     * @param string $option
+     *
+     * @return MappingException
+     */
+    public static function unsupportedIndexOption($className, $option)
+    {
+        return new self(sprintf(
+            'Index option "%s" declared on "%s" is not supported: the Parse schema API only carries the MongoDB key '
+            .'specification of an index. Only the "name" option is allowed. Options such as unique, sparse or TTL have '
+            .'to be created directly in MongoDB.',
+            $option,
+            $className
+        ));
+    }
+
+    /**
+     * @param string $className
+     * @param string $name
+     *
+     * @return MappingException
+     */
+    public static function duplicateIndexName($className, $name)
+    {
+        return new self(sprintf(
+            'Two different indexes of "%s" resolve to the name "%s". Give one of them an explicit name.',
+            $className,
+            $name
+        ));
+    }
+
+    /**
+     * @param string $className
+     * @param string $name
+     *
+     * @return MappingException
+     */
+    public static function indexNameTooLong($className, $name)
+    {
+        return new self(sprintf(
+            'The generated name "%s" for an index of "%s" exceeds 127 characters. Give the index an explicit name.',
+            $name,
+            $className
+        ));
+    }
+
+    /**
+     * @param string $className
+     * @param string $fieldName
+     *
+     * @return MappingException
+     */
+    public static function indexOnUnmappedField($className, $fieldName)
+    {
+        return new self(sprintf(
+            'Property "%s" of "%s" declares an index but has no field mapping.',
+            $fieldName,
+            $className
+        ));
+    }
+
+    /**
+     * @param string $className
+     * @param string $fieldName
+     *
+     * @return MappingException
+     */
+    public static function indexFieldNotMapped($className, $fieldName)
+    {
+        return new self(sprintf(
+            'An index of "%s" refers to the field "%s" which is not mapped.',
+            $className,
+            $fieldName
+        ));
+    }
+
+    /**
+     * @param string $className
+     * @param string $fieldName
+     *
+     * @return MappingException
+     */
+    public static function cannotIndexIdentifier($className, $fieldName)
+    {
+        return new self(sprintf(
+            'The identifier "%s" of "%s" can not be indexed: it is stored as the MongoDB "_id" column, which is always '
+            .'indexed and is rejected by the Parse schema API.',
+            $fieldName,
+            $className
+        ));
+    }
+
+    /**
+     * @param string $className
+     * @param string $fieldName
+     *
+     * @return MappingException
+     */
+    public static function cannotIndexTimestampField($className, $fieldName)
+    {
+        return new self(sprintf(
+            'The field "%s" of "%s" can not be indexed through the Parse schema API: it is stored as the MongoDB '
+            .'"_created_at"/"_updated_at" column, and Parse only accepts index keys matching a schema field. Create '
+            .'such an index directly in MongoDB, Parse Server will pick it up on its next start.',
+            $fieldName,
+            $className
+        ));
+    }
+
+    /**
+     * @param string $className
+     * @param string $fieldName
+     *
+     * @return MappingException
+     */
+    public static function cannotIndexInverseSideReference($className, $fieldName)
+    {
+        return new self(sprintf(
+            'The reference "%s" of "%s" can not be indexed: it is the inverse side of the association and has no '
+            .'column in the Parse class.',
+            $fieldName,
+            $className
+        ));
+    }
+
+    /**
+     * @param string $className
+     * @param string $fieldName
+     *
+     * @return MappingException
+     */
+    public static function cannotIndexRelation($className, $fieldName)
+    {
+        return new self(sprintf(
+            'The reference "%s" of "%s" can not be indexed: it is implemented as a Parse Relation, whose data lives in '
+            .'a separate "_Join" collection instead of a column of the class.',
+            $fieldName,
+            $className
+        ));
+    }
 }

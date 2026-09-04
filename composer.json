@@ -15,7 +15,7 @@
         "php": "^8.1",
         "doctrine/persistence": "^2.5 || ^3.0",
         "doctrine/data-fixtures": "^1.5.3",
-        "parse/php-sdk": "^1.2|^2.0",
+        "parse/php-sdk": "^2.0",
         "symfony/framework-bundle": "^5.4 || ^6.4 || ^7.4",
         "symfony/config": "^5.4 || ^6.4 || ^7.4",
         "symfony/console": "^5.4 || ^6.4 || ^7.4",

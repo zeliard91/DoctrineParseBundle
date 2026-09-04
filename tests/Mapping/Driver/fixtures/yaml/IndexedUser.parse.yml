@@ -1,0 +1,24 @@
+TestObjects\IndexedUser:
+    collection: indexed_user
+    indexes:
+        -
+            keys:
+                username: asc
+                address: desc
+            options:
+                name: username_address
+        -
+            keys:
+                email: asc
+    fields:
+        username:
+            type: string
+            index: true
+        email:
+            type: string
+            index:
+                order: desc
+                name: email_desc
+    referenceOne:
+        address:
+            targetDocument: TestObjects\Address

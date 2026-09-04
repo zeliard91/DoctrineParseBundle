@@ -107,6 +107,9 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
             $class->setDefaultDiscriminatorValue($parent->defaultDiscriminatorValue);
             $this->addInheritedFields($class, $parent);
             $this->addInheritedRelations($class, $parent);
+            foreach ($parent->indexes as $index) {
+                $class->addIndex($index['keys'], $index['options']);
+            }
             $class->setIdentifier($parent->identifier);
             $class->setLifecycleCallbacks($parent->lifecycleCallbacks);
             $class->setChangeTrackingPolicy($parent->changeTrackingPolicy);

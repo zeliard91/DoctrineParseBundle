@@ -8,6 +8,7 @@ use Doctrine\Persistence\Mapping\Driver\FileDriver;
 use Doctrine\Persistence\Mapping\Driver\SymfonyFileLocator;
 use Symfony\Component\Yaml\Yaml;
 use Redking\ParseBundle\Mapping\Builder\ObjectListenerBuilder;
+use Redking\ParseBundle\Mapping\MappingException;
 
 /**
  * The YamlDriver reads the mapping metadata from yaml schema files.
@@ -184,70 +185,42 @@ class YamlDriver extends FileDriver
             throw new \InvalidArgumentException('Cannot infer a MongoDB name from the mapping');
         }
 
+        /* Parse only stores the MongoDB key specification of an index, so these have to
+         * fail loudly instead of leaving the impression that the index was created.
+         */
+        foreach (array('unique', 'sparse') as $unsupported) {
+            if (isset($mapping[$unsupported])) {
+                throw MappingException::unsupportedIndexOption($class->name, $unsupported);
+            }
+        }
+
+        /* The index declaration is not part of the field mapping itself. */
+        $index = isset($mapping['index']) ? $mapping['index'] : null;
+        unset($mapping['index']);
+
         $class->mapField($mapping);
 
-        if (!(isset($mapping['index']) || isset($mapping['unique']) || isset($mapping['sparse']))) {
+        if ($index === null) {
             return;
         }
 
-        // Multiple index specifications in one field mapping is ambiguous
-        if ((isset($mapping['index']) && is_array($mapping['index'])) +
-            (isset($mapping['unique']) && is_array($mapping['unique'])) +
-            (isset($mapping['sparse']) && is_array($mapping['sparse'])) > 1) {
-            throw new \InvalidArgumentException('Multiple index specifications found among index, unique, and/or sparse fields');
-        }
-
-        // Index this field if either "index", "unique", or "sparse" are set
+        /* Along the field name, the only accepted options are the order and the name. */
         $keys = array($name => 'asc');
-
-        /* The "order" option is only used in the index specification and should
-         * not be passed along as an index option.
-         */
-        if (isset($mapping['index']['order'])) {
-            $keys[$name] = $mapping['index']['order'];
-            unset($mapping['index']['order']);
-        } elseif (isset($mapping['unique']['order'])) {
-            $keys[$name] = $mapping['unique']['order'];
-            unset($mapping['unique']['order']);
-        } elseif (isset($mapping['sparse']['order'])) {
-            $keys[$name] = $mapping['sparse']['order'];
-            unset($mapping['sparse']['order']);
-        }
-
-        /* Initialize $options from any array value among index, unique, and
-         * sparse. Any boolean values for unique or sparse should be merged into
-         * the options afterwards to ensure consistent parsing.
-         */
         $options = array();
-        $unique = null;
-        $sparse = null;
 
-        if (isset($mapping['index']) && is_array($mapping['index'])) {
-            $options = $mapping['index'];
-        }
+        if (is_array($index)) {
+            $options = $index;
 
-        if (isset($mapping['unique'])) {
-            if (is_array($mapping['unique'])) {
-                $options = $mapping['unique'] + array('unique' => true);
-            } else {
-                $unique = (boolean) $mapping['unique'];
+            if (isset($options['order'])) {
+                $keys[$name] = $options['order'];
+                unset($options['order']);
             }
-        }
 
-        if (isset($mapping['sparse'])) {
-            if (is_array($mapping['sparse'])) {
-                $options = $mapping['sparse'] + array('sparse' => true);
-            } else {
-                $sparse = (boolean) $mapping['sparse'];
+            foreach (array_keys($options) as $option) {
+                if ($option !== 'name') {
+                    throw MappingException::unsupportedIndexOption($class->name, (string) $option);
+                }
             }
-        }
-
-        if (isset($unique)) {
-            $options['unique'] = $unique;
-        }
-
-        if (isset($sparse)) {
-            $options['sparse'] = $sparse;
         }
 
         $class->addIndex($keys, $options);

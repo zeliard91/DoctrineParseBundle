@@ -96,6 +96,13 @@ class ClassMetadata implements BaseClassMetadata
     public $collection;
 
     /**
+     * READ-ONLY: The array of indexes declared for the Parse class.
+     *
+     * @var array<int, array{keys: array<string, int|string>, options: array<string, mixed>}>
+     */
+    public $indexes = [];
+
+    /**
      * READ-ONLY: The name of the entity class.
      *
      * @var string
@@ -492,6 +499,92 @@ class ClassMetadata implements BaseClassMetadata
     public function setCollection($name)
     {
         $this->collection = $name;
+    }
+
+    /**
+     * Adds an index for the Parse class.
+     *
+     * Only the "name" option is supported: the Parse schema API carries nothing
+     * but the MongoDB key specification of an index.
+     *
+     * @param array<string|int, string|int> $keys
+     * @param array<string, mixed>          $options
+     *
+     * @throws MappingException
+     */
+    public function addIndex(array $keys, array $options = []): void
+    {
+        if ($keys === []) {
+            throw MappingException::indexKeysRequired($this->name);
+        }
+
+        foreach (array_keys($options) as $option) {
+            if ($option !== 'name') {
+                throw MappingException::unsupportedIndexOption($this->name, (string) $option);
+            }
+        }
+
+        $normalizedKeys = [];
+
+        foreach ($keys as $field => $order) {
+            // List form, e.g. ['title', 'createdAt']
+            if (is_int($field)) {
+                $field = $order;
+                $order = 1;
+            }
+
+            $normalizedKeys[$field] = $this->normalizeIndexOrder((string) $field, $order);
+        }
+
+        $this->indexes[] = [
+            'keys' => $normalizedKeys,
+            'options' => $options,
+        ];
+    }
+
+    /**
+     * @return array<int, array{keys: array<string, int|string>, options: array<string, mixed>}>
+     */
+    public function getIndexes(): array
+    {
+        return $this->indexes;
+    }
+
+    public function hasIndexes(): bool
+    {
+        return $this->indexes !== [];
+    }
+
+    /**
+     * @param string|int $order
+     *
+     * @return int|string
+     *
+     * @throws MappingException
+     */
+    private function normalizeIndexOrder(string $fieldName, $order)
+    {
+        if ($order === 1 || $order === -1) {
+            return $order;
+        }
+
+        if (is_string($order)) {
+            switch (strtolower($order)) {
+                case 'asc':
+                case '1':
+                    return 1;
+                case 'desc':
+                case '-1':
+                    return -1;
+                case 'text':
+                case '2d':
+                case '2dsphere':
+                case 'hashed':
+                    return strtolower($order);
+            }
+        }
+
+        throw MappingException::invalidIndexOrder($this->name, $fieldName, $order);
     }
 
     /**
@@ -1475,6 +1568,10 @@ class ClassMetadata implements BaseClassMetadata
 
         if ($this->isReadOnly) {
             $serialized[] = 'isReadOnly';
+        }
+
+        if ($this->indexes) {
+            $serialized[] = 'indexes';
         }
 
         return $serialized;
