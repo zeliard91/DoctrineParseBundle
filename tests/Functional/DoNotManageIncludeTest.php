@@ -272,4 +272,68 @@ class DoNotManageIncludeTest extends \Redking\ParseBundle\Tests\TestCase
             ->getSingleResult();
         $this->assertSame('keep', $reloadedChild->getLabel(), 'a pre-managed object must not be wiped');
     }
+
+    /**
+     * Regression: an owning-side ReferenceMany the owner holds no value for must not be
+     * left lazy, or its first access fatally fails once the owner is detached.
+     *
+     * Production symptom: "Call to a member function get() on null" in
+     * ObjectPersister::loadReferenceManyCollectionOwningSide(), raised by a plain
+     * foreach on a collection of an object loaded under do_not_manage to be cached.
+     */
+    public function testAnEmptyOwningSideCollectionIsSafeOnADetachedOwner(): void
+    {
+        $article = new Article();
+        $article->setTitle('no tags at all');
+        $this->om->persist($article);
+        $this->om->flush();
+        $articleId = $article->getId();
+        $this->om->clear();
+
+        $loaded = $this->om->createQueryBuilder(Article::class)
+            ->field('id')->equals($articleId)
+            ->includeKey('tags')
+            ->getQuery()
+            ->setHints(['doctrine.do_not_manage' => true])
+            ->getSingleResult();
+
+        $this->assertFalse($this->om->contains($loaded), 'do_not_manage must hand back a detached object');
+
+        $read = [];
+        foreach ($loaded->getTags() as $tag) {
+            $read[] = $tag->getName();
+        }
+
+        $this->assertSame([], $read);
+        $this->assertCount(0, $loaded->getTags());
+    }
+
+    /**
+     * A collection left lazy on a detached owner can not be loaded at all — its
+     * references are read from the owner's original ParseObject, which detaching drops.
+     * It must come back empty instead of fatally failing, which is also why the caller
+     * has to includeKey() what it intends to read under do_not_manage.
+     */
+    public function testALazyCollectionComesBackEmptyOnADetachedOwner(): void
+    {
+        $tag = new Tag();
+        $tag->setName('parse');
+        $this->om->persist($tag);
+
+        $article = new Article();
+        $article->setTitle('not included');
+        $article->addTag($tag);
+        $this->om->persist($article);
+        $this->om->flush();
+        $articleId = $article->getId();
+        $this->om->clear();
+
+        $loaded = $this->om->createQueryBuilder(Article::class)
+            ->field('id')->equals($articleId)
+            ->getQuery()
+            ->setHints(['doctrine.do_not_manage' => true])
+            ->getSingleResult();
+
+        $this->assertCount(0, $loaded->getTags());
+    }
 }

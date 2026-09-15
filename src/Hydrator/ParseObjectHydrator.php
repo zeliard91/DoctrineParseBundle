@@ -161,6 +161,15 @@ class ParseObjectHydrator
                     // Try to hydrate loaded collection if available
                     try {
                         $references = $data->get($assoc['name']);
+                        if (null === $references && $this->isLoadedFromOwnerData($assoc)) {
+                            // The references of such a collection live in the owner's own
+                            // document, so no value there means an empty collection: that
+                            // is everything a lazy reload could ever produce. Left lazy,
+                            // it would fatally fail on first access once the owner is
+                            // detached — the common case of an object loaded under
+                            // 'doctrine.do_not_manage' to be put in a cache.
+                            $pColl->setInitialized(true);
+                        }
                         if (is_array($references)) {
                             // Track whether the whole array is fully included: only
                             // then can we flag the collection initialized and skip a
@@ -217,6 +226,20 @@ class ParseObjectHydrator
         if ($this->evm->hasListeners(Events::postLoad)) {
             $this->evm->dispatchEvent(Events::postLoad, new LifecycleEventArgs($object, $this->om));
         }
+    }
+
+    /**
+     * Whether a ReferenceMany is loaded from the references stored in the owner's own
+     * document, as opposed to a ParseRelation, a repository method or an inversed side —
+     * which all query the other class and work regardless of the owner's payload.
+     *
+     * Mirrors the dispatch of UnitOfWork::loadCollection().
+     */
+    private function isLoadedFromOwnerData(array $assoc): bool
+    {
+        return $assoc['implementation'] !== ClassMetadata::ASSOCIATION_IMPL_RELATION
+            && empty($assoc['repositoryMethod'])
+            && !empty($assoc['isOwningSide']);
     }
 
     /**
