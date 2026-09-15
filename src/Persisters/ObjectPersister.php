@@ -527,10 +527,16 @@ class ObjectPersister
         $originalData = $this->om->getUnitOfWork()->getOriginalObjectData($owner);
         $fieldName = $mapping['name'];
 
-        // Same as above: a detached owner carries no relation to read. The inversed side
-        // queries by the owner id and keeps working, the owning side gives up below.
-        $relation = null !== $originalData ? $originalData->get($fieldName) : null;
-        
+        // Same as above: a detached owner carries no relation to read. Both sides build
+        // their query from the owner's original ParseObject -- the inversed one matches
+        // on it in getQueryForInversedRelation() -- so without it there is nothing to ask
+        // for, and querying anyway would only send a `$in: [null]` that can not match.
+        if (null === $originalData) {
+            return;
+        }
+
+        $relation = $originalData->get($fieldName);
+
         if (!$mapping['isOwningSide']) {
             $query = $this->getQueryForInversedRelation($collection);
         } else {

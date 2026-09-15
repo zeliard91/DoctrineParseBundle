@@ -94,7 +94,7 @@ class ParseObjectHydrator
             }
         }
 
-        $this->preRegisterFullyLoadedAssociations($data, $hints);
+        $this->preRegisterFullyLoadedAssociations($data, $hints, $protected);
 
         // load associations
         foreach ($this->class->associationMappings as $field => $assoc) {
@@ -257,15 +257,23 @@ class ParseObjectHydrator
      * return early (before hydrate()), so a pre-registered instance would stay
      * empty yet keep the full ParseObject as its change-detection baseline — the
      * next flush would then compute a "full -> null" changeset and wipe the row.
+     *
+     * A protected field is skipped for the very same reason: the loop below does not
+     * hydrate it, so nothing would ever fill the instance registered here.
+     *
+     * @param array<string, true> $protected
      */
-    private function preRegisterFullyLoadedAssociations(\Parse\ParseObject $data, array $hints): void
+    private function preRegisterFullyLoadedAssociations(\Parse\ParseObject $data, array $hints, array $protected = []): void
     {
         if (isset($hints['doctrine.do_not_manage'])) {
             return;
         }
 
         $uow = $this->om->getUnitOfWork();
-        foreach ($this->class->associationMappings as $assoc) {
+        foreach ($this->class->associationMappings as $field => $assoc) {
+            if (isset($protected[$field])) {
+                continue;
+            }
             $targetClass = $this->om->getClassMetadata($assoc['targetDocument']);
             $rootName    = $targetClass->rootEntityName;
 
