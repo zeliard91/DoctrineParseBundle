@@ -855,6 +855,75 @@ class ManagedObjectRehydrationTest extends \Redking\ParseBundle\Tests\TestCase
         $this->assertFalse($this->om->contains($byId[$otherId]), 'and it is not managed');
     }
 
+    /**
+     * Regression: the hydrator pre-registers an empty instance for every fully included
+     * association BEFORE the association loop, which then skips the fields protected by
+     * a local change. Such an instance was therefore never hydrated, yet kept the full
+     * payload as its change-detection baseline: computeChangeSets() walks the identity
+     * map, saw a "full -> null" change set, and the next flush wiped the included row.
+     *
+     * Same failure mode as the do_not_manage one, reached through the other door.
+     */
+    public function testAnIncludedObjectIsNotWipedWhenTheFieldIsProtected(): void
+    {
+        $target = new ChainNode();
+        $target->setLabel('target');
+        $this->om->persist($target);
+
+        $other = new ChainNode();
+        $other->setLabel('other');
+        $this->om->persist($other);
+
+        $root = new ChainNode();
+        $root->setLabel('root');
+        $root->setFirst($target);
+        $this->om->persist($root);
+        $this->om->flush();
+
+        $rootId = $root->getId();
+        $targetId = $target->getId();
+        $otherId = $other->getId();
+        $this->om->clear();
+
+        $root = $this->om->createQueryBuilder(ChainNode::class)
+            ->field('id')->equals($rootId)
+            ->getQuery()
+            ->getSingleResult();
+
+        // The included target must not be tracked when the lookup below runs, otherwise
+        // the hydrator finds it in the identity map and registers no placeholder at all.
+        $this->om->detach($root->getFirst());
+        $this->assertFalse($this->uow->tryGetById($targetId, ChainNode::class) !== false);
+
+        $other = $this->om->createQueryBuilder(ChainNode::class)
+            ->field('id')->equals($otherId)
+            ->getQuery()
+            ->getSingleResult();
+
+        // Local change: 'first' becomes a protected field.
+        $root->setFirst($other);
+
+        // A lookup carrying the OLD target, fully included.
+        $this->om->createQueryBuilder(ChainNode::class)
+            ->field('id')->equals($rootId)
+            ->includeKey('first')
+            ->getQuery()
+            ->getSingleResult();
+
+        $this->assertSame($other, $root->getFirst(), 'the local change must survive the lookup');
+
+        $this->om->flush();
+        $this->om->clear();
+
+        $reloadedTarget = $this->om->createQueryBuilder(ChainNode::class)
+            ->field('id')->equals($targetId)
+            ->getQuery()
+            ->getSingleResult();
+
+        $this->assertNotNull($reloadedTarget);
+        $this->assertSame('target', $reloadedTarget->getLabel(), 'an included object must never be wiped');
+    }
+
     // --- helpers --------------------------------------------------------------
 
 

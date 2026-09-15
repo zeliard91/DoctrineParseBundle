@@ -94,7 +94,7 @@ class ParseObjectHydrator
             }
         }
 
-        $this->preRegisterFullyLoadedAssociations($data, $hints);
+        $this->preRegisterFullyLoadedAssociations($data, $hints, $protected);
 
         // load associations
         foreach ($this->class->associationMappings as $field => $assoc) {
@@ -161,6 +161,15 @@ class ParseObjectHydrator
                     // Try to hydrate loaded collection if available
                     try {
                         $references = $data->get($assoc['name']);
+                        if (null === $references && $this->isLoadedFromOwnerData($assoc)) {
+                            // The references of such a collection live in the owner's own
+                            // document, so no value there means an empty collection: that
+                            // is everything a lazy reload could ever produce. Left lazy,
+                            // it would fatally fail on first access once the owner is
+                            // detached — the common case of an object loaded under
+                            // 'doctrine.do_not_manage' to be put in a cache.
+                            $pColl->setInitialized(true);
+                        }
                         if (is_array($references)) {
                             // Track whether the whole array is fully included: only
                             // then can we flag the collection initialized and skip a
@@ -220,6 +229,20 @@ class ParseObjectHydrator
     }
 
     /**
+     * Whether a ReferenceMany is loaded from the references stored in the owner's own
+     * document, as opposed to a ParseRelation, a repository method or an inversed side —
+     * which all query the other class and work regardless of the owner's payload.
+     *
+     * Mirrors the dispatch of UnitOfWork::loadCollection().
+     */
+    private function isLoadedFromOwnerData(array $assoc): bool
+    {
+        return $assoc['implementation'] !== ClassMetadata::ASSOCIATION_IMPL_RELATION
+            && empty($assoc['repositoryMethod'])
+            && !empty($assoc['isOwningSide']);
+    }
+
+    /**
      * Pre-register a concrete (non-proxy) instance in the identity map for every
      * association whose payload is fully available, BEFORE the association-loading
      * loop below recurses into nested hydration.
@@ -234,15 +257,23 @@ class ParseObjectHydrator
      * return early (before hydrate()), so a pre-registered instance would stay
      * empty yet keep the full ParseObject as its change-detection baseline — the
      * next flush would then compute a "full -> null" changeset and wipe the row.
+     *
+     * A protected field is skipped for the very same reason: the loop below does not
+     * hydrate it, so nothing would ever fill the instance registered here.
+     *
+     * @param array<string, true> $protected
      */
-    private function preRegisterFullyLoadedAssociations(\Parse\ParseObject $data, array $hints): void
+    private function preRegisterFullyLoadedAssociations(\Parse\ParseObject $data, array $hints, array $protected = []): void
     {
         if (isset($hints['doctrine.do_not_manage'])) {
             return;
         }
 
         $uow = $this->om->getUnitOfWork();
-        foreach ($this->class->associationMappings as $assoc) {
+        foreach ($this->class->associationMappings as $field => $assoc) {
+            if (isset($protected[$field])) {
+                continue;
+            }
             $targetClass = $this->om->getClassMetadata($assoc['targetDocument']);
             $rootName    = $targetClass->rootEntityName;
 

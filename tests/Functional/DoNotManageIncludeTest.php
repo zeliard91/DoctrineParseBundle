@@ -2,9 +2,12 @@
 
 namespace Redking\ParseBundle\Tests\Functional;
 
+use Redking\ParseBundle\Tests\Models\Blog\Address;
 use Redking\ParseBundle\Tests\Models\Blog\Article;
 use Redking\ParseBundle\Tests\Models\Blog\ChainNode;
+use Redking\ParseBundle\Tests\Models\Blog\Post;
 use Redking\ParseBundle\Tests\Models\Blog\Tag;
+use Redking\ParseBundle\Tests\Models\Blog\User;
 
 /**
  * Coverage for the 'doctrine.do_not_manage' query hint combined with includeKey().
@@ -30,6 +33,9 @@ class DoNotManageIncludeTest extends \Redking\ParseBundle\Tests\TestCase
         ChainNode::class,
         Article::class,
         Tag::class,
+        Address::class,
+        User::class,
+        Post::class,
     ];
 
     /**
@@ -271,5 +277,147 @@ class DoNotManageIncludeTest extends \Redking\ParseBundle\Tests\TestCase
             ->getQuery()
             ->getSingleResult();
         $this->assertSame('keep', $reloadedChild->getLabel(), 'a pre-managed object must not be wiped');
+    }
+
+    /**
+     * Regression: an owning-side ReferenceMany the owner holds no value for must not be
+     * left lazy, or its first access fatally fails once the owner is detached.
+     *
+     * Production symptom: "Call to a member function get() on null" in
+     * ObjectPersister::loadReferenceManyCollectionOwningSide(), raised by a plain
+     * foreach on a collection of an object loaded under do_not_manage to be cached.
+     */
+    public function testAnEmptyOwningSideCollectionIsSafeOnADetachedOwner(): void
+    {
+        $article = new Article();
+        $article->setTitle('no tags at all');
+        $this->om->persist($article);
+        $this->om->flush();
+        $articleId = $article->getId();
+        $this->om->clear();
+
+        $loaded = $this->om->createQueryBuilder(Article::class)
+            ->field('id')->equals($articleId)
+            ->includeKey('tags')
+            ->getQuery()
+            ->setHints(['doctrine.do_not_manage' => true])
+            ->getSingleResult();
+
+        $this->assertFalse($this->om->contains($loaded), 'do_not_manage must hand back a detached object');
+
+        $read = [];
+        foreach ($loaded->getTags() as $tag) {
+            $read[] = $tag->getName();
+        }
+
+        $this->assertSame([], $read);
+        $this->assertCount(0, $loaded->getTags());
+    }
+
+    /**
+     * A collection left lazy on a detached owner can not be loaded at all — its
+     * references are read from the owner's original ParseObject, which detaching drops.
+     * It must come back empty instead of fatally failing, which is also why the caller
+     * has to includeKey() what it intends to read under do_not_manage.
+     */
+    public function testALazyCollectionComesBackEmptyOnADetachedOwner(): void
+    {
+        $tag = new Tag();
+        $tag->setName('parse');
+        $this->om->persist($tag);
+
+        $article = new Article();
+        $article->setTitle('not included');
+        $article->addTag($tag);
+        $this->om->persist($article);
+        $this->om->flush();
+        $articleId = $article->getId();
+        $this->om->clear();
+
+        $loaded = $this->om->createQueryBuilder(Article::class)
+            ->field('id')->equals($articleId)
+            ->getQuery()
+            ->setHints(['doctrine.do_not_manage' => true])
+            ->getSingleResult();
+
+        $this->assertCount(0, $loaded->getTags());
+    }
+
+    /**
+     * A ParseRelation read from its inversed side is matched against the owner's original
+     * ParseObject (ObjectPersister::getQueryForInversedRelation()), which detaching drops.
+     * The persister must give up instead of sending a `$in: [null]` that can not match:
+     * a detached object put in a cache would pay one empty round trip per access.
+     */
+    public function testAnInversedRelationIsNotQueriedOnADetachedOwner(): void
+    {
+        $address = new Address();
+        $address->setCity('Paris');
+        $this->om->persist($address);
+
+        $user = new User();
+        $user->setName('relation owner');
+        $user->setPassword('p4ss');
+        $user->addAddress($address);
+        $this->om->persist($user);
+        $this->om->flush();
+
+        $addressId = $this->uow->getObjectIdentifier($address);
+        $this->om->clear();
+
+        $loaded = $this->om->createQueryBuilder(Address::class)
+            ->field('id')->equals($addressId)
+            ->getQuery()
+            ->setHints(['doctrine.do_not_manage' => true])
+            ->getSingleResult();
+
+        $this->assertFalse($this->om->contains($loaded), 'do_not_manage must hand back a detached object');
+
+        $queries = [];
+        $this->om->getConfiguration()->setLoggerCallable(
+            static function (array $q) use (&$queries) { $queries[] = $q; }
+        );
+
+        $this->assertCount(0, $loaded->getUsers());
+        $this->assertCount(0, $queries, 'a relation with no owner payload must not be queried at all');
+    }
+
+    /**
+     * Counterpart: an inversed side that is NOT a ParseRelation queries the other class by
+     * the owner id, which survives detaching. It must keep loading, and keep costing the
+     * single query it always did — the empty-collection shortcut must not swallow it.
+     */
+    public function testAnInversedSideStillLoadsOnADetachedOwner(): void
+    {
+        $user = new User();
+        $user->setName('inversed owner');
+        $user->setPassword('p4ss');
+        $this->om->persist($user);
+
+        $post = new Post();
+        $post->setText('still reachable');
+        $post->setUser($user);
+        $this->om->persist($post);
+        $this->om->flush();
+
+        $userId = $user->getId();
+        $this->om->clear();
+
+        $loaded = $this->om->createQueryBuilder(User::class)
+            ->field('id')->equals($userId)
+            ->getQuery()
+            ->setHints(['doctrine.do_not_manage' => true])
+            ->getSingleResult();
+
+        $this->assertFalse($this->om->contains($loaded), 'do_not_manage must hand back a detached object');
+
+        $queries = [];
+        $this->om->getConfiguration()->setLoggerCallable(
+            static function (array $q) use (&$queries) { $queries[] = $q; }
+        );
+
+        $this->assertCount(1, $loaded->getPosts());
+        $this->assertSame('still reachable', $loaded->getPosts()->first()->getText());
+        $this->assertCount(1, $queries, 'the inversed side matches on the owner id and still fires once');
     }
 }

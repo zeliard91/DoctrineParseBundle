@@ -465,7 +465,15 @@ class ObjectPersister
         $mapping = $collection->getMapping();
         $originalData = $this->om->getUnitOfWork()->getOriginalObjectData($owner);
         $fieldName = $mapping['name'];
-        
+
+        // A detached owner has no original ParseObject left to read the references from
+        // (see UnitOfWork::getOrCreateObject() under 'doctrine.do_not_manage'). There is
+        // nothing to load, and the collection stays empty rather than fatally failing on
+        // its first access.
+        if (null === $originalData) {
+            return;
+        }
+
         $parseReferences = $originalData->get($fieldName);
 
         if (!is_array($parseReferences)) {
@@ -519,8 +527,16 @@ class ObjectPersister
         $originalData = $this->om->getUnitOfWork()->getOriginalObjectData($owner);
         $fieldName = $mapping['name'];
 
+        // Same as above: a detached owner carries no relation to read. Both sides build
+        // their query from the owner's original ParseObject -- the inversed one matches
+        // on it in getQueryForInversedRelation() -- so without it there is nothing to ask
+        // for, and querying anyway would only send a `$in: [null]` that can not match.
+        if (null === $originalData) {
+            return;
+        }
+
         $relation = $originalData->get($fieldName);
-        
+
         if (!$mapping['isOwningSide']) {
             $query = $this->getQueryForInversedRelation($collection);
         } else {
