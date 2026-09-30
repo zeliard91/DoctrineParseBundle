@@ -3,6 +3,7 @@
 namespace Redking\ParseBundle;
 
 use Doctrine\Common\Collections\ArrayCollection;
+use Parse\ParseClient;
 use Parse\ParseObject;
 use Parse\ParseQuery;
 use Parse\ParseUser;
@@ -244,7 +245,7 @@ class Query
                 break;
 
             case self::TYPE_AGGREGATE:
-                $results = $this->_parseQuery->aggregate($this->query['query']['$aggregate']);
+                $results = $this->aggregate($this->query['query']['$aggregate']);
                 $this->logQuery();
                 return $results;
 
@@ -446,5 +447,29 @@ class Query
     public function getObjectManager()
     {
         return $this->_om;
+    }
+
+    /**
+     * Runs an aggregation pipeline.
+     *
+     * Same request as ParseQuery::aggregate(), except that the pipeline travels in the body of a
+     * POST (with the "_method" override understood by Parse Server) instead of the query string of
+     * a GET: a pipeline carrying a long $in / $nin list exceeds the maximum URL length of Parse
+     * Server (Node rejects the request line beyond ~16 KB with a 431) and the call used to fail, or
+     * even return nothing, depending on the server version.
+     */
+    private function aggregate(array $pipeline): array
+    {
+        $sessionToken = ParseUser::getCurrentUser()?->getSessionToken();
+
+        $result = ParseClient::_request(
+            'POST',
+            'aggregate/' . $this->_class->getCollection(),
+            $sessionToken,
+            json_encode(['_method' => 'GET'] + $pipeline),
+            true
+        );
+
+        return $result['results'] ?? [];
     }
 }

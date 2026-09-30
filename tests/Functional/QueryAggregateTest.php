@@ -268,4 +268,43 @@ class QueryAggregateTest extends \Redking\ParseBundle\Tests\TestCase
         $amounts = array_map(fn ($row) => (float) ((array) $row)['amount'], $results);
         $this->assertSame([20.0, 30.0], $amounts);
     }
+
+    /**
+     * A pipeline carrying a long list of ids (an $in / $nin on thousands of pointers) must still
+     * run: sent as GET, it ended up in the query string and Parse Server (Node) rejected the URL
+     * beyond ~16 KB with a 431, which the SDK reported as "Could not decode Response".
+     */
+    public function testPipelineLargerThanTheUrlLimit(): void
+    {
+        $user = $this->createUser('UserA');
+        $this->om->flush();
+
+        $kept = $this->createPost('kept', $user);
+        $excluded = $this->createPost('excluded', $user);
+        $this->om->flush();
+
+        $excludedIds = [$excluded->getId()];
+        for ($i = 0; $i < 3000; $i++) {
+            $excludedIds[] = sprintf('fake%06d', $i);
+        }
+
+        $pipeline = [
+            'match' => [
+                'objectId' => ['$nin' => $excludedIds],
+            ],
+            'project' => [
+                'objectId' => 1,
+                'text' => 1,
+            ],
+        ];
+        $this->assertGreaterThan(16 * 1024, strlen(json_encode($pipeline)));
+
+        $results = $this->om->getRepository(Post::class)
+            ->createQueryBuilder()
+            ->aggregate($pipeline)
+            ->getQuery()
+            ->execute();
+
+        $this->assertSame([$kept->getId()], array_column(array_map(fn ($row) => (array) $row, $results), 'objectId'));
+    }
 }
