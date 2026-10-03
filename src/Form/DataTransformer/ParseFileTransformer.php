@@ -3,6 +3,7 @@
 namespace Redking\ParseBundle\Form\DataTransformer;
 
 use Parse\ParseFile;
+use Redking\ParseBundle\Form\UploadedParseFileRegistry;
 use Symfony\Component\Form\DataTransformerInterface;
 use Symfony\Component\Form\Exception\TransformationFailedException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -23,7 +24,7 @@ class ParseFileTransformer implements DataTransformerInterface
      * @param  Issue|null $parseFile
      * @return string
      */
-    public function transform($parseFile)
+    public function transform(mixed $parseFile): mixed
     {
         return $parseFile;
     }
@@ -35,7 +36,7 @@ class ParseFileTransformer implements DataTransformerInterface
      * @return UploadedFile|ParseFile
      * @throws TransformationFailedException if object (parseFile) is not found.
      */
-    public function reverseTransform($uploadedFile)
+    public function reverseTransform(mixed $uploadedFile): mixed
     {
         if ($uploadedFile instanceof UploadedFile) {
             if ($this->options['force_name'] !== false && $this->options['force_name'] !== '') {
@@ -52,7 +53,7 @@ class ParseFileTransformer implements DataTransformerInterface
 
             $parseFile = ParseFile::createFromFile($uploadedFile->getPathname(), $fileName);
             // Attach UploadedFile to the created ParseFile so it can be used by validators
-            $parseFile->_uploadedFile = $uploadedFile;
+            UploadedParseFileRegistry::attach($parseFile, $uploadedFile);
 
             return $parseFile;
         }

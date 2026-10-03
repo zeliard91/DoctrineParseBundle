@@ -3,8 +3,8 @@
 namespace Redking\ParseBundle\Validator\Constraints;
 
 use Parse\ParseFile;
+use Redking\ParseBundle\Form\UploadedParseFileRegistry;
 use Symfony\Component\HttpFoundation\File\File;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\ImageValidator;
 
@@ -13,15 +13,18 @@ class ParseFileImageValidator extends ImageValidator
     /**
      * {@inheritdoc}
      */
-    public function validate($value, Constraint $constraint)
+    public function validate(mixed $value, Constraint $constraint): void
     {
         if (!$value instanceof ParseFile) {
-            return parent::validate($value, $constraint);
+            parent::validate($value, $constraint);
+
+            return;
         }
 
         // We only validate uploaded files
-        if (null == $value->getUrl() && isset($value->_uploadedFile) && $value->_uploadedFile instanceof UploadedFile) {
-            return parent::validate($value->_uploadedFile, $constraint);
+        $uploadedFile = UploadedParseFileRegistry::get($value);
+        if (null == $value->getUrl() && null !== $uploadedFile) {
+            parent::validate($uploadedFile, $constraint);
         }
     }
 }
