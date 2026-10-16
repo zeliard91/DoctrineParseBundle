@@ -1036,6 +1036,33 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /**
+     * Gets the ParseObject to store as a pointer to an object.
+     *
+     * Its original data when the unit of work holds them, otherwise a pointer built from its
+     * collection and identifier, which neither loads a lazy reference nor needs the object to
+     * be managed: a reference obtained with getReference() or kept across a clear() has no data.
+     *
+     * @return ParseObject|null null for an object not saved yet
+     */
+    public function getParseObjectReference(object $object): ?ParseObject
+    {
+        $oid = spl_object_hash($object);
+        if (isset($this->originalObjectData[$oid])) {
+            return $this->originalObjectData[$oid];
+        }
+
+        $class = $this->om->getClassMetadata(get_class($object));
+        $id = (isset($this->objectIdentifiers[$oid]) && $this->objectIdentifiers[$oid] !== $oid)
+            ? $this->objectIdentifiers[$oid]
+            : $class->getIdentifierValue($object);
+        if (null === $id) {
+            return null;
+        }
+
+        return ParseObject::create($class->getCollection(), $id, true);
+    }
+
+    /**
      * Gets the ParseObject of an object from his spl id.
      *
      * @param string $oid
@@ -1929,8 +1956,15 @@ class UnitOfWork implements PropertyChangedListener
                 if ( ! $assoc['isOwningSide']) {
                     continue;
                 }
-                // if not found, we transform the object in a ParseObject if there is a cascade persist
                 if (!isset($this->originalObjectData[$ref_oid])) {
+                    // an object already saved but whose data the unit of work does not hold
+                    // (lazy reference, detached object) is stored as a pointer
+                    $reference = $this->getParseObjectReference($value);
+                    if (null !== $reference) {
+                        $actualData->set($class->getNameOfField($name), $reference);
+                        continue;
+                    }
+                    // a new object is transformed in a ParseObject if there is a cascade persist
                     if ($assoc['isCascadePersist']) {
                         $this->originalObjectData[$ref_oid] = $this->getObjectPersister(get_class($value))->instanciateParseObject();
                     } else {

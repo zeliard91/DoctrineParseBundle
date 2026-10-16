@@ -35,13 +35,18 @@ abstract class TestCase extends BaseTestCase
         $this->uow = $this->om->getUnitOfWork();
     }
     
-    public function createTestObjectManager()
+    /**
+     * @param bool|null $useLazyGhostObject Native lazy ghosts (PHP 8.4+) or generated proxies,
+     *                                      DOCTRINE_PARSE_USE_LAZY_GHOST decides when null
+     */
+    public function createTestObjectManager(?bool $useLazyGhostObject = null)
     {
         $config = new Configuration();
         $config->setAutoGenerateProxyClasses(Configuration::AUTOGENERATE_EVAL);
         $config->setProxyDir(\sys_get_temp_dir().'/Proxies');
         $config->setProxyNamespace('ParseProxies');
-        if (PHP_VERSION_ID >= 80400 && getenv('DOCTRINE_PARSE_USE_LAZY_GHOST') === '1') {
+        $useLazyGhostObject ??= PHP_VERSION_ID >= 80400 && getenv('DOCTRINE_PARSE_USE_LAZY_GHOST') === '1';
+        if ($useLazyGhostObject) {
             $config->setUseLazyGhostObject(true);
         }
         $config->setConnectionParameters([
