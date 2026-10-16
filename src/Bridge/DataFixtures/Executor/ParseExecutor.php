@@ -43,7 +43,7 @@ class ParseExecutor extends AbstractExecutor
     }
 
     /** @inheritDoc */
-    public function setReferenceRepository(ReferenceRepository $referenceRepository)
+    public function setReferenceRepository(ReferenceRepository $referenceRepository): void
     {
         $this->om->getEventManager()->removeEventListener(
             $this->listener->getSubscribedEvents(),
@@ -56,7 +56,7 @@ class ParseExecutor extends AbstractExecutor
     }
 
     /** @inheritDoc */
-    public function execute(array $fixtures, $append = false)
+    public function execute(array $fixtures, $append = false): void
     {
         if ($append === false) {
             $this->purge();
