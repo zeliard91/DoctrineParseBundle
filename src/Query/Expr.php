@@ -153,9 +153,9 @@ class Expr
     public function exists($bool)
     {
         if ($bool) {
-            return $this->operator('exists', (boolean) $bool);
+            return $this->operator('exists', (bool) $bool);
         }
-        return $this->operator('doesNotExist', (boolean) $bool);
+        return $this->operator('doesNotExist', (bool) $bool);
 
     }
 

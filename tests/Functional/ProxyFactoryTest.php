@@ -61,6 +61,15 @@ class ProxyFactoryTest extends \Redking\ParseBundle\Tests\TestCase
     {
         $proxy = $this->om->getProxyFactory()->getProxy(ChainNode::class, ['id' => 'x']);
 
+        if ($this->om->getConfiguration()->isLazyGhostObjectEnabled()) {
+            // Native lazy ghosts re-use the entity class itself: no generated class, no marker interface.
+            $this->assertSame(ChainNode::class, $proxy::class);
+            $this->assertNotInstanceOf(Proxy::class, $proxy);
+            $this->assertTrue((new \ReflectionClass($proxy))->isUninitializedLazyObject($proxy));
+
+            return;
+        }
+
         $this->assertInstanceOf(Proxy::class, $proxy);
         $this->assertFalse($proxy->__isInitialized());
     }
