@@ -263,12 +263,12 @@ class Expr
      */
     public function references($object): self
     {
-        $originalObject = $this->uow->getOriginalObjectData($object);
-        if (!is_object($originalObject)) {
+        $reference = is_object($object) ? $this->uow->getParseObjectReference($object) : null;
+        if (null === $reference) {
             throw new \InvalidArgumentException('The object passed in reference is not from Parse DB');
         }
 
-        return $this->equals($originalObject);
+        return $this->equals($reference);
     }
 
 
