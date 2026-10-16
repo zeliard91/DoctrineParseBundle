@@ -50,12 +50,15 @@ jobs:
 
           - php-version: '8.4'
             symfony-version: '6.4.*'
+            composer-require: 'zeliard91/parse-php-sdk:^2.5'
 
           - php-version: '8.4'
             symfony-version: '7.4.*'
+            composer-require: 'zeliard91/parse-php-sdk:^2.5'
 
           - php-version: '8.5'
             symfony-version: '7.4.*'
+            composer-require: 'zeliard91/parse-php-sdk:^2.5'
 
     steps:
       - name: 'Checkout code'
@@ -111,6 +114,7 @@ jobs:
         with:
           php-version: '${{ matrix.php-version }}'
           composer-token: ${{ secrets.GITHUB_TOKEN }}
+          composer-require: 'zeliard91/parse-php-sdk:^2.5'
           symfony-version: '${{ matrix.symfony-version }}'
       - name: 'Run tests'
         run: vendor/bin/phpunit
