@@ -2,6 +2,7 @@
 
 namespace Redking\ParseBundle\DependencyInjection;
 
+use Doctrine\Common\DataFixtures\Loader as FixturesLoader;
 use Doctrine\Common\EventSubscriber;
 use Redking\ParseBundle\Attribute\AsParseListener;
 use Redking\ParseBundle\Attribute\MapParseObject;
@@ -132,6 +133,7 @@ class RedkingParseExtension extends AbstractDoctrineExtension
         ]);
         $container->setDefinition('doctrine_parse.fixture_loader', $definition);
         $container->setAlias($config['fixture_loader'], 'doctrine_parse.fixture_loader');
+        $container->setAlias(FixturesLoader::class, 'doctrine_parse.fixture_loader');
 
         // Load bridge configurations
         $bundles = $container->getParameter('kernel.bundles');
