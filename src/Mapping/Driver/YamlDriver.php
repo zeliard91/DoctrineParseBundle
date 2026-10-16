@@ -230,7 +230,7 @@ class YamlDriver extends FileDriver
             if (is_array($mapping['unique'])) {
                 $options = $mapping['unique'] + array('unique' => true);
             } else {
-                $unique = (boolean) $mapping['unique'];
+                $unique = (bool) $mapping['unique'];
             }
         }
 
@@ -238,7 +238,7 @@ class YamlDriver extends FileDriver
             if (is_array($mapping['sparse'])) {
                 $options = $mapping['sparse'] + array('sparse' => true);
             } else {
-                $sparse = (boolean) $mapping['sparse'];
+                $sparse = (bool) $mapping['sparse'];
             }
         }
 
@@ -260,14 +260,14 @@ class YamlDriver extends FileDriver
             'orphanRemoval' => isset($reference['orphanRemoval']) ? $reference['orphanRemoval'] : false,
             'type' => $type,
             'reference' => true,
-            'simple' => isset($reference['simple']) ? (boolean) $reference['simple'] : false,
+            'simple' => isset($reference['simple']) ? (bool) $reference['simple'] : false,
             'targetDocument' => isset($reference['targetDocument']) ? $reference['targetDocument'] : null,
             'fieldName' => $fieldName,
             'inversedBy' => isset($reference['inversedBy']) ? (string) $reference['inversedBy'] : null,
             'mappedBy' => isset($reference['mappedBy']) ? (string) $reference['mappedBy'] : null,
             'repositoryMethod' => isset($reference['repositoryMethod']) ? (string) $reference['repositoryMethod'] : null,
-            'limit' => isset($reference['limit']) ? (integer) $reference['limit'] : null,
-            'skip' => isset($reference['skip']) ? (integer) $reference['skip'] : null,
+            'limit' => isset($reference['limit']) ? (int) $reference['limit'] : null,
+            'skip' => isset($reference['skip']) ? (int) $reference['skip'] : null,
             'discriminatorField' => isset($reference['discriminatorField']) ? $this->parseDiscriminatorField($reference['discriminatorField']) : null,
             'discriminatorMap' => isset($reference['discriminatorMap']) ? $reference['discriminatorMap'] : null,
             'defaultDiscriminatorValue' => isset($reference['defaultDiscriminatorValue']) ? $reference['defaultDiscriminatorValue'] : null,

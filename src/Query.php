@@ -150,7 +150,7 @@ class Query
      */
     public function setHydrate($hydrate)
     {
-        $this->hydrate = (boolean) $hydrate;
+        $this->hydrate = (bool) $hydrate;
     }
 
     /**

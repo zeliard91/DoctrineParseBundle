@@ -107,7 +107,6 @@ final class ProxyFactory
 
             if (null !== $loadedObject) {
                 foreach ($classMetadata->reflFields as $refProp) {
-                    $refProp->setAccessible(true);
                     $refProp->setValue($proxy, $refProp->getValue($loadedObject));
                 }
             } else {

@@ -208,7 +208,7 @@ class QueryBuilder
      */
     public function limit($limit)
     {
-        $this->query['limit'] = (integer) $limit;
+        $this->query['limit'] = (int) $limit;
 
         return $this;
     }
@@ -226,7 +226,7 @@ class QueryBuilder
      */
     public function skip($skip)
     {
-        $this->query['skip'] = (integer) $skip;
+        $this->query['skip'] = (int) $skip;
 
         return $this;
     }
@@ -421,7 +421,7 @@ class QueryBuilder
      */
     public function exists($bool)
     {
-        $this->expr->exists((boolean) $bool);
+        $this->expr->exists((bool) $bool);
 
         return $this;
     }

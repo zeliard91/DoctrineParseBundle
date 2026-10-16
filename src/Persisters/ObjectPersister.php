@@ -512,7 +512,7 @@ class ObjectPersister
     {
         $id = $this->class->getIdentifierObject($object);
 
-        return (boolean) $this->load(['_objectId' => $id]);
+        return (bool) $this->load(['_objectId' => $id]);
     }
     
     /**
