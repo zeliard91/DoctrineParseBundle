@@ -3,7 +3,8 @@
 namespace Redking\ParseBundle\DependencyInjection;
 
 use Redking\ParseBundle\Configuration as ParseBundleConfiguration;
-use Symfony\Bridge\Doctrine\DataFixtures\ContainerAwareLoader;
+use Doctrine\Common\DataFixtures\Loader;
+use Redking\ParseBundle\Bridge\DataFixtures\ContainerAwareLoader;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
@@ -87,8 +88,8 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode('fixture_loader')
                     ->defaultValue(ContainerAwareLoader::class)
                     ->beforeNormalization()
-                        ->ifTrue(function($v) {return !($v == ContainerAwareLoader::class || in_array(ContainerAwareLoader::class, class_parents($v)));})
-                        ->then(function($v) { throw new \LogicException(sprintf("The %s class is not a subclass of the ContainerAwareLoader", $v));})
+                        ->ifTrue(function($v) {return !is_a($v, Loader::class, true);})
+                        ->then(function($v) { throw new \LogicException(sprintf("The %s class is not a subclass of %s", $v, Loader::class));})
                     ->end()
                 ->end()
                 ->arrayNode('mappings')

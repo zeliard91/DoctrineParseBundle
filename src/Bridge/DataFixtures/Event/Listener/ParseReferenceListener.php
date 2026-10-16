@@ -50,7 +50,7 @@ final class ParseReferenceListener implements EventSubscriber
     /**
      * {@inheritdoc}
      */
-    public function getSubscribedEvents()
+    public function getSubscribedEvents(): array
     {
         return array(
             'postPersist'

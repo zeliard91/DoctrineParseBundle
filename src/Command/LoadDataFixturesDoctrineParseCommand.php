@@ -19,7 +19,6 @@ use Redking\ParseBundle\Bridge\DataFixtures\Executor\ParseExecutor;
 use Redking\ParseBundle\Bridge\DataFixtures\Purger\ParsePurger;
 use Redking\ParseBundle\ObjectManager;
 use Redking\ParseBundle\Registry;
-use Symfony\Bridge\Doctrine\DataFixtures\ContainerAwareLoader;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -40,11 +39,11 @@ class LoadDataFixturesDoctrineParseCommand extends DoctrineParseCommand
     private $params;
 
     /**
-     * @var \Symfony\Bridge\Doctrine\DataFixtures\ContainerAwareLoader
+     * @var \Doctrine\Common\DataFixtures\Loader
      */
     private $loader;
 
-    public function __construct(Registry $registry, ParameterBagInterface $params, ContainerAwareLoader $loader)
+    public function __construct(Registry $registry, ParameterBagInterface $params, Loader $loader)
     {
         parent::__construct($registry);
 

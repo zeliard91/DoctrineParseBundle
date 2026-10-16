@@ -40,7 +40,7 @@ class DisconnectedClassMetadataFactory extends ClassMetadataFactory
     /**
      * @override
      */
-    protected function newClassMetadataInstance($className)
+    protected function newClassMetadataInstance($className): ClassMetadata
     {
         $metadata = new ClassMetadata($className);
         if (strpos($className, '\\') !== false) {
