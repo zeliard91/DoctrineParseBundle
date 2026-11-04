@@ -1892,8 +1892,10 @@ class UnitOfWork implements PropertyChangedListener
                     $assoc['type'] == ClassMetadata::MANY &&
                     $val instanceof PersistentCollection &&
                     $val->isDirty()) {
+                    // Only the collection changed: its persister writes it on the original data.
+                    // $actualData holds every field set again, saving it would write back the
+                    // state the object was loaded with over what was saved since.
                     $this->objectChangeSets[$oid] = array();
-                    $this->originalObjectData[$oid] = $actualData;
                     $this->objectUpdates[$oid] = $object;
                 }
             }
