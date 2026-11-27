@@ -17,6 +17,15 @@ use Redking\ParseBundle\Types\EncryptedStringType;
 class ObjectManager implements BaseObjectManager
 {
     /**
+     * Connection cache shared by all the requests the Parse SDK sends from this process.
+     *
+     * The SDK opens a new cURL handle for each request and closes it afterwards, so without it every
+     * request resolves the host, opens a TCP connection and negotiates TLS again (about 50 ms of CPU
+     * with OpenSSL 3, against 1.5 ms on a reused connection).
+     */
+    private static ?\CurlShareHandle $curlShareHandle = null;
+
+    /**
      * The metadata factory, used to retrieve the ORM metadata of entity classes.
      *
      * @var \Redking\ParseBundle\Mapping\ClassMetadataFactory
@@ -128,6 +137,31 @@ class ObjectManager implements BaseObjectManager
         $params = $this->config->getConnectionParameters();
         ParseClient::initialize($params['app_id'], $params['rest_key'], $params['master_key']);
         ParseClient::setServerURL($params['server_url'], $params['mount_path']);
+        self::shareCurlConnections();
+    }
+
+    /**
+     * Make the requests of the Parse SDK reuse their connections, DNS lookups and TLS sessions.
+     *
+     * The handle is created once per process: the SDK applies these options to every cURL handle it
+     * opens. ParseClient::setHttpOptions() replaces any options set before.
+     */
+    private static function shareCurlConnections(): void
+    {
+        // The SDK falls back to PHP streams without the cURL extension
+        if (!\function_exists('curl_share_init')) {
+            return;
+        }
+
+        if (null === self::$curlShareHandle) {
+            $share = curl_share_init();
+            curl_share_setopt($share, \CURLSHOPT_SHARE, \CURL_LOCK_DATA_CONNECT);
+            curl_share_setopt($share, \CURLSHOPT_SHARE, \CURL_LOCK_DATA_DNS);
+            curl_share_setopt($share, \CURLSHOPT_SHARE, \CURL_LOCK_DATA_SSL_SESSION);
+            self::$curlShareHandle = $share;
+        }
+
+        ParseClient::setHttpOptions([\CURLOPT_SHARE => self::$curlShareHandle]);
     }
 
     public function getConfiguration()
